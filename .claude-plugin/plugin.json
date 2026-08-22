@@ -1,6 +1,6 @@
 {
   "name": "skills",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Personal agent skills for real engineering.",
   "author": {
     "name": "bgutschke",
@@ -8,6 +8,10 @@
   },
   "repository": "https://github.com/bgutschke/skills",
   "license": "MIT",
-  "keywords": ["engineering", "skills", "personal"],
+  "keywords": [
+    "engineering",
+    "skills",
+    "personal"
+  ],
   "skills": []
 }
