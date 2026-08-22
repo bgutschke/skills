@@ -1,0 +1,21 @@
+package.json
+  s_727fa403f12237::t_43307cb8a4e463 7-9
+.nvmrc
+  s_727fa403f12237::t_e04b580698dff9 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6c0d79f0f6223470b83ca92726fdf408d435e177",
+  "prompts": {},
+  "sessions": {
+    "s_727fa403f12237": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6d352cf-5ad4-434d-b299-57a5702588e4",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
