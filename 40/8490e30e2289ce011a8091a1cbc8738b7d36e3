@@ -1,0 +1,23 @@
+.claude-plugin/plugin.json
+  s_0fa2d8a37a329f::t_7961da048a74ab 4
+.claude-plugin/marketplace.json
+  s_0fa2d8a37a329f::t_59ca8c18c468e8 7
+CLAUDE.md
+  s_0fa2d8a37a329f::t_ad61a482603079 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "408490e30e2289ce011a8091a1cbc8738b7d36e3",
+  "prompts": {},
+  "sessions": {
+    "s_0fa2d8a37a329f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35321a25-3f29-4c6a-ba04-07e867bdd595",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
