@@ -1,0 +1,19 @@
+.github/renovate.json
+  s_0dafb8e37540a5::t_93182c1e5e6c0e 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "8ff9d149850d358e0d31167633bad7d0a0f7c3d3",
+  "prompts": {},
+  "sessions": {
+    "s_0dafb8e37540a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fee9be09-979c-4dd7-84a4-376c007da9a5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
