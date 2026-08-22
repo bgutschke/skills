@@ -4,7 +4,7 @@
     "name": "bgutschke",
     "url": "https://github.com/bgutschke"
   },
-  "description": "Personal agent skills, installable as a private Claude Code plugin.",
+  "description": "Personal agent skills, installable as a self-hosted Claude Code plugin.",
   "plugins": [
     {
       "name": "skills",
