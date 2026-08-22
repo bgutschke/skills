@@ -2,9 +2,9 @@
 
 ## Scope
 
-This document sets the quality bar for skill authorship — the only content type this repo
-ships today. A **Non-skill code** placeholder section below reserves scope for anything
-else (hook scripts, CI config) once it exists.
+This document sets the quality bar for skill authorship, the primary content type this
+repo ships. A **Non-skill code** section below covers the release tooling and CI config
+that support that shipping.
 
 ## Relation to `writing-for-agents`
 
@@ -39,8 +39,10 @@ Complete `AGENTS.md`'s "To add a skill" steps, then:
   --strict` only checks structural validity — frontmatter, file layout — not that the
   skill actually does what it claims.
 
-## Non-skill code (placeholder)
+## Non-skill code
 
-No non-skill code exists in this repo yet. Once it does, standards for it are decided
-per-language at that time, deferring to that language's own idiomatic style guide rather
-than inventing rules now.
+#10 introduced this repo's first non-skill code: `scripts/*.js` (plain CommonJS, one pure
+function per file, tested with Jest) and the tooling config that drives it
+(`commitlint.config.js`, `release.config.js`, `.github/workflows/`). No dedicated style
+guide beyond what's idiomatic for plain Node.js/CommonJS — nothing here is complex enough
+yet to need one invented ahead of time.
