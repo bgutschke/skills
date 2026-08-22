@@ -1,0 +1,27 @@
+docs/agents/domain.md
+  s_3fcdced298a749::t_d4fe5317d545a1 1-51
+docs/agents/triage-labels.md
+  s_3fcdced298a749::t_a573f947437a99 1-15
+AGENTS.md
+  s_3fcdced298a749::t_669c07fc771df2 18-20,23-26,31-33
+  s_3fcdced298a749::t_25c33d98dd8729 21-22
+  s_3fcdced298a749::t_0512c1ab1e7048 27-30
+docs/agents/issue-tracker.md
+  s_3fcdced298a749::t_3385bdb895f9ab 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "068b3a8bdc63687c49cdd2a7a2247f1f65545efc",
+  "prompts": {},
+  "sessions": {
+    "s_3fcdced298a749": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ceb3de5-72de-4c07-9d31-cd247d9ca634",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
