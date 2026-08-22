@@ -1,0 +1,23 @@
+.github/workflows/release.yml
+  s_6d75589dbe49f1::t_bb8d5fb55de8ee 1-48
+.github/workflows/validate.yml
+  s_6d75589dbe49f1::t_a0ed817d55f78b 1-36
+commitlint.config.js
+  s_6d75589dbe49f1::t_b668e09a3416e6 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "b423cd1f7d2f808c7a295c1e8c4fc611a405b847",
+  "prompts": {},
+  "sessions": {
+    "s_6d75589dbe49f1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea95a5fd-04a1-4fd2-9bee-8e97ddb7e489",
+        "model": "unknown"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
