@@ -35,16 +35,17 @@ resolves the PR open for the current branch.
 
 1. Fetch the PR's current body and metadata:
    `gh pr view <target> --json
-   body,url,number,headRefName,title,baseRepository,closingIssuesReferences`.
-   `baseRepository` names the PR's own repo (`owner.login`/`name`) — this may differ from
-   whatever repo happens to be checked out locally, since `args` can be a full URL into
-   any repo.
-2. Determine the structure to fill. Fetch `.github/PULL_REQUEST_TEMPLATE.md` from the
-   PR's own repo — the only location this skill checks, never a root or `docs/`
-   variant — via `gh api repos/<owner>/<name>/contents/.github/PULL_REQUEST_TEMPLATE.md
-   --jq .content | base64 --decode`, using `baseRepository` from Step 1. This works
-   whether that repo is the one checked out locally or not, so it needs no separate
-   local-file path.
+   body,url,number,headRefName,baseRefName,title,closingIssuesReferences`.
+   The `url` field (`https://github.com/<owner>/<repo>/pull/<n>`) names the PR's own
+   repo — this may differ from whatever repo happens to be checked out locally, since
+   `args` can be a full URL into any repo.
+2. Determine the structure to fill. Fetch `.github/PULL_REQUEST_TEMPLATE.md` as GitHub
+   itself would apply it — from the PR's *base* branch, not its head branch, and never a
+   root or `docs/` variant — via `gh api
+   "repos/<owner>/<repo>/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=<baseRefName>"
+   --jq .content | base64 --decode`, using `<owner>/<repo>` parsed from `url` and
+   `baseRefName` from Step 1. This works whether that repo is the one checked out
+   locally or not, so it needs no separate local-file path.
    - If the file exists, keep every heading, HTML comment, and checkbox exactly where it
      puts them.
    - If the API call 404s, use the built-in fallback structure: `## What changed`,
