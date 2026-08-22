@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekly"],
+  "minimumReleaseAge": "3 days",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "",
+  "commitMessageTopic": "{{depName}}",
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "excludePackageNames": ["@anthropic-ai/claude-code", "fsevents"],
+      "groupName": "devDependencies (non-major)",
+      "automerge": true
+    }
+  ]
+}
