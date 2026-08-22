@@ -42,7 +42,10 @@ One of:
 
 ### Scope
 
-Optional. When a commit touches one bucket or skill, scope it to the bucket name: `engineering` or `productivity`. Omit the scope for repo-wide changes (plugin manifest, marketplace config, top-level docs).
+Optional, and drawn from one of two independent vocabularies — a commit uses at most one value from either, never both:
+
+- **Bucket scope** — `engineering` or `productivity`, when a commit touches one skills bucket. Omit the scope for repo-wide changes (plugin manifest, marketplace config, top-level docs).
+- **Maintenance scope** — `deps` or `config`, for automated dependency-tooling changes (Renovate). Renovate's own config-migration PR hardcodes scope `config` and isn't configurable otherwise, so this vocabulary is accepted as-is rather than mapped onto the bucket scopes above.
 
 ### Subject
 
