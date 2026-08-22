@@ -1,0 +1,23 @@
+AGENTS.md
+  s_0fa2d8a37a329f::t_c30b1c2ee3a40a 1-17
+scripts/install.sh
+  s_0fa2d8a37a329f::t_39ac69a7c5e647 1-53
+scripts/list-skills.sh
+  s_0fa2d8a37a329f::t_4351a2bea3cb67 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "65f0e88db577d84ab5733ef94e2b44193ff84c10",
+  "prompts": {},
+  "sessions": {
+    "s_0fa2d8a37a329f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35321a25-3f29-4c6a-ba04-07e867bdd595",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
