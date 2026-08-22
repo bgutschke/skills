@@ -1,6 +1,6 @@
 {
   "name": "skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Personal agent skills for real engineering.",
   "author": {
     "name": "bgutschke",
@@ -13,5 +13,7 @@
     "skills",
     "personal"
   ],
-  "skills": ["./skills/engineering/to-pr-description"]
+  "skills": [
+    "./skills/engineering/to-pr-description"
+  ]
 }

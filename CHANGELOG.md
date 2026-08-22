@@ -1,3 +1,18 @@
+## 1.1.0 (2026-08-22)
+
+* feat(engineering): add to-pr-description skill and PR template ([de6ee82](https://github.com/bgutschke/skills/commit/de6ee82)), closes [#9](https://github.com/bgutschke/skills/issues/9)
+* feat(engineering): self-assign the PR in to-pr-description ([82fd7de](https://github.com/bgutschke/skills/commit/82fd7de)), closes [#9](https://github.com/bgutschke/skills/issues/9)
+* docs(engineering): sharpen to-pr-description from real dry-run findings ([7c1edc5](https://github.com/bgutschke/skills/commit/7c1edc5)), closes [#20](https://github.com/bgutschke/skills/issues/20) [#9](https://github.com/bgutschke/skills/issues/9)
+* fix(engineering): correct gh field usage in to-pr-description ([d0f7b8a](https://github.com/bgutschke/skills/commit/d0f7b8a)), closes [#20](https://github.com/bgutschke/skills/issues/20) [#9](https://github.com/bgutschke/skills/issues/9)
+* fix(engineering): generalize AI-attribution stripping beyond Claude Code ([499e0ff](https://github.com/bgutschke/skills/commit/499e0ff)), closes [#9](https://github.com/bgutschke/skills/issues/9)
+* fix(engineering): never keep Claude Code's own PR attribution line ([f960720](https://github.com/bgutschke/skills/commit/f960720)), closes [#9](https://github.com/bgutschke/skills/issues/9)
+* chore: accept Renovate's deps/config commit scopes ([e4e4873](https://github.com/bgutschke/skills/commit/e4e4873)), closes [#17](https://github.com/bgutschke/skills/issues/17) [renovatebot/renovate#35164](https://github.com/renovatebot/renovate/issues/35164) [#17](https://github.com/bgutschke/skills/issues/17)
+* chore: add Copilot review instructions ([cb5029b](https://github.com/bgutschke/skills/commit/cb5029b))
+* chore: add Renovate config for dependency updates ([2b05fd5](https://github.com/bgutschke/skills/commit/2b05fd5)), closes [#6](https://github.com/bgutschke/skills/issues/6)
+* chore: allowlist install scripts for claude-code and fsevents ([30a9a2a](https://github.com/bgutschke/skills/commit/30a9a2a))
+* chore: pin required Node version to 24 ([69cd10c](https://github.com/bgutschke/skills/commit/69cd10c))
+* chore(config): tune renovate minimum release age by risk tier ([6ec619d](https://github.com/bgutschke/skills/commit/6ec619d)), closes [#19](https://github.com/bgutschke/skills/issues/19)
+
 ## 1.0.0 (2026-08-22)
 
 * ci: authenticate release workflow with a PAT, not GITHUB_TOKEN ([3f44cd5](https://github.com/bgutschke/skills/commit/3f44cd5)), closes [#10](https://github.com/bgutschke/skills/issues/10)
