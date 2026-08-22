@@ -1,0 +1,19 @@
+.copilot-review-test.md
+  s_6f08d9f078ebbf::t_f462fd07e90492 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "e86418aefcd99a5f14307960545c0dc0f57bab9c",
+  "prompts": {},
+  "sessions": {
+    "s_6f08d9f078ebbf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "95ebc47b-d745-400b-aa8a-9a7a8128a00a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
