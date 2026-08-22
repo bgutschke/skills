@@ -4,7 +4,7 @@ Personal agent skills for real engineering. Modeled on [mattpocock/skills](https
 
 ## Installation
 
-Two ways in, same two philosophies as the upstream repo this is modeled on: a **Claude Code plugin** subscribes to a managed, read-only bundle that updates when this repo is pushed to; the **installer script** copies editable skill files into a project to hack on directly. Pick one per project — installing both leaves every skill twice.
+Two ways in, same two philosophies as the upstream repo this is modeled on: a **Claude Code plugin** subscribes to a managed, read-only bundle that updates when this repo is pushed to; **[skills.sh](https://skills.sh/bgutschke/skills)** copies editable skill files into a project to hack on directly. Pick one per project — installing both leaves every skill twice.
 
 ### Claude Code: the plugin
 
@@ -20,11 +20,10 @@ Being public, this needs no git credentials to add or update. Once at least one 
 ### Other agents, or to edit a skill in place
 
 ```bash
-gh repo clone bgutschke/skills   # once per machine; clones into ./skills
-./skills/scripts/install.sh <skill-name> --target .claude/skills
+npx skills@latest add bgutschke/skills --copy
 ```
 
-Run `scripts/list-skills.sh` from inside the clone to see what's available. This writes ordinary files into the target project; nothing updates behind your back.
+`--copy` writes the skills you pick into your project as ordinary, editable files — nothing updates behind your back. Drop it to symlink instead (skills CLI's own default): one canonical copy, refreshed in place with `npx skills update`, which behaves more like the plugin's "subscribe" model than "edit in place." Add `-a <agent>` to target a specific agent, or `-g` to install globally instead of per-project. Works the same whether this repo is public or private — no local clone needed either way.
 
 ## Structure
 
