@@ -13,5 +13,5 @@
     "skills",
     "personal"
   ],
-  "skills": []
+  "skills": ["./skills/engineering/to-pr-description"]
 }
