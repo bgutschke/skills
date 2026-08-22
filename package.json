@@ -4,6 +4,9 @@
   "description": "Personal agent skills for real engineering.",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": "24"
+  },
   "scripts": {
     "test": "jest"
   },
