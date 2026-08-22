@@ -2,7 +2,7 @@
 name: to-pr-description
 disable-model-invocation: true
 argument-hint: "A PR number or URL, or nothing for the current branch's PR"
-description: Fill in the blanks of an already-open GitHub PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md, falling back to a built-in What changed/Why/Testing structure when the repo has none. Use when the user asks to fill in, complete, or write a PR description, update a PR body, or types /to-pr-description. Not for opening a new PR, rewriting a body that already has real content, or producing a Screenshot no live browser session can capture.
+description: Fill in the blanks of an already-open GitHub PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md, falling back to a built-in What changed/Why/Testing structure when the repo has none. Use when the user asks to fill in, complete, or write a PR description, update a PR body, or types /to-pr-description. Not for opening a new PR, replacing real content written in a different structure, or producing a Screenshot no live browser session can capture.
 ---
 
 # PR description
@@ -15,12 +15,15 @@ its blanks move.
 
 - The user asks to fill in, complete, or write a PR description, or update a PR body.
 - The user types `/to-pr-description`, with or without a PR number or URL.
+- Refreshing a body already filled in the template's own structure, after new commits
+  landed since it was last filled — normal fill behavior, no confirmation needed.
 
 ## When not to use
 
 - Opening a brand-new PR — this skill only edits a PR that already exists and is open.
-- A PR body that already has real content in its blanks — filling would overwrite
-  something a human wrote; confirm with the user before touching it.
+- Replacing real content written in a different structure than the target template, or
+  content on a PR this fill isn't actually about — that's a rewrite, not a fill; confirm
+  with the user before touching it.
 - A template's Screenshot (or other visual-evidence) section — leave it exactly as the
   template has it. No live browser session backs this skill, so it cannot produce an "as
   it should appear" image.
@@ -43,9 +46,8 @@ resolves the PR open for the current branch.
    itself would apply it — from the PR's *base* branch, not its head branch, and never a
    root or `docs/` variant — via `gh api
    "repos/<owner>/<repo>/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=<baseRefName>"
-   --jq .content | base64 --decode`, using `<owner>/<repo>` parsed from `url` and
-   `baseRefName` from Step 1. This works whether that repo is the one checked out
-   locally or not, so it needs no separate local-file path.
+   --jq .content | base64 --decode`, using `<owner>/<repo>` and `baseRefName` from
+   Step 1.
    - If the file exists, keep every heading, HTML comment, and checkbox exactly where it
      puts them.
    - If the API call 404s, use the built-in fallback structure: `## What changed`,
@@ -85,18 +87,22 @@ resolves the PR open for the current branch.
 
 ## Worked example
 
-A PR on this repo closes issue #9. This repo's `.github/PULL_REQUEST_TEMPLATE.md` has
-three sections and no checkboxes: `## What changed`, `## Why`, `## Testing`. Nothing is
-appended after the template on this repo's PRs yet, so there is nothing to preserve.
+This is what actually happened dry-running this skill against its own PR,
+[bgutschke/skills#20](https://github.com/bgutschke/skills/pull/20). Its body was still
+the raw, unfilled template: `## What changed`, `## Why`, `## Testing`, nothing appended
+after it.
 
-- `gh pr view 12 --json body,closingIssuesReferences` returns an empty body and
-  `closingIssuesReferences: [{number: 9, ...}]` — GitHub's own linking already ties this
-  PR to a ticket.
-- This repo's `CLAUDE.md` documents the `Closes #<n>` / `Refs #<n>` footer convention, and
-  the linked issue confirms #9 applies here, so **Why** ends with `Closes #9`.
-- **What changed** is written from `git log` and `git diff main...HEAD`: adding the
+- `gh pr view 20 --json body,closingIssuesReferences` returned an empty body and
+  `closingIssuesReferences: []` — GitHub's own linking found no ticket, because this
+  repo's commit footers use `Refs #9`, which GitHub doesn't auto-link the way `Closes`
+  does.
+- This repo's `CLAUDE.md` documents the `Closes #<n>` / `Refs #<n>` footer convention.
+  The commit history's actual footer — `Refs #9`, not `Closes #9` — is the evidence, so
+  **Why** ends with `Refs #9`, not the `Closes #9` a naive reading of the linked issue
+  might suggest.
+- **What changed** was written from `git log` and `git diff main...HEAD`: adding the
   `to-pr-description` skill and this repo's first `PULL_REQUEST_TEMPLATE.md`.
-- **Testing** is written from what the diff shows: `claude plugin validate . --strict`
-  passing, plus a dry run of the skill itself against this same PR.
-- The filled body is written with `gh pr edit 12 --body-file <file>`, and the report
-  lists all three sections as filled, none left untouched.
+- **Testing** was written from what the diff and history actually showed:
+  `claude plugin validate . --strict` passing, plus this same dry run.
+- The filled body was written with `gh pr edit 20 --body-file <file>`, and the report
+  listed all three sections as filled, none left untouched.
