@@ -3,7 +3,7 @@ Skills are organized into bucket folders under `skills/`:
 - `engineering/`: daily code work
 - `productivity/`: daily non-code workflow tools
 
-Every skill must have a reference in its bucket's `README.md` and the top-level `README.md`, and an entry in `.claude-plugin/plugin.json`'s `skills` array (the plugin ships exactly what's listed there).
+Every skill must have a reference in its bucket's `README.md` and the top-level `README.md`, and an entry in `.claude-plugin/plugin.json`'s `skills` array (the plugin ships exactly what's listed there). `plugin.json`'s `version` field is owned by the release pipeline (`release.config.js`) — never hand-edit it when adding a skill.
 
 To add a skill:
 
@@ -20,14 +20,14 @@ See `CODING_STANDARDS.md` for the quality bar a skill must meet — required `SK
 
 ## Commit messages
 
-Every commit — human or agent — follows [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): description`. Applies going forward only; existing history on `main` is untouched. Documentation only for now — nothing enforces this format via a git hook or CI.
+Every commit — human or agent — follows [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): description`. Applies going forward only; existing history on `main` is untouched. Enforced on every pull request by commitlint in CI (`.github/workflows/validate.yml`), and consumed directly by `semantic-release` (`release.config.js`) to decide what ships in each release — getting the type right isn't just style anymore.
 
 ### Type
 
 One of:
 
 - `feat` — a new skill, or new capability added to an existing one
-- `fix` — corrects a skill, doc, or config that was wrong
+- `fix` — corrects a skill, the plugin manifest (`plugin.json`/`marketplace.json`), or a doc that was wrong
 - `docs` — documentation-only change (`README.md`, this file, `docs/`, skill prose)
 - `style` — formatting/whitespace only, no content or logic change
 - `refactor` — reorganizes skills or code with no behavior change
@@ -37,6 +37,8 @@ One of:
 - `ci` — CI configuration changes
 - `chore` — tooling, config, or meta changes that don't fit elsewhere
 - `revert` — reverts a previous commit; body states `Reverts commit <hash>.`
+
+`feat`, `fix`, and `perf` are release-triggering: `semantic-release` bumps a version and cuts a GitHub Release from them (see #10). Reserve them for changes to what the plugin actually ships — skills, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`. A change to the release pipeline itself (a workflow, `release.config.js`, `scripts/sync-plugin-version.js`, a `package.json` dependency bump) is `build`/`ci`/`chore` even when it fixes a bug in that tooling — it changes nothing a consumer receives, so it shouldn't cut a release.
 
 ### Scope
 
@@ -48,13 +50,13 @@ Lowercase, imperative mood, no trailing period — `fix(engineering): correct br
 
 ### Body
 
-Separated from the subject by a blank line, for any non-trivial change. Explains WHAT changed and WHY — never HOW; the diff already shows how.
+Separated from the subject by a blank line, for any non-trivial change. Explains WHAT changed and WHY — never HOW; the diff already shows how. Keep issue references (`#N`) out of the body entirely — put them only in the Footer below. commitlint's parser treats the *first* `#N` it finds anywhere in the body as the start of the footer; if that first mention lands on a hard-wrapped continuation line rather than one already preceded by a blank line, everything after it — including the real `Refs #10`/`Closes #10` line — gets swallowed into an unspaced "footer" and trips a `footer-leading-blank` warning.
 
 ### Footer
 
 `Closes #<n>` or `Refs #<n>` when the commit closes or relates to a tracked GitHub issue (see `docs/agents/issue-tracker.md`). Omit when there's no related issue — most commits won't have one.
 
-Breaking changes use a `!` after the type/scope (`feat(engineering)!: ...`) and/or a `BREAKING CHANGE:` footer, per the spec. This repo doesn't cut releases yet, so the marker is currently inert — it costs nothing to support now and saves a future question.
+Breaking changes use a `!` after the type/scope (`feat(engineering)!: ...`) and/or a `BREAKING CHANGE:` footer, per the spec. `semantic-release` reads this as a major version bump.
 
 ## Agent skills
 
