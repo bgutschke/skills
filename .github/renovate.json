@@ -13,9 +13,12 @@
     {
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["patch", "minor"],
-      "excludePackageNames": ["@anthropic-ai/claude-code", "fsevents"],
       "groupName": "devDependencies (non-major)",
-      "automerge": true
+      "automerge": true,
+      "matchPackageNames": [
+        "!@anthropic-ai/claude-code",
+        "!fsevents"
+      ]
     }
   ]
 }
