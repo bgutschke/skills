@@ -20,10 +20,10 @@ Being public, this needs no git credentials to add or update. Once at least one 
 ### Other agents, or to edit a skill in place
 
 ```bash
-npx skills@latest add bgutschke/skills --copy
+npx skills@latest add bgutschke/skills
 ```
 
-`--copy` writes the skills you pick into your project as ordinary, editable files — nothing updates behind your back. Drop it to symlink instead (skills CLI's own default): one canonical copy, refreshed in place with `npx skills update`, which behaves more like the plugin's "subscribe" model than "edit in place." Add `-a <agent>` to target a specific agent, or `-g` to install globally instead of per-project. Works the same whether this repo is public or private — no local clone needed either way.
+Writes the skills you pick into your project as ordinary, editable files you own — nothing updates without you explicitly running `npx skills update`. Add `-a <agent>` to target a specific agent, or `-g` to install globally instead of per-project. Works the same whether this repo is public or private — no local clone needed either way.
 
 ## Structure
 
