@@ -32,9 +32,16 @@ Writes the skills you pick into your project as ordinary, editable files you own
 
 Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed in `.claude-plugin/plugin.json`'s `skills` array to ship with the plugin. See `CLAUDE.md` for the full convention.
 
+## Skills
+
+- **engineering**
+  - [to-pr-description](./skills/engineering/to-pr-description/SKILL.md) — fill in the
+    blanks of an already-open PR's description from its own
+    `.github/PULL_REQUEST_TEMPLATE.md`.
+
 ## Status
 
-Skeleton only — no skills committed yet. Community-marketplace submission is planned once that changes.
+First real skill shipped. Community-marketplace submission is planned now that this repo has one.
 
 ## License
 
