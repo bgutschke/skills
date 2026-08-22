@@ -1,0 +1,28 @@
+.claude-plugin/plugin.json
+  s_32e4efd09f72c2::t_945a90cc4838d2 16
+skills/engineering/to-pr-description/SKILL.md
+  s_32e4efd09f72c2::t_49f8ae04cf1197 1-29,33-36,52-96
+  s_32e4efd09f72c2::t_515e4f495b2ac7 30-32,37-51
+README.md
+  s_32e4efd09f72c2::t_199783af463b24 35-41,44
+.github/PULL_REQUEST_TEMPLATE.md
+  s_32e4efd09f72c2::t_5f87557d3132a1 1-5
+skills/engineering/README.md
+  s_32e4efd09f72c2::t_0869cbe2779dc6 7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "9c101188677ce4e81bbb9d9e6d4a2d7096e91c45",
+  "prompts": {},
+  "sessions": {
+    "s_32e4efd09f72c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7c2b0828-ec5f-4a52-bfb4-796f86b0bffe",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
