@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run semantic-release without tagging or publishing anything
+        type: boolean
+        default: false
+
+# semantic-release needs to push a release commit and tag straight to `main`.
+# Branch protection must allow the actor running this workflow (github-actions[bot],
+# or a PAT stored as a secret and used in checkout/env below) to bypass the
+# pull-request requirement for that push — otherwise @semantic-release/git's push fails.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+# Never let two release runs race over the same push to main.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Validate plugin manifest
+        run: npx claude plugin validate . --strict
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
