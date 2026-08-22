@@ -1,0 +1,19 @@
+release.config.js
+  s_6d75589dbe49f1::t_1cec43d6a6b41e 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3a345408cb0b17de555eba95d3e818290e2e3718",
+  "prompts": {},
+  "sessions": {
+    "s_6d75589dbe49f1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea95a5fd-04a1-4fd2-9bee-8e97ddb7e489",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
