@@ -1,0 +1,19 @@
+README.md
+  s_0fa2d8a37a329f::t_145c9c4f616bf9 23,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "17ffd7d9c0c92f1a3c42e6ce044468692b65091b",
+  "prompts": {},
+  "sessions": {
+    "s_0fa2d8a37a329f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "35321a25-3f29-4c6a-ba04-07e867bdd595",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
