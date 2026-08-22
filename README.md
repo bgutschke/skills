@@ -12,7 +12,7 @@ This repo isn't listed on Claude Code's official marketplace (`anthropics/claude
 
 ```bash
 /plugin marketplace add bgutschke/skills
-/plugin install bgutschke-skills@bgutschke
+/plugin install skills@bgutschke
 ```
 
 Being public, this needs no git credentials to add or update. Once at least one real skill exists here, the plan is to submit to Claude Code's open **community marketplace** (`anthropics/claude-plugins-community`) for automatic discovery and nightly-synced updates — until then, this self-hosted route is how you install it.
@@ -20,8 +20,8 @@ Being public, this needs no git credentials to add or update. Once at least one 
 ### Other agents, or to edit a skill in place
 
 ```bash
-gh repo clone bgutschke/skills ~/code/bgutschke-skills   # once per machine
-~/code/bgutschke-skills/scripts/install.sh <skill-name> --target .claude/skills
+gh repo clone bgutschke/skills   # once per machine; clones into ./skills
+./skills/scripts/install.sh <skill-name> --target .claude/skills
 ```
 
 Run `scripts/list-skills.sh` from inside the clone to see what's available. This writes ordinary files into the target project; nothing updates behind your back.
