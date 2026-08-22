@@ -1,0 +1,26 @@
+.github/renovate.json
+  s_0dafb8e37540a5::t_908baf7f4abd02 16
+commitlint.config.js
+  s_0dafb8e37540a5::t_2a5897ced36c34 14
+  s_0dafb8e37540a5::t_94ae7b2a9a43aa 3-4,9-13
+AGENTS.md
+  s_0dafb8e37540a5::t_1df25c2ae4371a 45-48
+CONTEXT.md
+  s_0dafb8e37540a5::t_1fc71a6db39748 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "27a388ff7a1564a4b23fb64b78f5c0a8d2e28447",
+  "prompts": {},
+  "sessions": {
+    "s_0dafb8e37540a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fee9be09-979c-4dd7-84a4-376c007da9a5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
