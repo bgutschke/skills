@@ -1,0 +1,23 @@
+docs/adr/0001-renovate-risk-tiered-minimum-release-age.md
+  s_652def1d9c9316::t_17e9e7be31c533 1-8
+.github/renovate.json
+  s_652def1d9c9316::t_5595e7b0933ef3 3,12-15,23-27
+.github/workflows/validate.yml
+  s_652def1d9c9316::t_fccadb8e53d083 37-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "e4c5ed5f78b36b5f6d36cfd515c57cbf6a129901",
+  "prompts": {},
+  "sessions": {
+    "s_652def1d9c9316": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff36f7d0-0f97-451e-bc2c-17efaba22d86",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
