@@ -53,9 +53,12 @@ resolves the PR open for the current branch.
 3. Preserve anything already appended after the template's own structure — CI-generated
    sections, deploy-preview links, or anything else trailing the body — byte-for-byte, at
    the end. Detect this positionally, by what comes after the template's last section,
-   never by matching a specific section name. The one exception: a `🤖 Generated with
-   [Claude Code]` attribution line is this tool's own signature, not the target repo's
-   content — drop it if present, and never write one when composing a body.
+   never by matching a specific section name. The one exception: drop any AI-attribution
+   line — a trailer crediting an AI assistant or tool for writing or generating the PR
+   (e.g. "🤖 Generated with [Claude Code]", "Co-Authored-By: <bot>", "Assisted by
+   Copilot"). Recognize this by what it says, not a fixed list of tool names, since it's
+   an artifact of *how* the PR was authored, not the target repo's own content — and
+   never write one when composing a body.
 4. Ground every blank in something real on the branch, never invention:
    - **What changed** — summarize the actual diff and commit messages (`git log`, `git
      diff` against the base branch).
