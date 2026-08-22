@@ -79,11 +79,12 @@ resolves the PR open for the current branch.
    - Whether no convention is documented at all, or one is documented but no ticket
      applies to this PR, fall back identically: write **Why** as a plain prose summary of
      the diff and commit messages, with no ticket reference. One fallback path, not two.
-6. Write the completed body to a scratch file, then update the PR:
-   `gh pr edit <target> --body-file <file>`.
-7. Report which blanks were filled, which checkboxes were checked, and which sections
-   were left untouched and why — so the reasoning is visible before anyone reads the PR
-   itself.
+6. Write the completed body to a scratch file, then update the PR in one call, self-
+   assigning it at the same time: `gh pr edit <target> --body-file <file> --add-assignee
+   @me`.
+7. Report which blanks were filled, which checkboxes were checked, which sections were
+   left untouched and why, and that the PR is now assigned to you — so the reasoning is
+   visible before anyone reads the PR itself.
 
 ## Worked example
 
@@ -104,5 +105,6 @@ after it.
   `to-pr-description` skill and this repo's first `PULL_REQUEST_TEMPLATE.md`.
 - **Testing** was written from what the diff and history actually showed:
   `claude plugin validate . --strict` passing, plus this same dry run.
-- The filled body was written with `gh pr edit 20 --body-file <file>`, and the report
-  listed all three sections as filled, none left untouched.
+- The filled body was written and the PR self-assigned in one call — `gh pr edit 20
+  --body-file <file> --add-assignee @me` — and the report listed all three sections as
+  filled, none left untouched, and the new assignee.
