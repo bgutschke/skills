@@ -39,6 +39,7 @@
   },
   "allowScripts": {
     "@anthropic-ai/claude-code@2.1.239": true,
-    "fsevents@2.3.3": true
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }
