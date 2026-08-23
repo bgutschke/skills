@@ -10,10 +10,10 @@ Two ways in — pick one per project; installing both leaves every skill twice. 
 
 ```bash
 /plugin marketplace add bgutschke/skills
-/plugin install skills@bgutschke
+/plugin install bgutschke-skills@bgutschke
 ```
 
-Update: `/plugin marketplace update bgutschke-skills`, or enable auto-update via `/plugin` → **Marketplaces** → this marketplace → **Enable auto-update**.
+Update: `/plugin marketplace update bgutschke`, or enable auto-update via `/plugin` → **Marketplaces** → **bgutschke** → **Enable auto-update**.
 
 ### Other agents, or to edit a skill in place
 
