@@ -1,0 +1,21 @@
+.github/workflows/release.yml
+  s_b4dcd0d4b5e599::t_888370940d38b8 35-37
+  s_b4dcd0d4b5e599::t_a9059f494be121 30,42
+  s_b4dcd0d4b5e599::t_fae9669df14bcb 4-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "e3a5fa0e3ede2b5f49081df533cc3d41dffe9900",
+  "prompts": {},
+  "sessions": {
+    "s_b4dcd0d4b5e599": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87a23c08-4905-434d-b4cf-81df8b09d494",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
