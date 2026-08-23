@@ -1,0 +1,8 @@
+# Rules auditor: read broadly, write only to personal rule files, never auto-apply
+
+The planned `/audit-rules` skill detects contradictions and unresolved overlaps across every rule file and invocable-unit (skill/agent) description that could affect a session — personal rule files, project-shared `CLAUDE.md`/`rules/*.md`, and enterprise-managed policy files, plus every installed skill and agent description whether or not the user authored it. We decided it reads all of that, but only ever proposes edits to the user's own personal rule files (`~/.claude/CLAUDE.md`, `~/.claude/rules/*.md`) and to skills/agents the user authors themselves — and even those are proposed edits gated by the harness's normal permission prompt, never applied silently. We considered letting it also propose edits directly against project-shared files, but rejected that: those files are team-owned, and a single contributor's tool making unreviewed proposals against them would exceed what any one person should decide alone on a shared repo.
+
+## Consequences
+
+- **A contradiction with a third-party skill's description has no direct fix.** The auditor can't edit a plugin it doesn't own, so the only available fix is tightening the user's own `ROUTING.md`/`CLAUDE.md` to disambiguate on their side — the finding gets reported, but the proposed edit (if any) always lands on a file the user controls, never on the third-party skill.
+- **A conflict with a managed-policy file is escalate-only.** There is no edit target — the fix is organizational (raise it with whoever administers the policy), so these findings are reported as-is with no proposed diff at all.
