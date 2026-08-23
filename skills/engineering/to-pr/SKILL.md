@@ -162,7 +162,11 @@ labeled sections:
 - **Testing evidence** — tests added or modified, commands the diff implies running, any
   manual verification steps visible in the diff or commit messages. Omit the category
   entirely rather than pad it with generic boilerplate.
-- **Commit messages** — verbatim, for the ticket-reasoning fallback below to draw on.
+- **Commit messages** — reproduce each one inside a fenced code block, character-for-
+  character; never paraphrase, condense, or summarize, even under length pressure. The
+  ticket-reasoning fallback below depends on exact footer text — blurring `Refs #9` into
+  something that reads like `Closes #9` is exactly the failure this category exists to
+  prevent.
 - **Ticket references** — any ticket number or tracker URL appearing in a commit message
   or the diff itself.
 
