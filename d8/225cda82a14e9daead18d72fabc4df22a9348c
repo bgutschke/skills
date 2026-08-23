@@ -1,0 +1,28 @@
+CODING_STANDARDS.md
+  s_e5f54248fdfab2::t_9aaaf182280a2d 34-38,44-46
+  s_e5f54248fdfab2::t_f93a82096abb6d 33
+docs/adr/0005-skill-writing-best-practices-split-from-coding-standards.md
+  s_e5f54248fdfab2::t_cf0fc3f84497b2 1-52
+.gitignore
+  s_e5f54248fdfab2::t_f0fbdcd4605b20 2-3
+docs/skill-writing-best-practices.md
+  s_e5f54248fdfab2::t_7a8ab395e1d503 1-348
+.claude/skills/skill-writing-standards/SKILL.md
+  s_e5f54248fdfab2::t_143269890b74e1 1-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "d8225cda82a14e9daead18d72fabc4df22a9348c",
+  "prompts": {},
+  "sessions": {
+    "s_e5f54248fdfab2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3849870e-9c25-4e03-a4c8-3e5fd7e725a8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
