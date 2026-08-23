@@ -12,9 +12,10 @@ guidance for the same trigger — and **Unresolved overlap** — two auto-invoca
 that could both plausibly fire for the same request, with no stated precedence between
 them. This is a read-broad, write-narrow tool: it reads everything, but only ever
 proposes edits to files the user can edit directly — their own personal rule files, and
-skills/agents they author themselves. See `docs/adr/0002-rules-auditor-read-broad-write-
-narrow.md` for why, and `CONTEXT.md`'s "Rules auditor" section for the definitions this
-skill works from.
+skills/agents they author themselves — never to project-shared, third-party, or managed-
+policy files, since those are owned by more people than whoever is running this skill,
+and a single contributor's tool making unreviewed proposals against them would exceed
+what any one person should decide alone.
 
 ## When to use
 
