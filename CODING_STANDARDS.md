@@ -6,25 +6,6 @@ This document sets the quality bar for skill authorship, the primary content typ
 repo ships. A **Non-skill code** section below covers the release tooling and CI config
 that support that shipping.
 
-## Relation to `writing-for-agents`
-
-The [`mattpocock-skills:writing-for-agents`](https://github.com/mattpocock/skills) skill,
-where installed, covers general document-writing craft for anything an agent consumes:
-context pointers, information hierarchy, pruning, leading words. It applies to every
-`SKILL.md` in this repo. This document does not restate that craft — it adds only what's
-specific to authoring a skill *here*.
-
-## Required SKILL.md structure
-
-Every skill must state, explicitly:
-
-- **When to use it** — the concrete situations that should trigger it.
-- **When *not* to use it** — the boundary cases it declines, so the trigger doesn't creep.
-- **At least one worked example** — a skill described only in the abstract is unverifiable;
-  a worked example makes its behavior concrete. The example must demonstrate current,
-  designed behavior — never narrate a bug that was found and fixed while building the
-  skill.
-
 ## Self-containment
 
 A skill must not assume that any file outside its own bundle exists — `docs/adr/*.md`,
@@ -49,14 +30,20 @@ such standing discovery path and stay fine.
 - No emojis in skill prose or generated artifacts, unless the user explicitly asks for
   them.
 - No marketing or hype language — in descriptions or bodies.
-- A skill's `description` names concrete trigger phrases or situations, not a vague
-  category. ("Fires when the user says X, Y, or asks to Z" — not "helps with workflow
-  tasks.")
+
+For guidance on `SKILL.md` structure, description design, and how this repo's standards
+relate to `writing-for-agents`, see
+[`docs/skill-writing-best-practices.md`](docs/skill-writing-best-practices.md) — that
+content is sourced from, and periodically reconciled against, external authoritative
+guidance, so it lives separately from this file's terse, in-house rules.
 
 ## Pre-merge checklist
 
 Complete `AGENTS.md`'s "To add a skill" steps, then:
 
+- **Meet the required structure and style bar** in
+  [`docs/skill-writing-best-practices.md`](docs/skill-writing-best-practices.md) — when to
+  use it, when not to, a worked example, and a well-designed `description`.
 - **Dry-run the skill** against a realistic sample task before committing. `validate
   --strict` only checks structural validity — frontmatter, file layout — not that the
   skill actually does what it claims.
