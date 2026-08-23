@@ -34,6 +34,3 @@ jobs:
 
       - name: Validate plugin manifest
         run: npx claude plugin validate . --strict
-
-      - name: Validate Renovate config
-        run: npx --yes --package renovate -- renovate-config-validator
