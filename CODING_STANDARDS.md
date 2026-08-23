@@ -63,6 +63,12 @@ Complete `AGENTS.md`'s "To add a skill" steps, then:
   skill's own directory that assume this repo's layout (see Self-containment above). A dry
   run won't catch this: a dead citation is inert prose, never dereferenced when the skill
   actually runs.
+- **Run `writing-for-agents` against the draft** — a real second pass applying that
+  skill's concepts (context pointers, information hierarchy, leading words, pruning
+  no-op sentences) to the actual text, not a mental note made while writing it. That
+  guidance has no mechanical rubric to grep for, so a self-review is the easiest of these
+  checks to skip under pressure; treat it the same as a `/code-review` pass — a genuinely
+  separate look, not a box ticked from memory.
 
 ## Non-skill code
 
