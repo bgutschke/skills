@@ -1,0 +1,21 @@
+skills/productivity/audit-rules/SKILL.md
+  s_a78ba31c6a0df8::t_49e1bec22b88fe 88-89
+  s_a78ba31c6a0df8::t_74ce39811e2c08 129-131
+  s_a78ba31c6a0df8::t_223c20326bd668 112-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1a8a1d85b5d47fce5117e142bdc9b4f95b694ced",
+  "prompts": {},
+  "sessions": {
+    "s_a78ba31c6a0df8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82b264c4-9cfa-47ab-a75d-f86296fddcd1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
