@@ -1,0 +1,31 @@
+.claude-plugin/plugin.json
+  s_23d08ea4b03f7b::t_debea893798d87 17
+skills/engineering/to-pr/SKILL.md
+  s_23d08ea4b03f7b::t_17fb28fa3fd2c9 199-221
+  s_23d08ea4b03f7b::t_89c8fc256aa435 186,188-192,194-198
+  s_23d08ea4b03f7b::t_52ee02bfd99ab9 58-61
+  s_23d08ea4b03f7b::t_3858224c59842b 77-82
+  s_23d08ea4b03f7b::t_ce7253492fe7a0 2-57,62-76,83-185,187,193,222-259
+skills/engineering/README.md
+  s_23d08ea4b03f7b::t_993a0637ce9641 7-9
+README.md
+  s_23d08ea4b03f7b::t_3c0911f4fac21d 36-37
+docs/adr/0002-no-confirmation-for-to-pr-create-path-actions.md
+  s_23d08ea4b03f7b::t_9a3b65aea0dfd3 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3e23851910634413af0730532cc57cafe261e238",
+  "prompts": {},
+  "sessions": {
+    "s_23d08ea4b03f7b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c864a4cd-b042-44ac-9ef4-4901bee24d05",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
