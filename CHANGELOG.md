@@ -1,3 +1,7 @@
+## 1.3.0 (2026-08-23)
+
+* feat(productivity): add audit-rules skill ([caccb38](https://github.com/bgutschke/skills/commit/caccb38)), closes [#26](https://github.com/bgutschke/skills/issues/26)
+
 ## 1.2.0 (2026-08-23)
 
 * feat(engineering): rename to-pr-description to to-pr, add create path ([2b0376a](https://github.com/bgutschke/skills/commit/2b0376a)), closes [#25](https://github.com/bgutschke/skills/issues/25)
