@@ -7,7 +7,7 @@
   "description": "Personal agent skills, installable as a self-hosted Claude Code plugin.",
   "plugins": [
     {
-      "name": "skills",
+      "name": "bgutschke-skills",
       "source": "./",
       "description": "Personal agent skills for real engineering.",
       "category": "engineering",
