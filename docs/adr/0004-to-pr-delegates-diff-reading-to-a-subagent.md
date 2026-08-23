@@ -6,7 +6,7 @@ diff can be arbitrarily large. We decided `to-pr` delegates *only* that diff/log
 step to a subagent via the `Agent` tool, making it the first skill in this repo to
 instruct itself to call `Agent` internally. Every other step (template fetch, documented-
 convention lookup, merge-commit check, inferred-title-tier `gh pr list`) stays a direct
-tool call, per this repo's own `ROUTING.md` doctrine that single-fact lookups are
+tool call, per the user's own personal `ROUTING.md` doctrine that single-fact lookups are
 Read/Grep/Explore territory, not `Agent` territory — the diff/log step is the one
 exception because, unlike those bounded lookups, it has no upper bound on size. The
 saving this buys is context isolation (the raw diff lives in the subagent's context; only
