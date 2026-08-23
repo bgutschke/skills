@@ -1,3 +1,8 @@
+## <small>1.1.1 (2026-08-23)</small>
+
+* fix: rename marketplace plugin entry to bgutschke-skills ([67a95f9](https://github.com/bgutschke/skills/commit/67a95f9))
+* docs: cut readme install section to bare instructions ([8244426](https://github.com/bgutschke/skills/commit/8244426))
+
 ## 1.1.0 (2026-08-22)
 
 * feat(engineering): add to-pr-description skill and PR template ([de6ee82](https://github.com/bgutschke/skills/commit/de6ee82)), closes [#9](https://github.com/bgutschke/skills/issues/9)
