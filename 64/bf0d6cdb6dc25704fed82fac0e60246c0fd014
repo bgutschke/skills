@@ -1,0 +1,19 @@
+.github/workflows/validate-renovate.yml
+  s_dab983bdfb55d2::t_bc88ffa402cd58 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "64bf0d6cdb6dc25704fed82fac0e60246c0fd014",
+  "prompts": {},
+  "sessions": {
+    "s_dab983bdfb55d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cdf94a20-6bde-4154-b983-01199f302777",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
