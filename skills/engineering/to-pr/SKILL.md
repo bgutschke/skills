@@ -2,7 +2,7 @@
 name: to-pr
 disable-model-invocation: true
 argument-hint: "[<PR number or URL>] [--ready|--draft] [--base <branch>]"
-description: Open a new PR from the current branch (draft by default, title and body derived from its commits and diff) when none is open yet, or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state at creation or on an existing PR; --base sets or retargets the base branch. Use when the user asks to open, create, or update a PR, fill in a PR description, or types /to-pr. Not for replacing real content written in a different structure, or producing a Screenshot no live browser session can capture.
+description: Open a new PR from the current branch (draft by default, title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch.
 ---
 
 # to-pr
@@ -20,7 +20,7 @@ running `/to-pr` is the only authorization step, since it has exactly one user.
 - The user types `/to-pr`, with or without a target, `--ready`/`--draft`, or `--base`.
 - Refreshing a body already filled in the template's own structure, after new commits
   landed since it was last filled, or after a diff or convention change makes an earlier
-  fill stale — normal fill behavior, no confirmation needed.
+  fill stale.
 - Flipping an existing PR's ready-for-review state or base branch via `--ready`,
   `--draft`, or `--base`, with no other change intended.
 
@@ -77,8 +77,7 @@ Scan `args` for three optional pieces, in any order or position:
    commits aren't on it (`git rev-list @{u}..HEAD --count` > 0), `git push` is
    unambiguous. If no upstream is configured, push to whichever single remote `git
    remote` lists (`git push -u <remote> HEAD`); more than one configured remote is
-   ambiguous — report it and ask which one, rather than guessing `origin`. No
-   confirmation once the remote is known.
+   ambiguous — report it and ask which one, rather than guessing `origin`.
 3. **Derive the title** from the first commit ahead of the resolved base — see
    "Deriving the title" below.
 4. **Compose the body** — see "Composing the body" below, fetching the template from the
