@@ -30,13 +30,15 @@ Every skill must state, explicitly:
 - A skill's `description` names concrete trigger phrases or situations, not a vague
   category. ("Fires when the user says X, Y, or asks to Z" — not "helps with workflow
   tasks.")
-- No relative-path references into this repo's own files (`docs/adr/*.md`, `CONTEXT.md`,
-  `CODING_STANDARDS.md`, etc.) from inside a skill's own instructions. A skill executes
-  against whatever project the user is actually working in, not this repo, so that path
-  won't resolve there even though the file exists here. State the reasoning inline
-  instead of citing it; if a citation is genuinely worth including, use an absolute,
-  universally-resolvable URL (e.g. a GitHub issue link) — never a path relative to this
-  repo.
+- Never cite this repo's own decision records (`docs/adr/*.md`, `CONTEXT.md`) from inside
+  a skill's own instructions — not even by an otherwise-valid absolute URL. A skill
+  executes against whatever project the user is actually working in, not this repo, so
+  the reasoning must already be stated inline for the skill to be self-contained; and
+  `docs/agents/domain.md` already tells anyone maintaining this repo to check `docs/adr/`
+  before touching an area, so an in-skill pointer back would be redundant for that
+  audience too. This doesn't extend to citing external, third-party references (a
+  library's docs, an upstream bug tracker) by absolute URL — those have no such standing
+  discovery path and stay fine.
 
 ## Pre-merge checklist
 
