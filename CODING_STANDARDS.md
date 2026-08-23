@@ -8,10 +8,11 @@ that support that shipping.
 
 ## Relation to `writing-for-agents`
 
-The installed `writing-for-agents` skill covers general document-writing craft for
-anything an agent consumes: context pointers, information hierarchy, pruning, leading
-words. It applies to every `SKILL.md` in this repo. This document does not restate that
-craft — it adds only what's specific to authoring a skill *here*.
+The [`mattpocock-skills:writing-for-agents`](https://github.com/mattpocock/skills) skill,
+where installed, covers general document-writing craft for anything an agent consumes:
+context pointers, information hierarchy, pruning, leading words. It applies to every
+`SKILL.md` in this repo. This document does not restate that craft — it adds only what's
+specific to authoring a skill *here*.
 
 ## Required SKILL.md structure
 
@@ -63,12 +64,12 @@ Complete `AGENTS.md`'s "To add a skill" steps, then:
   skill's own directory that assume this repo's layout (see Self-containment above). A dry
   run won't catch this: a dead citation is inert prose, never dereferenced when the skill
   actually runs.
-- **Run `writing-for-agents` against the draft** — a real second pass applying that
-  skill's concepts (context pointers, information hierarchy, leading words, pruning
-  no-op sentences) to the actual text, not a mental note made while writing it. That
-  guidance has no mechanical rubric to grep for, so a self-review is the easiest of these
-  checks to skip under pressure; treat it the same as a `/code-review` pass — a genuinely
-  separate look, not a box ticked from memory.
+- **Run `writing-for-agents` against the draft, or apply its concepts by hand if it isn't
+  installed** — a real second pass over the actual text against that skill's concepts
+  (context pointers, information hierarchy, leading words, pruning no-op sentences), not a
+  mental note made while writing it. That guidance has no mechanical rubric to grep for, so
+  a self-review is the easiest of these checks to skip under pressure; treat it the same as
+  a `/code-review` pass — a genuinely separate look, not a box ticked from memory.
 
 ## Non-skill code
 
