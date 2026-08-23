@@ -78,3 +78,10 @@ function per file, tested with Jest) and the tooling config that drives it
 (`commitlint.config.js`, `release.config.js`, `.github/workflows/`). No dedicated style
 guide beyond what's idiomatic for plain Node.js/CommonJS — nothing here is complex enough
 yet to need one invented ahead of time.
+
+#31 added Markdown linting (`markdownlint-cli2`, config in `.markdownlint-cli2.jsonc`),
+enforced locally by a Husky pre-commit hook (`lint-staged`, scoped to staged `.md` files)
+and again in CI (`validate.yml`). The config disables or loosens several rules that fire
+on patterns this repo uses deliberately — unwrapped prose, steps numbered continuously
+across sections, angle-bracket placeholders in prose — rather than forcing a rewrite of
+existing docs; each override is commented with its reasoning in that file.

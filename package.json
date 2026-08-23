@@ -8,7 +8,9 @@
     "node": "24"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "^2.1.239",
@@ -21,13 +23,19 @@
     "@semantic-release/github": "^11.0.1",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.3",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
+    "lint-staged": "^17.3.0",
+    "markdownlint-cli2": "^0.23.2",
     "semantic-release": "^24.2.1"
   },
   "jest": {
     "clearMocks": true,
     "restoreMocks": true,
     "testEnvironment": "node"
+  },
+  "lint-staged": {
+    "*.md": "markdownlint-cli2"
   },
   "allowScripts": {
     "@anthropic-ai/claude-code@2.1.239": true,
