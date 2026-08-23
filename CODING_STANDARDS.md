@@ -60,15 +60,15 @@ Complete `AGENTS.md`'s "To add a skill" steps, then:
 
 ## Non-skill code
 
-#10 introduced this repo's first non-skill code: `scripts/*.js` (plain CommonJS, one pure
-function per file, tested with Jest) and the tooling config that drives it
-(`commitlint.config.js`, `release.config.js`, `.github/workflows/`). No dedicated style
-guide beyond what's idiomatic for plain Node.js/CommonJS — nothing here is complex enough
-yet to need one invented ahead of time.
+`scripts/*.js` (plain CommonJS, one pure function per file, tested with Jest) and the
+tooling config that drives it (`commitlint.config.js`, `release.config.js`,
+`.github/workflows/`) have no dedicated style guide beyond what's idiomatic for plain
+Node.js/CommonJS — nothing here is complex enough yet to need one invented ahead of time.
+See [ADR 0006](docs/adr/0006-release-automation-via-semantic-release.md) for why this
+tooling exists and how it's wired together.
 
-#31 added Markdown linting (`markdownlint-cli2`, config in `.markdownlint-cli2.jsonc`),
+Markdown is linted with `markdownlint-cli2` (config in `.markdownlint-cli2.jsonc`),
 enforced locally by a Husky pre-commit hook (`lint-staged`, scoped to staged `.md` files)
-and again in CI (`validate.yml`). The config disables or loosens several rules that fire
-on patterns this repo uses deliberately — unwrapped prose, steps numbered continuously
-across sections, angle-bracket placeholders in prose — rather than forcing a rewrite of
-existing docs; each override is commented with its reasoning in that file.
+and again in CI (`validate.yml`). See
+[ADR 0007](docs/adr/0007-markdownlint-overrides-tuned-to-existing-conventions.md) for why
+several default rules are disabled or loosened.
