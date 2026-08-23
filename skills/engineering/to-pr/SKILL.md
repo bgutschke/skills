@@ -117,7 +117,7 @@ Shared by both paths. "The template" means the target repo's own
 already settled on (the create path's step 1, or the update path's `baseRefName`) — never
 the head branch, and never a root or `docs/` variant:
 
-```
+```bash
 gh api "repos/<owner>/<repo>/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=<base>" \
   --jq .content | base64 --decode
 ```
@@ -213,7 +213,7 @@ a merge commit, `git log`'s default traversal can surface a commit from the *mer
 branch as "first" instead of the actual first commit made on the current branch. Instead,
 run the equivalent yourself with `--first-parent`, which sidesteps this unconditionally:
 
-```
+```bash
 git log --reverse --first-parent <base>..HEAD --format=%s
 ```
 
