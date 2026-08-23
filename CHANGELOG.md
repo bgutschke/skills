@@ -1,3 +1,5 @@
+## [1.4.1](https://github.com/bgutschke/skills/compare/v1.4.0...v1.4.1) (2026-08-23)
+
 ## 1.4.0 (2026-08-23)
 
 * docs: add ADR for to-pr's subagent diff-reading delegation ([9e5c1ac](https://github.com/bgutschke/skills/commit/9e5c1ac))
