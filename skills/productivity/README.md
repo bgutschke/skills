@@ -4,7 +4,8 @@ Daily non-code workflow tools.
 
 **User-invoked**
 
-_None yet._
+- [audit-rules](./audit-rules/SKILL.md) — read every active rule file and installed
+  skill/agent description and report contradictions or unresolved overlaps between them.
 
 **Model-invoked**
 
