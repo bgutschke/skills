@@ -1,0 +1,19 @@
+docs/adr/0004-to-pr-delegates-diff-reading-to-a-subagent.md
+  s_a3a0b634944a3e::t_95db3e14767a68 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "42bcff48d288b931c8949f696d70983b4e885066",
+  "prompts": {},
+  "sessions": {
+    "s_a3a0b634944a3e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e2c1490-cacd-4cf3-bb91-5c3c1c65b060",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
