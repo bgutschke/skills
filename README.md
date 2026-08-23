@@ -4,18 +4,16 @@ Personal agent skills for real engineering. Modeled on [mattpocock/skills](https
 
 ## Installation
 
-Two ways in, same two philosophies as the upstream repo this is modeled on: a **Claude Code plugin** subscribes to a managed, read-only bundle that updates when this repo is pushed to; **[skills.sh](https://skills.sh/bgutschke/skills)** copies editable skill files into a project to hack on directly. Pick one per project — installing both leaves every skill twice.
+Two ways in — pick one per project; installing both leaves every skill twice. A **Claude Code plugin** subscribes to a managed, read-only bundle; **[skills.sh](https://skills.sh/bgutschke/skills)** copies editable files into your project instead.
 
 ### Claude Code: the plugin
-
-This repo isn't listed on Claude Code's official marketplace (`anthropics/claude-plugins-official` is partnership-gated, no open submission path). It marks itself as its own marketplace instead (`.claude-plugin/marketplace.json`):
 
 ```bash
 /plugin marketplace add bgutschke/skills
 /plugin install skills@bgutschke
 ```
 
-Being public, this needs no git credentials to add or update. Once at least one real skill exists here, the plan is to submit to Claude Code's open **community marketplace** (`anthropics/claude-plugins-community`) for automatic discovery and nightly-synced updates — until then, this self-hosted route is how you install it.
+Update: `/plugin marketplace update bgutschke-skills`, or enable auto-update via `/plugin` → **Marketplaces** → this marketplace → **Enable auto-update**.
 
 ### Other agents, or to edit a skill in place
 
@@ -23,7 +21,7 @@ Being public, this needs no git credentials to add or update. Once at least one 
 npx skills@latest add bgutschke/skills
 ```
 
-Writes the skills you pick into your project as ordinary, editable files you own — nothing updates without you explicitly running `npx skills update`. Add `-a <agent>` to target a specific agent, or `-g` to install globally instead of per-project. Works the same whether this repo is public or private — no local clone needed either way.
+Update: `npx skills update` — re-fetches directly from GitHub, no manual clone step. Add `-g` to install globally instead of per-project, or `-a <agent>` to target a specific agent.
 
 ## Structure
 
@@ -38,10 +36,6 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
   - [to-pr-description](./skills/engineering/to-pr-description/SKILL.md) — fill in the
     blanks of an already-open PR's description from its own
     `.github/PULL_REQUEST_TEMPLATE.md`.
-
-## Status
-
-First real skill shipped. Community-marketplace submission is planned now that this repo has one.
 
 ## License
 
