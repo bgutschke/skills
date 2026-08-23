@@ -1,0 +1,23 @@
+docs/adr/0006-release-automation-via-semantic-release.md
+  s_06aadb1255acb3::t_a362bcaf007267 1-46
+docs/adr/0007-markdownlint-overrides-tuned-to-existing-conventions.md
+  s_06aadb1255acb3::t_50943878008663 1-33
+CODING_STANDARDS.md
+  s_06aadb1255acb3::t_714e6b2193df95 63-68,70,72-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "0c49f0efb75d8e29789f18f4b3e8f5d93f329125",
+  "prompts": {},
+  "sessions": {
+    "s_06aadb1255acb3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3ee9649f-e082-4477-a99e-bfb144f4dbe0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
