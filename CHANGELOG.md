@@ -1,3 +1,18 @@
+## 1.4.0 (2026-08-23)
+
+* docs: add ADR for to-pr's subagent diff-reading delegation ([9e5c1ac](https://github.com/bgutschke/skills/commit/9e5c1ac))
+* docs: add coding standard against relative-path repo citations in skills ([96618f8](https://github.com/bgutschke/skills/commit/96618f8))
+* docs: add self-containment principle to coding standards ([52e9d58](https://github.com/bgutschke/skills/commit/52e9d58))
+* docs: correct ROUTING.md misattribution in ADR 0004 ([97f06c8](https://github.com/bgutschke/skills/commit/97f06c8))
+* docs: forbid citing this repo's own ADRs from skills outright ([9473e56](https://github.com/bgutschke/skills/commit/9473e56))
+* docs: renumber duplicate 0002 ADR to 0003 ([f7e80ce](https://github.com/bgutschke/skills/commit/f7e80ce))
+* docs: require a writing-for-agents pass in the pre-merge checklist ([b1a5eaa](https://github.com/bgutschke/skills/commit/b1a5eaa))
+* fix(engineering): drop dead-path ADR citations from to-pr ([3ae0d11](https://github.com/bgutschke/skills/commit/3ae0d11))
+* fix(engineering): force verbatim commit-message reproduction in to-pr ([cd71079](https://github.com/bgutschke/skills/commit/cd71079))
+* fix(engineering): tighten to-pr's SKILL.md against writing-for-agents ([dbd94ae](https://github.com/bgutschke/skills/commit/dbd94ae))
+* fix(productivity): make audit-rules self-contained ([704e6e2](https://github.com/bgutschke/skills/commit/704e6e2))
+* feat(engineering): delegate to-pr diff reading to a subagent ([43f5de5](https://github.com/bgutschke/skills/commit/43f5de5))
+
 ## 1.3.0 (2026-08-23)
 
 * feat(productivity): add audit-rules skill ([caccb38](https://github.com/bgutschke/skills/commit/caccb38)), closes [#26](https://github.com/bgutschke/skills/issues/26)
