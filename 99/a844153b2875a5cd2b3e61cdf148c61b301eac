@@ -1,0 +1,14 @@
+package.json
+  h_1f38bc7352bbbe 42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "99a844153b2875a5cd2b3e61cdf148c61b301eac",
+  "prompts": {},
+  "humans": {
+    "h_1f38bc7352bbbe": {
+      "author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
