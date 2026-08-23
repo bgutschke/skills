@@ -85,9 +85,8 @@ that category rather than inventing content.
 9. **Unresolved overlap** — among invocable units *not* exempt per step 7, compare every
    pair's trigger conditions. If both could plausibly fire for the same request and no
    rule file states which one should win, flag it — even when neither unit's own
-   guidance is individually wrong. This is a carving defect per `ROUTING.md`'s carving
-   principle: verbs should not overlap, and when they do, something needs to state the
-   precedence.
+   guidance is individually wrong. This is a carving defect: verbs should not overlap,
+   and when they do, something needs to state the precedence.
 10. **Stale references** — while reading each unit in step 6, note any reference (by
     name) to another skill or agent that isn't in the current active set from step 5 —
     evidence it was renamed or removed. Report this as its own line, distinct from the
@@ -110,9 +109,9 @@ that category rather than inventing content.
       personal file is always in scope for a diff even when the counterpart isn't.
 13. If the finding is an Unresolved overlap between two units the user owns, propose the
     fix as a carving addition — typically a new row in the user's own `ROUTING.md`
-    stating which unit takes precedence for the shared trigger, per this repo's own
-    carving convention. If one side is third-party, the same third-party-note rule from
-    step 12 applies; no edit lands on the third-party unit.
+    stating which unit takes precedence for the shared trigger. If one side is
+    third-party, the same third-party-note rule from step 12 applies; no edit lands on
+    the third-party unit.
 
 ## Reporting
 
@@ -127,9 +126,9 @@ that category rather than inventing content.
 
 ## Worked example
 
-Dry run against a constructed six-fixture set — no unit-test seam exists for a pure-
-prose skill (per `CODING_STANDARDS.md`'s pre-merge checklist, this stands in for one),
-covering every case the read/write-authority split needs to get right:
+Dry run against a constructed six-fixture set — no unit-test seam exists for a
+pure-prose skill, so this dry run stands in for one, covering every case the
+read/write-authority split needs to get right:
 
 - `personal/CLAUDE.md` — "Always squash commits before merging a PR," "Always use spaces
   for indentation," "Never add a `Signed-off-by` trailer."
