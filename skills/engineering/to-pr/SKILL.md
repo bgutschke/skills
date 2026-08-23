@@ -11,8 +11,7 @@ Open a PR if the target branch doesn't have one yet; otherwise fill in the one t
 already open. Both paths compose the same way: ground every section in the actual diff
 and commit history, respect the target repo's own PR template structure, and never
 invent content. Neither path prompts for confirmation beyond the invocation itself —
-running `/to-pr` is the only authorization step, since it has exactly one user (see
-`docs/adr/0002-no-confirmation-for-to-pr-create-path-actions.md`).
+running `/to-pr` is the only authorization step, since it has exactly one user.
 
 ## When to use
 
@@ -149,8 +148,7 @@ run arbitrarily large, unlike every other lookup this skill makes — dispatch a
 `general-purpose` subagent to read it instead of pulling it into this session directly. Do
 not override the subagent's model: the "never invent" grounding this evidence must hold
 up under is a judgment call, not a mechanical extraction, and isn't a place to trade
-quality for a cheaper tier (see
-`docs/adr/0004-to-pr-delegates-diff-reading-to-a-subagent.md`).
+quality for a cheaper tier.
 
 Task the subagent to run `git log --first-parent <base>..HEAD` (full commit messages, not
 just subjects) and `git diff <base>...HEAD` against the base branch the calling path
