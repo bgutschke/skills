@@ -1,7 +1,9 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: [Validate]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -25,15 +27,19 @@ permissions:
 
 # Never let two release runs race over the same push to main.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: false
 
 jobs:
   release:
+    # workflow_run fires on every Validate completion, including failed ones — gate on
+    # conclusion so a broken push to main never releases.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
 
@@ -43,9 +49,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - name: Validate plugin manifest
-        run: npx claude plugin validate . --strict
 
       - name: Release
         env:
