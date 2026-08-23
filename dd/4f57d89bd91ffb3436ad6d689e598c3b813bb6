@@ -1,0 +1,19 @@
+lint-test.md
+  s_1525ea32308d98::t_2c1d74aa3cf15f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "dd4f57d89bd91ffb3436ad6d689e598c3b813bb6",
+  "prompts": {},
+  "sessions": {
+    "s_1525ea32308d98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4d2db2a2-e87d-41d7-9dbd-98bcc777c9c0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
