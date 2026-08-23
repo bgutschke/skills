@@ -144,15 +144,47 @@ since it's an artifact of *how* the PR was authored, not the target repo's own c
 and never write one when composing a body. On the create path, there is nothing to
 conflict with yet, so this step doesn't apply.
 
+Before grounding any blank, gather the diff evidence once per invocation. A real diff can
+run arbitrarily large, unlike every other lookup this skill makes — dispatch a
+`general-purpose` subagent to read it instead of pulling it into this session directly. Do
+not override the subagent's model: the "never invent" grounding this evidence must hold
+up under is a judgment call, not a mechanical extraction, and isn't a place to trade
+quality for a cheaper tier (see
+`docs/adr/0004-to-pr-delegates-diff-reading-to-a-subagent.md`).
+
+Task the subagent to run `git log --first-parent <base>..HEAD` (full commit messages, not
+just subjects) and `git diff <base>...HEAD` against the base branch the calling path
+already resolved, then report back only what it can ground in that output, in clearly
+labeled sections:
+
+- **Change summary** — what the diff actually does, file by file or logically grouped;
+  never what the change is *for*.
+- **Testing evidence** — tests added or modified, commands the diff implies running, any
+  manual verification steps visible in the diff or commit messages. Omit the category
+  entirely rather than pad it with generic boilerplate.
+- **Commit messages** — verbatim, for the ticket-reasoning fallback below to draw on.
+- **Ticket references** — any ticket number or tracker URL appearing in a commit message
+  or the diff itself.
+
+The report is evidence, not prose for any specific template — the subagent doesn't know
+which template this run will fill, so it must never assume a target's section names or
+structure. Mapping the evidence onto the actual template's blanks stays this skill's own
+job, below.
+
+As a cheap cross-check before trusting the report, run `git diff --stat <base>...HEAD`
+directly in this session — file list and line counts only, never the full diff — and
+compare it against the subagent's change summary. A mismatch (fewer files mentioned than
+`--stat` shows, for instance) means re-running the subagent, not composing the body from
+an incomplete report.
+
 Ground every blank in something real, never invention:
 
-- **What changed** — summarize the actual diff and commit messages (`git log`, `git
-  diff` against the base branch).
+- **What changed** — the diff-evidence subagent's change summary.
 - **Why** — see the ticket-reasoning step below.
-- **Testing** — concrete verification steps derived from what the diff actually touches
-  (tests added, commands run, manual steps taken), not generic boilerplate.
-- Any other checkbox or blank the template defines — fill only what the diff
-  demonstrably supports; leave the rest unchecked or untouched.
+- **Testing** — the diff-evidence subagent's testing evidence; if it omitted the
+  category, leave **Testing** unfilled rather than inventing boilerplate.
+- Any other checkbox or blank the template defines — fill only what the diff-evidence
+  subagent's report demonstrably supports; leave the rest unchecked or untouched.
 - A template's non-blank content — a fixed disclaimer, a Screenshot section — is left
   exactly as the template has it, filled only if the diff demonstrably supports it, never
   invented.
@@ -162,12 +194,13 @@ Fill **Why**'s ticket-reasoning by tracker convention, with exactly one fallback
 - Look for a documented tracker or commit-footer convention in the target repo — a
   `CONTRIBUTING.md`, `CLAUDE.md`/`AGENTS.md`, or a `docs/` page describing one.
 - If one exists, look for evidence tying *this* PR to a ticket in that convention's own
-  terms: `closingIssuesReferences`, the branch name, or a commit message footer matching
-  the convention's format. Follow the convention exactly — e.g. a `Closes #<n>` /
-  `Refs #<n>` footer, or a linked tracker URL.
+  terms: `closingIssuesReferences`, the branch name, the diff-evidence subagent's ticket
+  references, or a commit message footer matching the convention's format. Follow the
+  convention exactly — e.g. a `Closes #<n>` / `Refs #<n>` footer, or a linked tracker URL.
 - Whether no convention is documented at all, or one is documented but no ticket applies
-  to this PR, fall back identically: write **Why** as a plain prose summary of the diff
-  and commit messages, with no ticket reference. One fallback path, not two.
+  to this PR, fall back identically: write **Why** as a plain prose summary built from the
+  diff-evidence subagent's change summary and commit messages, with no ticket reference.
+  One fallback path, not two.
 
 ## Deriving the title
 
