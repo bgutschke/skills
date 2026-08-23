@@ -1,0 +1,46 @@
+.github/workflows/validate.yml
+  s_1525ea32308d98::t_6f6837b101a258 31-33
+CODING_STANDARDS.md
+  s_1525ea32308d98::t_f49e7ceee3668a 81-87
+.markdownlint-cli2.jsonc
+  s_1525ea32308d98::t_c7eb518270d922 29-33
+  s_1525ea32308d98::t_a267dda0d9671a 26-28
+  s_1525ea32308d98::t_b859f7694cf1ac 34-36
+  s_7fb86113ae4d58::t_eeda09b777d3a9 1-25,37-40
+.husky/pre-commit
+  s_7fb86113ae4d58::t_db877e7e791d50 1
+CONTEXT.md
+  s_7fb86113ae4d58::t_6fda3e704f4bb7 9,15,19,23,27,31,35
+docs/agents/domain.md
+  s_7fb86113ae4d58::t_1cf189ae230441 17,28
+package-lock.json
+  s_7fb86113ae4d58::t_5c34b0e047038f 22,24-25,27-29,1588-1625,2449-2458,2496-2509,2534-2540,3375-3407,3606-3615,3975-3988,4024-4033,4044-4057,4138-4150,4433-4449,4474-4483,4651-4663,4770-4782,4799-4845,4986-5011,5146-5171,5195-5215,5236-5259,5280-5292,6705-6711,6735-6748,6762-6778,6806-6862,7091-7238,7290-7296,7317-7862,10802-10821,11202-11211,11229-11249,11458-11492,11874-11886,12002-12011,12451-12457,12738-12754
+package.json
+  s_7fb86113ae4d58::t_999b723c9f7b12 11-13,26,28-29,37-39
+skills/engineering/to-pr/SKILL.md
+  s_7fb86113ae4d58::t_49ba67588f64b6 120,216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "22c5a5bd1339cb691ff78b4d105fa4bca18cac88",
+  "prompts": {},
+  "sessions": {
+    "s_1525ea32308d98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4d2db2a2-e87d-41d7-9dbd-98bcc777c9c0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    },
+    "s_7fb86113ae4d58": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-abb19841b9211f057",
+        "model": "unknown"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
