@@ -1,3 +1,7 @@
+## 1.2.0 (2026-08-23)
+
+* feat(engineering): rename to-pr-description to to-pr, add create path ([2b0376a](https://github.com/bgutschke/skills/commit/2b0376a)), closes [#25](https://github.com/bgutschke/skills/issues/25)
+
 ## <small>1.1.1 (2026-08-23)</small>
 
 * fix: rename marketplace plugin entry to bgutschke-skills ([67a95f9](https://github.com/bgutschke/skills/commit/67a95f9))
