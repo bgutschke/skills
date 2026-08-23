@@ -30,6 +30,13 @@ Every skill must state, explicitly:
 - A skill's `description` names concrete trigger phrases or situations, not a vague
   category. ("Fires when the user says X, Y, or asks to Z" — not "helps with workflow
   tasks.")
+- No relative-path references into this repo's own files (`docs/adr/*.md`, `CONTEXT.md`,
+  `CODING_STANDARDS.md`, etc.) from inside a skill's own instructions. A skill executes
+  against whatever project the user is actually working in, not this repo, so that path
+  won't resolve there even though the file exists here. State the reasoning inline
+  instead of citing it; if a citation is genuinely worth including, use an absolute,
+  universally-resolvable URL (e.g. a GitHub issue link) — never a path relative to this
+  repo.
 
 ## Pre-merge checklist
 
