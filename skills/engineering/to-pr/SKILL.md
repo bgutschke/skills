@@ -238,13 +238,16 @@ one:
   repo's docs distinguish PR titles from commit messages explicitly.
 - **Inferred convention**, only if no documented one applies: `gh pr list --state merged
   --base <resolved-base> --json title -L 20`. Fewer than 5 results: skip this tier
-  entirely, not enough history to call anything established. Otherwise compare the
-  sampled titles across three dimensions *together*: a leading prefix format
+  entirely — below 5 samples a shared prefix is as likely to be coincidence as
+  convention, so there's not enough history to call anything established. Otherwise
+  compare the sampled titles across three dimensions *together*: a leading prefix format
   (Conventional-Commits `type(scope): `, a ticket bracket like `[ABC-123]`, an emoji, or
   none), the capitalization of the first word after any prefix, and the presence or
   absence of a trailing period. Established only if at least 80% of the sample share the
-  same combination of all three. Any failure fetching this history (API error, timeout,
-  rate limit) falls back silently to the plain default below — this tier is a
+  same combination of all three — high enough to rule out coincidence, but short of
+  unanimity, since one bot-authored or revert PR that breaks the pattern shouldn't
+  disqualify an otherwise-real convention. Any failure fetching this history (API error,
+  timeout, rate limit) falls back silently to the plain default below — this tier is a
   nice-to-have signal, never load-bearing.
 - **Plain default**: the first commit's subject, verbatim.
 
