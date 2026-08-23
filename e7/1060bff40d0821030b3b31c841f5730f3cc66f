@@ -1,0 +1,19 @@
+.husky/commit-msg
+  s_1661e098488dce::t_a660d92f71c17d 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "e71060bff40d0821030b3b31c841f5730f3cc66f",
+  "prompts": {},
+  "sessions": {
+    "s_1661e098488dce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2097bf5c-5540-4ac3-87cb-a8a02a5ae6cf",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
