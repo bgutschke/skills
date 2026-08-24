@@ -53,4 +53,13 @@ describe('extractUpstreamRepo', () => {
     const result = extractUpstreamRepo('redis/docker-library-redis', content);
     expect(result).toEqual({ status: 'found', repo: 'redis/redis' });
   });
+
+  it('deduplicates the same upstream repository referenced with different casing', () => {
+    const content = [
+      'https://github.com/Redis/Redis/releases/tag/8.10.0',
+      'https://github.com/redis/redis/releases/tag/8.10.1',
+    ].join('\n');
+    const result = extractUpstreamRepo('redis/docker-library-redis', content);
+    expect(result).toEqual({ status: 'found', repo: 'Redis/Redis' });
+  });
 });
