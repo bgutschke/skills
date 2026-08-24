@@ -25,7 +25,14 @@ if (!packagingRepo || files.length === 0) {
   process.exit(1);
 }
 
-const content = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+let content;
+try {
+  content = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+} catch (error) {
+  console.error(`Could not read file: ${error.message}`);
+  process.exit(1);
+}
+
 const result = extractUpstreamRepo(packagingRepo, content);
 
 console.log(JSON.stringify(result, null, 2));

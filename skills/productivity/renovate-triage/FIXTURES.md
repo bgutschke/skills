@@ -58,7 +58,7 @@ Fixtures 17–20 confirm the docker adapter's dual-repo lookup and the Security 
 scan each behave as designed. Fixture 17 confirms a packaging repository with nothing
 to find doesn't end the lookup, since the upstream tier still resolves a clean
 changelog carrying an unrelated security disclosure — the `safe` verdict (patch bump,
-changelog found) and the Security advisory section coexist in the same comment,
+changelog found) and the Security advisory finding coexist in the same comment,
 computed independently, exactly as step 15 requires. Fixture 18 confirms the
 extraction never guesses when it finds nothing: a `none` result leaves the docker
 adapter with only the packaging tier's own evidence, never a guessed second

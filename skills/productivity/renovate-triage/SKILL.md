@@ -377,12 +377,14 @@ are identical regardless of datasource.
     10–17 run once per dependency) plus one overall rollup verdict, shown at the top of
     the comment, equal to the worst (most severe: `blocked` > `needs-review` > `safe`)
     verdict among its dependencies — so one risky dependency in an otherwise-boring
-    bundle is never hidden behind the others. Opportunities (step 16) and Security
-    advisories (step 15) each roll up the same way, but never into a single worst-of
-    value: one subsection per dependency that has a finding, none for a dependency that
-    doesn't — mirroring the verdict breakdown's per-dependency shape without a rollup
-    verdict of its own, since neither an Opportunity nor a Security advisory is ever
-    ranked against another.
+    bundle is never hidden behind the others. Opportunities roll up the same way, but
+    never into a single worst-of value: one Opportunities subsection per dependency that
+    has a finding, none for a dependency that doesn't — mirroring the verdict
+    breakdown's per-dependency shape without a rollup verdict of its own, since an
+    Opportunity is never ranked against another. A Security advisory finding (step 15)
+    is likewise computed per dependency and never rolled into a single worst-of value or
+    the overall verdict, for the same reason — how it's rendered for a grouped PR is
+    settled by whatever comment-composition convention is current, not fixed here.
 
 ## Writing the Agent brief
 
@@ -411,12 +413,16 @@ are identical regardless of datasource.
     idempotency check in step 22, never shown in the rendered comment) followed by the
     verdict (with the per-dependency breakdown from step 18 for a grouped PR), the
     one-line reason each tier or hard-stop fired, each dependency's production/dev-only
-    placement as context, the Agent brief section when step 19 produced one, and — each
-    kept in its own section, separate from the verdict, the Agent brief, and each other
-    — a "Security advisories" section carrying each dependency's finding from step 15,
-    and an "Opportunities" section carrying each dependency's finding from step 16; each
-    section is omitted entirely (no placeholder line) for a dependency its
-    corresponding step produced nothing for.
+    placement as context, the Agent brief section when step 19 produced one, and — kept
+    in its own "Opportunities" section, separate from both the verdict and the Agent
+    brief — each dependency's findings from step 16, omitted entirely (no placeholder
+    line) for a dependency step 16 produced nothing for. Each dependency's Security
+    advisory finding from step 15, when present, must also be made available to render,
+    reported alongside but never merged into the verdict or the Agent brief — the same
+    placement principle Opportunities already follow — but its exact heading text,
+    placement relative to other sections, and per-dependency subsection shape are
+    settled by whatever comment-composition convention is current at implementation
+    time, not fixed here.
 21. Before any comment write executes for this run, validate every composed body: run
     `node ${CLAUDE_SKILL_DIR}/scripts/validate-comment-body-cli.js <verdict>
     <body-file>` for each PR's body from step 20. **Execute this script directly for
@@ -443,7 +449,7 @@ are identical regardless of datasource.
 
 23. Report in-session, in addition to the PR comments: every PR checked, its verdict (or
     per-dependency breakdown for a grouped PR), whether its comment was created or
-    updated, which PRs or dependencies received a new Security advisory section (step
+    updated, which PRs or dependencies received a new Security advisory finding (step
     15) or a new Opportunities section (step 16), every PR skipped for a mixed or
     unresolved datasource (step 8), every PR skipped for having no adapter for its
     resolved datasource (step 9), every PR skipped for detection being unavailable (step
