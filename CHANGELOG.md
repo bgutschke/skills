@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/bgutschke/skills/compare/v1.4.2...v1.4.3) (2026-08-24)
+
+
+### Bug Fixes
+
+* **productivity:** add trigger clause, generalize symlink example ([7572589](https://github.com/bgutschke/skills/commit/7572589358acc2c6a56be488df533f3a45f09c45)), closes [#52](https://github.com/bgutschke/skills/issues/52)
+
 ## [1.4.2](https://github.com/bgutschke/skills/compare/v1.4.1...v1.4.2) (2026-08-23)
 
 ### Bug Fixes
