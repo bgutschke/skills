@@ -1,3 +1,10 @@
+## [1.4.5](https://github.com/bgutschke/skills/compare/v1.4.4...v1.4.5) (2026-08-24)
+
+
+### Bug Fixes
+
+* **skill-writing-standards:** make own worked example evergreen ([5fc16f1](https://github.com/bgutschke/skills/commit/5fc16f11380f2378265aa364e3d010a1b874e5e9)), closes [#53](https://github.com/bgutschke/skills/issues/53)
+
 ## [1.4.4](https://github.com/bgutschke/skills/compare/v1.4.3...v1.4.4) (2026-08-24)
 
 
