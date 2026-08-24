@@ -1,0 +1,42 @@
+skills/productivity/renovate-triage/FIXTURES.md
+  s_7b2971fb23c711::t_f3fbfac98d56e3 1-26,28-57,66-80
+  s_7b2971fb23c711::t_52054b0848fc59 58-65
+  s_7b2971fb23c711::t_9efe933ac9b249 27
+skills/productivity/renovate-triage/scripts/detect-security-advisory.js
+  s_7b2971fb23c711::t_f5d569f06ef460 1-22
+skills/productivity/renovate-triage/scripts/extract-upstream-repo.test.js
+  s_7b2971fb23c711::t_ec6b0199d49e13 1-56
+skills/productivity/renovate-triage/scripts/detect-security-advisory.test.js
+  s_7b2971fb23c711::t_cc76c5ff1f649b 1-41
+CONTEXT.md
+  s_7b2971fb23c711::t_8eb81add13d8ba 107-109,111-171
+skills/productivity/renovate-triage/scripts/extract-upstream-repo.js
+  s_7b2971fb23c711::t_a044933448f1ef 1-20
+docs/adr/0017-renovate-triage-docker-upstream-repo-and-security-advisory.md
+  s_7b2971fb23c711::t_8eb81add13d8ba 1-59
+skills/productivity/renovate-triage/scripts/extract-upstream-repo-cli.js
+  s_7b2971fb23c711::t_dd0f2a1403d8bb 1-31
+skills/productivity/renovate-triage/scripts/detect-security-advisory-cli.js
+  s_7b2971fb23c711::t_4a5b365fd44822 1-19
+skills/productivity/renovate-triage/SKILL.md
+  s_7b2971fb23c711::t_7c3b575603c16d 35-38,49-59,66-68,75-79,116-118,139,187,197,206,211-229,243-246,251-271,302-317,320-327,331,335,376-377,380-385,389,392-405,409-420,422,429,432,440,444,446-452,459
+  s_7b2971fb23c711::t_7fcfd9adb5a721 460-461
+  s_7b2971fb23c711::t_aa5c591b5b944e 5
+  s_7b2971fb23c711::t_50f0a170a42095 247-250
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "4231a810f3a17dc9f0f68dbbcb7558ed0f698b3c",
+  "prompts": {},
+  "sessions": {
+    "s_7b2971fb23c711": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4851cb18-9671-4351-bc28-84159c49e031",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
