@@ -17,7 +17,15 @@ describe('classifyBumpSize', () => {
     expect(classifyBumpSize('v1.2.3', 'v1.3.0')).toBe('minor');
   });
 
-  it('throws on an unparseable version', () => {
-    expect(() => classifyBumpSize('latest', '1.0.0')).toThrow();
+  it('classifies as indeterminate when the old version is not semver', () => {
+    expect(classifyBumpSize('latest', '1.0.0')).toBe('indeterminate');
+  });
+
+  it('classifies as indeterminate when the new version is not semver', () => {
+    expect(classifyBumpSize('1.0.0', 'latest')).toBe('indeterminate');
+  });
+
+  it('classifies as indeterminate when neither version is semver', () => {
+    expect(classifyBumpSize('latest', 'stable')).toBe('indeterminate');
   });
 });

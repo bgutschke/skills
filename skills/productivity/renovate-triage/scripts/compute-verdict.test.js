@@ -63,4 +63,22 @@ describe('computeVerdict', () => {
     expect(result.verdict).toBe('needs-review');
     expect(result.reason).toMatch(/CI pending/);
   });
+
+  it('defaults an indeterminate bump size to a needs-review baseline', () => {
+    const result = computeVerdict({ ...passing, bumpSize: 'indeterminate' });
+    expect(result.verdict).toBe('needs-review');
+    expect(result.reason).toMatch(/indeterminate/);
+  });
+
+  it('still blocks an indeterminate bump size on a failing CI check', () => {
+    const result = computeVerdict({ ...passing, bumpSize: 'indeterminate', ciStatus: 'failing' });
+    expect(result.verdict).toBe('blocked');
+    expect(result.reason).toMatch(/failing CI/);
+  });
+
+  it('still blocks an indeterminate bump size on a relevant breaking-change callout', () => {
+    const result = computeVerdict({ ...passing, bumpSize: 'indeterminate', relevantBreakingChangeCallout: true });
+    expect(result.verdict).toBe('blocked');
+    expect(result.reason).toMatch(/breaking-change callout/);
+  });
 });

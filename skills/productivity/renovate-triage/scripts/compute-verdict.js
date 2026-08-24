@@ -11,7 +11,10 @@ function computeVerdict({ bumpSize, changelogFound, relevantBreakingChangeCallou
 
   let baseline;
   let reason;
-  if (bumpSize === 'major') {
+  if (bumpSize === 'indeterminate') {
+    baseline = 'needs-review';
+    reason = 'baseline: indeterminate bump size (non-semver version), defaults to needs-review';
+  } else if (bumpSize === 'major') {
     baseline = 'needs-review';
     reason = 'baseline: major bump with changelog found, no relevant breaking-change callout';
   } else if (changelogFound) {
