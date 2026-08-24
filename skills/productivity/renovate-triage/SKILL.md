@@ -1,8 +1,8 @@
 ---
 name: renovate-triage
 disable-model-invocation: true
-argument-hint: "[<PR number or URL>]"
-description: Reads each open Renovate dependency-bump PR's changelog, release notes, and CI status, computes a Risk verdict — safe, needs-review, or blocked — from a fixed hard-stop rule list rather than a weighted score, and posts (or updates in place) one PR comment per PR stating the verdict and reason; blocked PRs also get an Agent brief naming concrete call sites and changelog sections for a follow-up investigation. Resolves each changed file's datasource (npm, Docker, PyPI, Ansible Galaxy) from the target repo's own renovate.json rather than guessing from filenames, so custom regex managers are triaged correctly too. Use when the user types /renovate-triage with no argument to scan every open Renovate PR in the currently checked-out repo, or with a PR number or URL to check exactly one, or asks to triage, review, or assess the risk of Renovate dependency-bump PRs.
+argument-hint: "[<PR number or URL>] [--no-opportunities]"
+description: Reads each open Renovate dependency-bump PR's changelog, release notes, and CI status, computes a Risk verdict — safe, needs-review, or blocked — from a fixed hard-stop rule list rather than a weighted score, and posts (or updates) one PR comment stating the verdict and reason; blocked PRs also get an Agent brief naming call sites and changelog sections for follow-up. Resolves each changed file's datasource (npm, Docker, PyPI, Ansible Galaxy) from the repo's own renovate.json rather than guessing from filenames, so custom regex managers triage correctly. For a minor or major bump it also reports relevant Opportunities — new capabilities or deprecations found in the changelog and actually used here — in a separate, verdict-independent section; on by default, skip with `--no-opportunities`. Use when the user types /renovate-triage with no argument to scan every open Renovate PR in the current repo, with a PR number or URL to check one, or asks to triage, review, or assess Renovate PR risk.
 ---
 
 # renovate-triage
@@ -34,10 +34,21 @@ dispatches to once a file's datasource is resolved. One adapter per datasource; 
 resolved datasource with no adapter built is skipped and named, never given generic
 best-effort evidence gathering.
 
+**Opportunity**: A relevant capability change found while scanning a minor or major
+bump's full release range (every version between old and new, not just the latest) —
+either a newly-added capability, or an existing capability the dependency now marks
+deprecated — cross-referenced against the dependency's actual call sites in the
+consuming codebase and reported only when relevant usage is found there. Reported per
+dependency, in its own comment section, alongside but never merged into the Risk
+verdict — it never escalates, de-escalates, or otherwise changes the verdict, regardless
+of tier or placement.
+
 The skill computes a Risk verdict for every open Renovate PR, or the single PR given as
 an argument, reports in-session, and maintains exactly one idempotent comment per PR,
 updated in place on later runs rather than duplicated. It never approves, merges, or
-labels a PR — every merge decision stays the maintainer's.
+labels a PR — every merge decision stays the maintainer's. By default it also scans
+every minor or major bump for Opportunities, reported in their own section separate
+from the verdict; pass `--no-opportunities` to skip that pass for a single run.
 
 ## Dependencies
 
@@ -83,14 +94,21 @@ the way `npm` and `node` are.
 
 ## Resolving what to check
 
+Before either case below, strip `--no-opportunities` out of the raw arguments if
+present — a boolean switch, never combined with a value, that can appear with or
+without a PR number or URL. When present, this entire run skips step 11's changelog-
+range widening and step 15's Opportunity scan for every PR it checks; nothing
+else in this section changes.
+
 1. **An explicit target was given** (PR number or URL): resolve it directly with `gh pr
    view <target> --json number,title,url,body,headRefName,author,files`. This is always
    a single-PR check, regardless of who authored it or what datasource it touches — an
    explicit target names a PR that must already exist, and the datasource-resolution
    check below still applies to it.
-2. **No target was given**: list every open PR in the current repo — `gh pr list --state
-   open --json number,title,url,body,headRefName,author,files` — and keep only the
-   Renovate-authored ones: `author.login` equal to `renovate[bot]` or `app/renovate`.
+2. **No target was given** (only `--no-opportunities`, or no arguments at all): list
+   every open PR in the current repo — `gh pr list --state open --json
+   number,title,url,body,headRefName,author,files` — and keep only the Renovate-authored
+   ones: `author.login` equal to `renovate[bot]` or `app/renovate`.
 3. **Zero PRs survive step 2**: report "no open Renovate PRs found" and stop — a clear
    confirmation the scan actually ran, not silence or an error.
 
@@ -101,7 +119,7 @@ the way `npm` and `node` are.
    (datasource resolution through comment posting) independently for its own PR. PRs are
    already self-contained triage units — own rollup, own comment, own idempotency marker
    — so no cross-PR coordination is needed; each sub-agent reports its result back for
-   step 21's summary. Adapters are never split out to their own sub-agent at
+   step 22's summary. Adapters are never split out to their own sub-agent at
    dependency/datasource granularity — splitting evidence-gathering across a further
    sub-agent boundary would only add coordination overhead around an otherwise
    PR-scoped, deterministic flow.
@@ -149,14 +167,19 @@ Runs once per PR, before any evidence gathering, using the PR's `files` list fro
 ## Gathering evidence, per dependency
 
 Steps 10–14 run once per dependency changed in the PR — for a PR Renovate grouped into
-several dependencies, once per dependency in the group (see step 16 for how the
+several dependencies, once per dependency in the group (see step 17 for how the
 per-dependency results roll up). Steps 11 and 14 are the two facets a datasource's
 adapter fills in (its changelog source, and its call-site search); steps 10, 12, and 13
 are identical regardless of datasource.
 
 10. Read the old and new version for this dependency from the PR's title or body (both
     fixed Renovate output formats naming the dependency and its version range,
-    regardless of datasource).
+    regardless of datasource), then classify the bump size immediately: `node -e
+    "console.log(require('${CLAUDE_SKILL_DIR}/scripts/classify-bump-size').classifyBumpSize(process.argv[1],
+    process.argv[2]))" <old> <new>`. **Execute this directly — it calls the exact same
+    `classifyBumpSize` function step 16's `compute-verdict-cli.js` runs internally for
+    the verdict, just earlier, so step 11 below knows whether to widen its changelog
+    range; the bump size must never be hand-classified from the version strings.**
 11. Look for a changelog or release notes, per the PR's resolved datasource:
     - **npm**: in this fixed order, stopping at the first hit — (a) the dependency's
       GitHub Releases, via `gh api repos/<dep-owner>/<dep-repo>/releases` once the
@@ -184,6 +207,16 @@ are identical regardless of datasource.
     "No changelog or release notes found anywhere" (relevant to the major-bump hard-stop
     below) means the adapter's lookup — including its own registry-metadata step for
     docker/pypi/ansible-galaxy — came back empty at every stage.
+
+    For a minor or major bump (step 10), when `--no-opportunities` wasn't passed: once a
+    source is found via the fixed order above, widen the fetch to every release between
+    old and new inclusive, not just the newest — GitHub Releases already return every
+    release, so keep every entry whose tag falls in the old→new range instead of only
+    the latest; for `CHANGELOG.md`, read every dated or versioned section between the
+    old and new version headings, not just the top one. This wider fetch is what step 15
+    below scans for Opportunities. A patch or indeterminate bump, or a
+    `--no-opportunities` run, keeps today's latest-only lookup — the wider fetch only
+    happens when something will actually scan it.
 12. If a changelog or release notes were found, scan them for an explicit
     breaking-change callout (a "Breaking Changes" heading, or prose stating a breaking
     change) and judge whether it's actually relevant to this codebase's usage — cross-
@@ -212,12 +245,27 @@ are identical regardless of datasource.
     so a clean changelog is enough to stand on its own; above it, the sheer count is
     itself the practical reason a bump needs a closer look, independent of what the
     changelog says. This applies identically whether the dependency sits in a
-    production or dev-only role — placement is reported as context (step 18) but never
+    production or dev-only role — placement is reported as context (step 19) but never
     changes the verdict.
+
+## Running the Opportunity scan
+
+15. For a minor or major bump (step 10) only, and only when `--no-opportunities` wasn't
+    passed: scan the widened changelog range gathered in step 11 for two kinds of
+    finding only — a newly-added capability, or an existing capability the dependency
+    now marks deprecated — no other category (a performance note, a config-only
+    addition) counts. Keep a finding only when it's actually relevant to this codebase's
+    usage, cross-referenced against the same call sites found in step 14 — the same
+    relevance test step 12 already applies to a breaking-change callout, no new
+    codebase search. There's no cap on how many findings survive this filter per
+    dependency. A patch or indeterminate bump, a `--no-opportunities` run, or a
+    dependency with nothing relevant found, produces no Opportunity output at all for
+    that dependency — not an empty placeholder — and this never changes the verdict
+    computed in step 16, regardless of what's found or how many findings there are.
 
 ## Computing the verdict, per dependency
 
-15. Compute the bump size and the verdict together by running
+16. Compute the bump size and the verdict together by running
     `node ${CLAUDE_SKILL_DIR}/scripts/compute-verdict-cli.js --old-version <old>
     --new-version <new> --changelog-found <true|false> --breaking-callout
     <true|false> --ci-status <passing|pending|failing> --blast-radius-large
@@ -258,15 +306,19 @@ are identical regardless of datasource.
 
 ## Rolling up a grouped PR
 
-16. A PR grouping several dependencies gets a per-dependency verdict breakdown (steps
-    10–15 run once per dependency) plus one overall rollup verdict, shown at the top of
+17. A PR grouping several dependencies gets a per-dependency verdict breakdown (steps
+    10–16 run once per dependency) plus one overall rollup verdict, shown at the top of
     the comment, equal to the worst (most severe: `blocked` > `needs-review` > `safe`)
     verdict among its dependencies — so one risky dependency in an otherwise-boring
-    bundle is never hidden behind the others.
+    bundle is never hidden behind the others. Opportunities roll up the same way, but
+    never into a single worst-of value: one Opportunities subsection per dependency that
+    has a finding (step 15), none for a dependency that doesn't — mirroring the verdict
+    breakdown's per-dependency shape without a rollup verdict of its own, since an
+    Opportunity is never ranked against another.
 
 ## Writing the Agent brief
 
-17. Only for a dependency (or PR, if ungrouped) whose final verdict is `blocked`: name
+18. Only for a dependency (or PR, if ungrouped) whose final verdict is `blocked`: name
     the concrete call sites to inspect (the file list from step 14's blast-radius
     search, not just a count), and point to the specific changelog or release-notes
     section that triggered the hard-stop. If the hard-stop was a failing CI check, name
@@ -279,23 +331,28 @@ are identical regardless of datasource.
 
 ## Posting the comment
 
-18. Compose one comment body per PR: an HTML-comment marker (`<!--
+19. Compose one comment body per PR: an HTML-comment marker (`<!--
     renovate-triage:verdict -->`, used for the validation gate below and the idempotency
-    check in step 20, never shown in the rendered comment) followed by the verdict (with
-    the per-dependency breakdown from step 16 for a grouped PR), the one-line reason each
+    check in step 21, never shown in the rendered comment) followed by the verdict (with
+    the per-dependency breakdown from step 17 for a grouped PR), the one-line reason each
     tier or hard-stop fired, each dependency's production/dev-only placement as context,
-    and the Agent brief section when step 17 produced one.
-19. Before any comment write executes for this run, validate every composed body: run
+    the Agent brief section when step 18 produced one, and — kept in its own
+    "Opportunities" section, separate from both the verdict and the Agent brief — each
+    dependency's findings from step 15, omitted entirely (no placeholder line) for a
+    dependency step 15 produced nothing for.
+20. Before any comment write executes for this run, validate every composed body: run
     `node ${CLAUDE_SKILL_DIR}/scripts/validate-comment-body-cli.js <verdict>
-    <body-file>` for each PR's body from step 18. **Execute this script directly for
+    <body-file>` for each PR's body from step 19. **Execute this script directly for
     every PR in the batch before posting any of them — it is the machine-checkable gate
     for the whole run, not a manual double-check.** It confirms the verdict is one of
-    the three valid tiers, the idempotency marker appears exactly once, and an Agent
-    brief section is present if and only if the verdict is `blocked`. A PR whose body
-    fails validation is skipped for posting — report it in step 21 alongside the reason
-    validation gave, rather than letting a malformed comment reach a real PR — while
-    every other PR in the batch still proceeds.
-20. For every PR whose body passed step 19's validation: search the PR's existing
+    the three valid tiers, the idempotency marker appears exactly once, an Agent brief
+    section is present if and only if the verdict is `blocked`, and any "Opportunities"
+    heading in the body is followed by real content rather than an empty section or
+    boilerplate empty-state text. A PR whose body fails validation is skipped for
+    posting — report it in step 22 alongside the reason validation gave, rather than
+    letting a malformed comment reach a real PR — while every other PR in the batch
+    still proceeds.
+21. For every PR whose body passed step 20's validation: search the PR's existing
     comments for the marker: `gh api repos/<owner>/<repo>/issues/<number>/comments
     --jq '.[] | select(.body | contains("renovate-triage:verdict")) | .id'`. If a match
     exists, update it in place — `gh api -X PATCH
@@ -303,15 +360,16 @@ are identical regardless of datasource.
     second one. If no match exists, create it — `gh pr comment <number> --body-file
     <file>`. Invoking the skill is sufficient authorization to write or update every
     comment touched in the run; there is no separate per-PR confirmation prompt beyond
-    step 19's validation gate.
+    step 20's validation gate.
 
 ## Reporting
 
-21. Report in-session, in addition to the PR comments: every PR checked, its verdict (or
+22. Report in-session, in addition to the PR comments: every PR checked, its verdict (or
     per-dependency breakdown for a grouped PR), whether its comment was created or
-    updated, every PR skipped for a mixed or unresolved datasource (step 8), every PR
-    skipped for having no adapter for its resolved datasource (step 9), every PR skipped
-    for detection being unavailable (step 7), and every PR skipped for failing step 19's
+    updated, which PRs or dependencies received a new Opportunities section (step 15),
+    every PR skipped for a mixed or unresolved datasource (step 8), every PR skipped for
+    having no adapter for its resolved datasource (step 9), every PR skipped for
+    detection being unavailable (step 7), and every PR skipped for failing step 20's
     validation gate — each with the reason why. On a no-target scan that found zero open
     Renovate PRs, this report is exactly the "no open Renovate PRs found" line from step
     3 — never silence.
@@ -320,39 +378,56 @@ are identical regardless of datasource.
 
 A synthetic scenario set, fabricated for this dry run and discarded afterward — never
 committed, so a fixture PR can't be mistaken for a real one — covering each hard-stop,
-baseline, and escalation individually, the grouped-PR rollup, and one fixture per
-datasource:
+baseline, and escalation individually, the grouped-PR rollup, one fixture per
+datasource, and each Opportunity-scan shape:
 
-| # | Fixture | Datasource | Bump | Changelog | CI | Blast radius | Verdict | Why |
-|---|---|---|---|---|---|---|---|---|
-| 1 | `widget-format` | npm | major | none found | passing | 2 files | `blocked` | hard-stop: major, no changelog anywhere |
-| 2 | `fake-http-client` | npm | minor | found, states a removed default export used in this repo | passing | 4 files | `blocked` | hard-stop: relevant breaking-change callout |
-| 3 | `collection-utils` | npm | patch | found, clean | failing | 3 files | `blocked` | hard-stop: failing CI |
-| 4 | `term-color` | npm | patch | found, clean | passing | 3 files | `safe` | baseline: patch/minor + changelog |
-| 5 | `date-helpers` | npm | minor | found, clean | passing | 14 files | `needs-review` | baseline `safe`, escalated: blast radius > 10 |
-| 6 | `ui-toolkit` | npm | major | found, no breaking-change callout | passing | 6 files | `needs-review` | baseline: major + changelog, no callout |
-| 7 | `lint-core` | npm | minor | found, clean | pending | 5 files | `needs-review` | baseline `safe`, escalated: CI pending |
-| 8 | grouped: `bundler-core` (major, no changelog, failing CI) + `bundler-cli` (patch, clean, passing) | npm | — | — | — | — | overall `blocked` | rollup = worst of the two (`bundler-core`'s hard-stop) |
-| 9 | `ghcr.io/example-org/sample-image` | docker | minor tag bump | found via GHCR org linkage, clean | passing | 2 files | `safe` | docker adapter: registry-linked changelog, baseline patch/minor |
-| 10 | `sample-transform-lib` | pypi | major | found via `project_urls.Source`, no breaking-change callout | passing | 5 files | `needs-review` | pypi adapter: baseline major + changelog, no callout |
-| 11 | `example.sample_collection` | ansible-galaxy | patch | found via Galaxy `repository` field, clean | passing | 1 file | `safe` | ansible-galaxy adapter: baseline patch/minor + changelog |
-| 12 | `legacy-widget` | docker | `latest` → `stable` (non-semver) | found, clean | passing | 3 files | `needs-review` | baseline: indeterminate bump size defaults to needs-review |
+| # | Fixture | Datasource | Bump | Changelog | CI | Blast radius | Verdict | Opportunity | Why |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | `widget-format` | npm | major | none found | passing | 2 files | `blocked` | — | hard-stop: major, no changelog anywhere |
+| 2 | `fake-http-client` | npm | minor | found, states a removed default export used in this repo | passing | 4 files | `blocked` | — | hard-stop: relevant breaking-change callout |
+| 3 | `collection-utils` | npm | patch | found, clean | failing | 3 files | `blocked` | — | hard-stop: failing CI |
+| 4 | `term-color` | npm | patch | found, clean | passing | 3 files | `safe` | — | baseline: patch/minor + changelog |
+| 5 | `date-helpers` | npm | minor | found, clean | passing | 14 files | `needs-review` | — | baseline `safe`, escalated: blast radius > 10 |
+| 6 | `ui-toolkit` | npm | major | found, no breaking-change callout | passing | 6 files | `needs-review` | — | baseline: major + changelog, no callout |
+| 7 | `lint-core` | npm | minor | found, clean | pending | 5 files | `needs-review` | — | baseline `safe`, escalated: CI pending |
+| 8 | grouped: `bundler-core` (major, no changelog, failing CI) + `bundler-cli` (patch, clean, passing) | npm | — | — | — | — | overall `blocked` | — | rollup = worst of the two (`bundler-core`'s hard-stop) |
+| 9 | `ghcr.io/example-org/sample-image` | docker | minor tag bump | found via GHCR org linkage, clean | passing | 2 files | `safe` | — | docker adapter: registry-linked changelog, baseline patch/minor |
+| 10 | `sample-transform-lib` | pypi | major | found via `project_urls.Source`, no breaking-change callout | passing | 5 files | `needs-review` | — | pypi adapter: baseline major + changelog, no callout |
+| 11 | `example.sample_collection` | ansible-galaxy | patch | found via Galaxy `repository` field, clean | passing | 1 file | `safe` | — | ansible-galaxy adapter: baseline patch/minor + changelog |
+| 12 | `legacy-widget` | docker | `latest` → `stable` (non-semver) | found, clean | passing | 3 files | `needs-review` | — | baseline: indeterminate bump size defaults to needs-review |
+| 13 | `stream-utils` | npm | minor | found across full range, clean, one release adds `batchWithConcurrency()` | passing | 3 files | `safe` | **new capability**: `batchWithConcurrency()` — relevant, this repo's call sites already hand-roll the same batching it replaces | baseline: patch/minor + changelog; Opportunity found and relevant |
+| 14 | `legacy-cache` | npm | major | found across full range, no breaking-change callout, one release deprecates `.get()` in favor of `.fetch()` | passing | 4 files | `needs-review` | **deprecation**: `LegacyCache.get()` — relevant, this repo's call sites still call `.get()` | baseline: major + changelog, no callout; Opportunity found and relevant |
+| 15 | `chart-render` | npm | minor | found across full range, clean, one release adds `exportToPDF()` | passing | 2 files | `safe` | none reported — `exportToPDF()` found but filtered out, this repo's call sites never touch PDF export | baseline: patch/minor + changelog; Opportunity found but irrelevant, so omitted |
+| 16 | grouped: `api-client` (minor, adds `retryPolicy` option) + `api-server-utils` (minor, deprecates `parseLegacyHeaders()`) | npm | — | — | — | — | overall `needs-review` | per-dependency: `api-client` **new capability** (relevant), `api-server-utils` **deprecation** (relevant) | rollup verdict as usual; Opportunities get one subsection per dependency, same shape as the verdict breakdown |
 
 Fixture 1 alone already fires a hard-stop, so its `blocked` verdict holds regardless of
 its small blast radius — confirming hard-stops short-circuit baseline/escalation
-entirely (step 15). Fixture 5 shows the blast-radius escalation on its own pushing an
+entirely (step 16). Fixture 5 shows the blast-radius escalation on its own pushing an
 otherwise-clean minor bump from `safe` to `needs-review`, without touching `blocked` —
-confirming the `needs-review` ceiling from step 15. Fixture 8's `bundler-cli` verdict
-(`safe`) never appears at the top level; only the rollup does, per step 16. Fixtures
+confirming the `needs-review` ceiling from step 16. Fixture 8's `bundler-cli` verdict
+(`safe`) never appears at the top level; only the rollup does, per step 17. Fixtures
 9–11 confirm the same hard-stop/baseline/escalation logic produces identical shapes of
 verdict regardless of which adapter gathered the evidence — only *where* the changelog
 and blast-radius facts come from differs by datasource, never how they're judged.
 Fixture 12 confirms an indeterminate bump size defaults to `needs-review` on its own,
 without needing a missing changelog or any other signal to fire.
 
+Fixtures 13–16 confirm the Opportunity scan (step 15) never touches the verdict
+alongside it: fixture 13's `safe` verdict and its new-capability finding are both
+present in the same comment, computed independently; fixture 14's deprecation finding
+sits next to a `needs-review` verdict without pushing it toward `blocked` — only a
+relevant breaking-change callout, a failing CI check, or a major bump with no changelog
+can do that (step 16), and a deprecation notice is none of those. Fixture 15 confirms
+the call-site relevance filter actually filters — a real capability change that this
+repo's code never touches produces no Opportunities section at all, not a low-priority
+mention. Fixture 16 confirms the per-dependency Opportunities subsection shape from
+step 17: each dependency in the group gets its own finding, exactly like the verdict
+breakdown, without either the group producing a single merged list or one dependency's
+finding leaking into the other's subsection.
+
 **Comment idempotency**, checked against one real open Renovate PR on this repo at dry-
 run time (a synthetic fixture is an equally valid substitute when none is open): the
-first run found no comment containing the `renovate-triage:verdict` marker, so step 20
+first run found no comment containing the `renovate-triage:verdict` marker, so step 21
 took the create branch (`gh pr comment`). Re-running the skill against the same PR with
 no new commits found the marker in the existing comment and took the update branch (`gh
 api -X PATCH`) instead — the PR ended the second run with exactly one `renovate-triage`

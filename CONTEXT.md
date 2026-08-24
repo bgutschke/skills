@@ -107,3 +107,16 @@ file has a resolved *Datasource*. One adapter per datasource, replacing a hardco
 evidence-gathering flow written out separately per ecosystem.
 *Avoid*: assuming an adapter is itself a sub-agent — the term names the evidence-gathering
 strategy, not a claim about what process or context executes it.
+
+**Opportunity**:
+A relevant capability change found while scanning a minor or major bump's full release
+range (every version between old and new, not just the latest) — either a newly-added
+capability, or an existing capability the dependency now marks deprecated — cross-
+referenced against the dependency's actual call sites in the consuming codebase and
+reported only when relevant usage is found there. Reported per dependency, in its own
+comment section, alongside but never merged into the *Risk verdict* — it never
+escalates, de-escalates, or otherwise changes the verdict, regardless of tier or
+placement (dev-only vs. production).
+*Avoid*: conflating with *Agent brief* — that's investigative handoff for a `blocked`
+verdict's hard-stop; an Opportunity is informational and appears (by default) regardless
+of tier.
