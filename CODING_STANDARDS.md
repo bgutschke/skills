@@ -30,6 +30,15 @@ such standing discovery path and stay fine.
 - No emojis in skill prose or generated artifacts, unless the user explicitly asks for
   them.
 - No marketing or hype language — in descriptions or bodies.
+- When a skill's mechanism depends on a non-ambient external CLI tool — one that requires
+  authentication, or isn't installed on every machine capable of running Claude Code —
+  state it in a dedicated `## Dependencies` section, naming the tool and its precondition
+  (e.g. "requires an authenticated `gh` CLI"). Ambient tools (`git`, `base64`, and the rest
+  of a standard shell) don't need listing. This is narrower than, and distinct from,
+  [`docs/skill-writing-best-practices.md`](docs/skill-writing-best-practices.md)'s existing
+  package/runtime-dependency guidance, which is about install-ability and network access
+  across the different sandboxes a skill might run in, not CLI-availability/auth
+  preconditions on a single machine.
 
 For guidance on `SKILL.md` structure, description design, and how this repo's standards
 relate to `writing-for-agents`, see

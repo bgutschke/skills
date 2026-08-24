@@ -55,3 +55,11 @@ live file can.
 *Avoid*: assuming "narrates something that really happened" is itself the defect — the
 defect is asserting a current-state fact about a *mutable* target, not historicity by
 itself.
+
+**Dependencies section**:
+A skill's `## Dependencies` heading listing only its *non-ambient* external dependencies —
+CLI tools that require authentication, or aren't installed on every machine capable of
+running Claude Code (e.g. an authenticated `gh` CLI). Part of the Skill compliance bar;
+checked mechanically by `audit-skills`.
+*Avoid*: listing ambient tools (`git`, `base64`, and the rest of a standard shell) here —
+that's noise, not signal, and the convention deliberately excludes them.

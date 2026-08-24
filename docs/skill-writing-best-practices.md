@@ -229,9 +229,10 @@ A cluster of concrete writing rules recurs across every primary source:
 - **Avoid offering too many roughly-equal options** — state one default with a narrow,
   named escape hatch for the genuine edge case, rather than listing several parallel
   choices for Claude to weigh itself.
-- **No voodoo constants** — every configuration value or threshold in a bundled script
-  needs a comment justifying why that value was chosen; if the author doesn't know the
-  right value, Claude has no better way to determine it at runtime.
+- **No voodoo constants** — every configuration value or threshold a skill relies on,
+  whether it lives in a bundled script or directly in the skill's own prose, needs a
+  justification for why that value was chosen; if the author doesn't know the right value,
+  Claude has no better way to determine it at runtime.
 - **Solve, don't defer, in scripts** — handle expected error conditions (missing file,
   permission error) with sensible fallback behavior in the script itself, rather than
   letting an exception surface for Claude to puzzle out.
