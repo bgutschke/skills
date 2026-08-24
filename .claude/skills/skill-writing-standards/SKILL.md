@@ -113,11 +113,11 @@ dropping it, so it can be considered for promotion onto the floor list on a futu
 
 ## Worked example
 
-A real first run, executed 2026-08-23 against issue #35, dispatched five sub-agents — one
-per floor-list source — in parallel. Each returned topic-tagged findings rather than raw
-page content; for example, the Claude Code sub-agent tagged its `allowed-tools`/
-`disallowed-tools` findings under `tool-scoping` and noted in passing that it had seen
-(but not fetched) a link to the Agent Skills best-practices page.
+A real run dispatched five sub-agents — one per floor-list source — in parallel. Each
+returned topic-tagged findings rather than raw page content; for example, the Claude Code
+sub-agent tagged its `allowed-tools`/`disallowed-tools` findings under `tool-scoping` and
+noted in passing that it had seen (but not fetched) a link to the Agent Skills
+best-practices page.
 
 Reconciling across all five reports surfaced both agreement and source-specific gaps: four
 sources independently described the same three-tier progressive-disclosure model in
@@ -132,19 +132,17 @@ second independent citation, while its few genuinely distinct contributions (the
 "plan → validate → execute" framing, the two-agent author/tester loop) were folded in and
 attributed to it directly.
 
-The reconciled result is `docs/skill-writing-best-practices.md`'s first version: ten topic
-subsections (Required structure, Naming, Description design, Tool scoping, Examples,
-When-to-use/when-not boundaries, Progressive disclosure, Style and quality craft,
-Evaluation and testing, Claude Code mechanics), each dated 2026-08-23, plus an "Other
-notable sources found" section surfacing `agentskills.io`, the `anthropics/skills`
-reference-implementation repo, and the `skill-creator` plugin — none on the floor list, all
-noticed by a sub-agent in passing.
+The reconciled result populated `docs/skill-writing-best-practices.md` with one topic
+subsection per finding-cluster the sources converged on, each dated to the day of that
+run, plus an "Other notable sources found" section surfacing `agentskills.io`, the
+`anthropics/skills` reference-implementation repo, and the `skill-creator` plugin — none on
+the floor list, all noticed by a sub-agent in passing.
 
-A second run followed immediately after, re-dispatching the same five sub-agents against
-the same five sources. Each was asked explicitly to report only deltas against what the
-first pass had already captured. All five reported back "no material changes detected" —
-including the obra/superpowers sub-agent, which re-confirmed the same absence of
-tool-scoping content it had flagged in the first pass, rather than assuming it. Comparing
-those five reports against `docs/skill-writing-best-practices.md`'s existing topic
-subsections and their same-day Last-reviewed dates correctly produced zero edits — the
-idempotency mechanism in step 5 held on a genuine second invocation, not just on paper.
+A later run re-dispatched the same five sub-agents against the same five sources, each
+asked explicitly to report only deltas against what the prior run had already captured.
+All five reported back "no material changes detected" — including the obra/superpowers
+sub-agent, which re-confirmed the same absence of tool-scoping content it had flagged
+before, rather than assuming it. Comparing those five reports against
+`docs/skill-writing-best-practices.md`'s existing topic subsections and their same-day
+Last-reviewed dates correctly produced zero edits — the idempotency mechanism in step 5
+held on a genuine second invocation, not just on paper.

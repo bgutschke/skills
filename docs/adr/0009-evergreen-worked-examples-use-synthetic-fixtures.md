@@ -22,5 +22,12 @@ safely cites a merged PR by number on exactly this basis.
 - Any future compliance-audit-style skill's worked example follows this same pattern by
   default: synthetic fixtures for the pass/fail claims, a real name allowed only for an
   immutable reference.
-- Issue #53 (`skill-writing-standards`' own worked example, same defect class) can apply
-  this ADR directly instead of re-deriving the reasoning.
+- A worked example's real, fixed, permanent inputs — config intrinsic to the skill's own
+  identity, such as a hardcoded floor list, rather than an arbitrary target the skill
+  operates against — may be kept as-is; only claims about a *mutable target's current
+  state* need genericizing. This is a legitimate variant of the pattern above, not a
+  deviation from it.
+- Issue #53 (`skill-writing-standards`' own worked example, same defect class) is resolved
+  via that variant: its hardcoded floor-list sources stayed real in the narration, while
+  the dated, issue-numbered framing and the fixed-count claim about
+  `docs/skill-writing-best-practices.md`'s current subsections were removed.
