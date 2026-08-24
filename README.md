@@ -1,4 +1,4 @@
-# bgutschke's skills
+# Skills
 
 Personal agent skills for real engineering. Modeled on [mattpocock/skills](https://github.com/mattpocock/skills) — small, composable, editable, not vibe coding.
 
@@ -30,7 +30,7 @@ Update: `npx skills update` — re-fetches directly from GitHub, no manual clone
 
 Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed in `.claude-plugin/plugin.json`'s `skills` array to ship with the plugin. See `CLAUDE.md` for the full convention.
 
-## Skills
+## Available skills
 
 - **engineering**
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
