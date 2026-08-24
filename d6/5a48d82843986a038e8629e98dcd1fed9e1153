@@ -1,0 +1,19 @@
+.claude/skills/audit-skills/SKILL.md
+  s_c6a084315c189a::t_00801041367f93 32-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d65a48d82843986a038e8629e98dcd1fed9e1153",
+  "prompts": {},
+  "sessions": {
+    "s_c6a084315c189a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d5dc7928-73c5-4dee-8477-246d4d72f649",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
