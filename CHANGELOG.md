@@ -1,3 +1,12 @@
+## [1.4.6](https://github.com/bgutschke/skills/compare/v1.4.5...v1.4.6) (2026-08-24)
+
+
+### Bug Fixes
+
+* **audit-skills:** state its own gh dependency ([e44d2ec](https://github.com/bgutschke/skills/commit/e44d2ec08c06f484c5b096602731a6beafaa5141)), closes [#51](https://github.com/bgutschke/skills/issues/51)
+* generalize dependency-listing and voodoo-constants rules ([76f085d](https://github.com/bgutschke/skills/commit/76f085d6d0f873621f5e8595a1f4d4e89fbe396d)), closes [#51](https://github.com/bgutschke/skills/issues/51)
+* **to-pr:** state invocation path, gh dependency, title-cap reason ([fe552e2](https://github.com/bgutschke/skills/commit/fe552e270ac48873f9ebf9f21e5a86e7767e7e8d)), closes [authenticated-#CLI](https://github.com/authenticated-/issues/CLI) [#51](https://github.com/bgutschke/skills/issues/51)
+
 ## [1.4.5](https://github.com/bgutschke/skills/compare/v1.4.4...v1.4.5) (2026-08-24)
 
 
