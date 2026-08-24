@@ -1,0 +1,34 @@
+scripts/commit-scope-enum.js
+  s_7e463a18fc187f::t_569d8b83ca5f3c 8
+  s_7e463a18fc187f::t_db837ec932140b 1-7
+AGENTS.md
+  s_7e463a18fc187f::t_63f222ad8354cd 45,47-51
+  s_7e463a18fc187f::t_de1f56db83e784 65-66
+CONTEXT.md
+  s_7e463a18fc187f::t_32d751b6453e85 8-9
+docs/agents/issue-tracker.md
+  s_7e463a18fc187f::t_582e7c161c2f19 45
+commitlint.config.js
+  s_7e463a18fc187f::t_c23fb2ab52a079 19-21,30-33,35
+  s_7e463a18fc187f::t_23fc49d97bbc05 5-7,9-18,22
+  s_7e463a18fc187f::t_36597ddb6ce7eb 8,27-29,34
+scripts/commit-scope-enum.test.js
+  s_7e463a18fc187f::t_24f08d1f01870e 1
+  s_7e463a18fc187f::t_bf5e1969b23b91 2-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f667d13de16b8652db2d1c5ca4d98860832e4727",
+  "prompts": {},
+  "sessions": {
+    "s_7e463a18fc187f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9993a04f-e901-416f-94f3-c2dd9bbe96f8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
