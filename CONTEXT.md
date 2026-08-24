@@ -5,8 +5,8 @@ A Claude Code plugin repo shipping agent skills, organized into bucket folders u
 ## Language
 
 **Commit scope**:
-The optional `type(scope): ...` segment of a Conventional Commits header. Two independent vocabularies share this one field, and a commit draws from at most one of them: *bucket scope* (`engineering`, `productivity`) names which skills bucket a commit touches; *maintenance scope* (`deps`, `config`) names what kind of automated dependency-tooling change a Renovate-authored commit is. See `AGENTS.md`'s Commit messages section for the full rule.
-*Avoid*: treating "scope" as solely the bucket vocabulary — that's only half of it now.
+The optional `type(scope): ...` segment of a Conventional Commits header. Three independent vocabularies share this one field, and a commit draws from at most one of them, picking the most specific one that applies: *skill scope* names the one skill a commit touches, by that skill's own directory name (e.g. `to-pr`); *bucket scope* (`engineering`, `productivity`) is the fallback when a commit spans multiple skills in one bucket or touches a bucket-level file; *maintenance scope* (`deps`, `config`) names what kind of automated dependency-tooling change a Renovate-authored commit is. Enforced dynamically — `commitlint.config.js` reads skill directory names off disk rather than from a hand-maintained list. See `AGENTS.md`'s Commit messages section for the full rule.
+*Avoid*: treating "scope" as solely the bucket vocabulary — that's only one of three now; and don't assume the enum is a static list — it's computed from `skills/**` and `.claude/skills/**` at lint time.
 
 ### Rules auditor
 

@@ -42,10 +42,13 @@ One of:
 
 ### Scope
 
-Optional, and drawn from one of two independent vocabularies — a commit uses at most one value from either, never both:
+Optional, and drawn from one of three independent vocabularies — a commit uses at most one value from any of them, never combining two, and picks the most specific one that applies (same carving principle as `ROUTING.md`):
 
-- **Bucket scope** — `engineering` or `productivity`, when a commit touches one skills bucket. Omit the scope for repo-wide changes (plugin manifest, marketplace config, top-level docs).
-- **Maintenance scope** — `deps` or `config`, for automated dependency-tooling changes (Renovate). Renovate's own config-migration PR hardcodes scope `config` and isn't configurable otherwise, so this vocabulary is accepted as-is rather than mapped onto the bucket scopes above.
+- **Skill scope** — a skill's own directory name (`to-pr`, `audit-rules`, `skill-writing-standards`, `audit-skills`, …), when a commit touches exactly one skill. Maintainer-only skills under `.claude/skills/**` use their own name the same way — there is no separate marker distinguishing them from shipped skills.
+- **Bucket scope** — `engineering` or `productivity`, the fallback when a commit spans multiple skills within one bucket, or touches a bucket-level file (e.g. a bucket `README.md`). Omit the scope entirely for repo-wide changes (plugin manifest, marketplace config, top-level docs).
+- **Maintenance scope** — `deps` or `config`, for automated dependency-tooling changes (Renovate). Renovate's own config-migration PR hardcodes scope `config` and isn't configurable otherwise, so this vocabulary is accepted as-is rather than mapped onto the other two.
+
+`commitlint.config.js`'s `scope-enum` rule enforces this by reading `skills/**` and `.claude/skills/**` directory names off disk at lint time (via `scripts/commit-scope-enum.js`), unioned with the fixed `deps`/`config` vocabulary — a hand-maintained list would need a manual edit every time a skill is added, renamed, or removed, and would drift.
 
 ### Subject
 
@@ -58,6 +61,8 @@ Separated from the subject by a blank line, for any non-trivial change. Explains
 ### Footer
 
 `Closes #<n>` or `Refs #<n>` when the commit closes or relates to a tracked GitHub issue (see `docs/agents/issue-tracker.md`). Omit when there's no related issue — most commits won't have one.
+
+Use `Closes #<n>`, never `Refs #<n>`, for the commit that ships an issue's last remaining acceptance-criteria item — GitHub then closes the issue automatically on push instead of needing a manual follow-up. Where the issue body has an explicit checklist, the test is mechanical: does this diff check off everything still unchecked? Where there's no checklist: would you want this push to auto-close the issue? Yes means `Closes`. A manual `gh issue close` stays valid only for issues that resolve without any shipping commit (`wontfix`, duplicates, pure decisions where the comment *is* the resolution).
 
 Breaking changes use a `!` after the type/scope (`feat(engineering)!: ...`) and/or a `BREAKING CHANGE:` footer, per the spec. `semantic-release` reads this as a major version bump.
 
