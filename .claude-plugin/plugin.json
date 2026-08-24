@@ -15,6 +15,7 @@
   ],
   "skills": [
     "./skills/engineering/to-pr",
-    "./skills/productivity/audit-rules"
+    "./skills/productivity/audit-rules",
+    "./skills/productivity/renovate-triage"
   ]
 }
