@@ -29,6 +29,12 @@ occur here. The exemption is narrow: it does not extend to `docs/adr/*.md` or
 `CONTEXT.md`, which stay uncited from this skill's own instructions the same as from any
 other skill's.
 
+## Dependencies
+
+Requires an authenticated `gh` CLI, but only for the optional issue-filing step (`gh
+issue create`, see "Issue filing" below) — a report-only run needs no external CLI at
+all.
+
 ## When to use
 
 - Right after a `SKILL.md` under `skills/**/SKILL.md` or `.claude/skills/**/SKILL.md` is
