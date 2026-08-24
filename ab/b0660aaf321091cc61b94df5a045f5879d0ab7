@@ -1,0 +1,23 @@
+skills/productivity/renovate-triage/scripts/resolve-datasource.js
+  s_ab22e5df334239::t_fb0e37e5a58278 16,18,24-39
+  s_ab22e5df334239::t_bc5fb94cd78f93 3
+  s_ab22e5df334239::t_ef9b5e94dd1bb8 40-41
+skills/productivity/renovate-triage/scripts/resolve-datasource.test.js
+  s_ab22e5df334239::t_320f0ea967da5d 50-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "abb0660aaf321091cc61b94df5a045f5879d0ab7",
+  "prompts": {},
+  "sessions": {
+    "s_ab22e5df334239": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54cd5959-a16b-4702-b8d4-4d19f2a278ae",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
