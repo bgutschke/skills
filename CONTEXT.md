@@ -87,3 +87,23 @@ investigation, not a human skimming for discretion — concrete starting points:
 call sites to inspect, which changelog or migration-guide sections to read.
 *Avoid*: attaching this to `needs-review` — that tier means a human should glance and
 decide, not that information is missing.
+
+**Datasource**:
+Renovate's own name for a dependency's versioning source and lookup mechanism — `npm`,
+`docker`, `pypi`, `ansible-galaxy`, `github-releases`, and others. A built-in manager
+(e.g. npm) has a fixed default datasource; a `customManagers` entry declares its own via
+`datasourceTemplate`. The skill resolves a changed file's datasource by reading the
+target repo's own `renovate.json`, never by guessing from the file's name or extension
+alone — a custom regex manager can point any file at any datasource.
+*Avoid*: "ecosystem" for this going forward — once a single language can be reached via
+more than one path (e.g. pip through a manifest file versus pip through a custom regex
+manager embedded in a YAML file), "datasource" is the precise term; "ecosystem" conflates
+the language with the mechanism Renovate used to find it.
+
+**Datasource adapter**:
+A declarative bundle — where to look for a changelog or release notes, and how to search
+the codebase for usage sites — that evidence-gathering dispatches to once a PR's changed
+file has a resolved *Datasource*. One adapter per datasource, replacing a hardcoded
+evidence-gathering flow written out separately per ecosystem.
+*Avoid*: assuming an adapter is itself a sub-agent — the term names the evidence-gathering
+strategy, not a claim about what process or context executes it.
