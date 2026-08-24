@@ -1,3 +1,11 @@
+## [1.4.4](https://github.com/bgutschke/skills/compare/v1.4.3...v1.4.4) (2026-08-24)
+
+
+### Bug Fixes
+
+* **audit-skills:** avoid real-ADR-number collision in worked example ([d0d534a](https://github.com/bgutschke/skills/commit/d0d534ae68e0ce0e47692197f15905fc2e7d94e0)), closes [#54](https://github.com/bgutschke/skills/issues/54)
+* **audit-skills:** rebuild worked example on synthetic fixtures ([27ccde0](https://github.com/bgutschke/skills/commit/27ccde0d89919ba10b54e229d3efaa0134845ef2)), closes [#54](https://github.com/bgutschke/skills/issues/54)
+
 ## [1.4.3](https://github.com/bgutschke/skills/compare/v1.4.2...v1.4.3) (2026-08-24)
 
 
