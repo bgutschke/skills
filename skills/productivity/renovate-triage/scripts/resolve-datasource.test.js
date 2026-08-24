@@ -47,4 +47,33 @@ describe('resolveDatasource', () => {
     const result = resolveDatasource(config, ['charts/image-tags.yaml']);
     expect(result).toEqual({ status: 'resolved', datasources: { 'charts/image-tags.yaml': 'unknown' } });
   });
+
+  it('resolves a customManagers pattern written in the /source/flags delimited form', () => {
+    const config = JSON.stringify({
+      customManagers: [
+        {
+          managerFilePatterns: ['/roles/nextcloud/defaults/main\\.yml$/'],
+          datasourceTemplate: 'docker',
+        },
+      ],
+    });
+    const result = resolveDatasource(config, ['roles/nextcloud/defaults/main.yml']);
+    expect(result).toEqual({ status: 'resolved', datasources: { 'roles/nextcloud/defaults/main.yml': 'docker' } });
+  });
+
+  it('honors flags on a delimited customManagers pattern', () => {
+    const config = JSON.stringify({
+      customManagers: [{ managerFilePatterns: ['/DOCKERFILE$/i'], datasourceTemplate: 'docker' }],
+    });
+    const result = resolveDatasource(config, ['Dockerfile']);
+    expect(result).toEqual({ status: 'resolved', datasources: { Dockerfile: 'docker' } });
+  });
+
+  it("resolves docker-compose's built-in manager default pattern for a Jinja template", () => {
+    const result = resolveDatasource('{}', ['roles/nextcloud/templates/docker-compose.yml.j2']);
+    expect(result).toEqual({
+      status: 'resolved',
+      datasources: { 'roles/nextcloud/templates/docker-compose.yml.j2': 'docker' },
+    });
+  });
 });
