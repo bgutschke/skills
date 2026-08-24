@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/bgutschke/skills/compare/v1.7.0...v1.7.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **renovate-triage:** strip regex delimiters when resolving datasources ([f0cc43d](https://github.com/bgutschke/skills/commit/f0cc43da2d9d3d65f2756ca4ac357e0e7e9b1c4e))
+
 # [1.7.0](https://github.com/bgutschke/skills/compare/v1.6.0...v1.7.0) (2026-08-24)
 
 
