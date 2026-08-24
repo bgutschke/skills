@@ -1,0 +1,22 @@
+skills/engineering/to-pr/SKILL.md
+  s_c6a084315c189a::t_559078cffc3da9 16-21
+  s_c6a084315c189a::t_e32c10ef546303 298-299
+  s_c6a084315c189a::t_ea1c92a8b979d0 5
+  s_c6a084315c189a::t_136afd5cb724ca 246-250
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "b6bc6395cf312a7e79bd3f2e4cd532278602b801",
+  "prompts": {},
+  "sessions": {
+    "s_c6a084315c189a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d5dc7928-73c5-4dee-8477-246d4d72f649",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
