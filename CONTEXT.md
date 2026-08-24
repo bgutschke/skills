@@ -44,3 +44,14 @@ description-design guidance. Checked live against both documents' current conten
 against an embedded or duplicated copy.
 *Avoid*: "best practices" alone for this — that names only the externally-sourced half of
 the two documents.
+
+**Evergreen worked example**:
+A skill's worked example that demonstrates the mechanism's designed behavior without
+asserting a pass/fail fact about any target whose state can later change. A dated
+timestamp, an issue number, or a claim about a real live file's current compliance
+breaks this. Referencing an immutable external record (e.g. a merged PR, cited by number)
+does not — it can never "come back clean" later and invalidate the narration the way a
+live file can.
+*Avoid*: assuming "narrates something that really happened" is itself the defect — the
+defect is asserting a current-state fact about a *mutable* target, not historicity by
+itself.

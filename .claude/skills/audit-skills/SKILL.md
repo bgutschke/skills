@@ -105,64 +105,46 @@ checked:
 
 ## Worked example
 
-A real dry run, executed against four fixtures: the two maintainer-only/shipped skills
-already in this repo (`skill-writing-standards`, `audit-rules`); one constructed
-violation — a copy of `audit-rules` renamed to `rule-auditor-pro`, with its description
-rewritten to first-person marketing language ("Our revolutionary, best-in-class
-rule-auditing engine... with industry-leading accuracy"), a citation to
-`docs/adr/0006-release-automation-via-semantic-release.md` added to that description, and
-its "When not to use" section deleted entirely; and one corrected fixture — a copy of
-`audit-rules` with its own two genuine violations (found below) fixed, to exercise the
-"Compliant" report path against a real known-good case rather than only the violation
-path.
+A real dry run, executed against two synthetic, frozen fixtures built solely for this
+example: `invoice-line-splitter`, deliberately constructed with violations spanning both
+source documents, and `spreadsheet-cell-merger`, a fully compliant skill exercising the
+"Compliant" report path. Both are entirely invented — neither names nor makes a pass/fail
+claim about any real shipped or maintainer skill in this repo — and neither fixture file
+was ever committed; they existed only in a scratch location outside the repository for
+the duration of this run. That means the violation and clean pass illustrated below can
+never drift, unlike a worked example that names a real skill and reports its current
+compliance as fact.
 
 Step 4's checklist sub-agent returned a topic-tagged checklist covering required
-structure, naming, description design, self-containment, style, and sizing. Step 5's
-four parallel per-skill sub-agents then checked each fixture against it — and, notably,
-neither of the two real, already-shipped skills came back clean:
+structure, naming, description design, self-containment, and style. Step 5's two
+parallel per-fixture sub-agents then checked each fixture against it:
 
-**`skill-writing-standards`**
+**`invoice-line-splitter`**
 
-1. Its worked example narrates a specific historical dev-time event ("A real first run,
-   executed 2026-08-23 against issue #35...") rather than depicting generic, evergreen
-   designed behavior — `docs/skill-writing-best-practices.md`, Required structure.
-2. The same section embeds dated, time-sensitive content (two literal `2026-08-23`
-   timestamps, one issue-number reference) — `docs/skill-writing-best-practices.md`,
-   Style and quality craft.
-
-**`audit-rules`**
-
-1. Cites a repo-layout-specific fact ("this repo's own `CLAUDE.md -> AGENTS.md`") inline
-   as an example inside its general instructions — a Self-containment violation even
-   though it isn't a `docs/adr/*.md`/`CONTEXT.md` citation, since a plugin consumer's own
-   project has no such symlink at all — `CODING_STANDARDS.md`, Self-containment.
-2. The frontmatter `description` states only *what* the skill does, with no trigger
-   phrase or situation — that content exists only in the body's "When to use" section,
-   not the description itself — `docs/skill-writing-best-practices.md`, Description
-   design.
-
-**`rule-auditor-pro`** (constructed fixture)
-
-1. Marketing/hype language in the description ("revolutionary," "best-in-class,"
-   "industry-leading") — `CODING_STANDARDS.md`, Style and content rules.
-2. Description written in first person ("Our... engine") rather than third person —
-   `docs/skill-writing-best-practices.md`, Description design.
-3. Description cites `docs/adr/0006-release-automation-via-semantic-release.md`, a
-   repo-specific path, with no stated exemption — `CODING_STANDARDS.md`,
-   Self-containment.
-4. Missing a "When not to use" section entirely — `docs/skill-writing-best-practices.md`,
-   Required structure.
+1. Description written in first person ("I split multi-line invoice text into per-item
+   rows...") rather than third person — `docs/skill-writing-best-practices.md`,
+   Description design.
+2. Description states only *what* the skill does, with no trigger phrase or
+   when-to-use clause — `docs/skill-writing-best-practices.md`, Description design.
+3. No "When to use" or "When not to use" section anywhere in the body —
+   `docs/skill-writing-best-practices.md`, Required structure.
+4. Marketing/hype language in both the description ("our revolutionary,
+   industry-leading parsing engine") and the body ("best-in-class... with unmatched
+   accuracy") — `CODING_STANDARDS.md`, Style and content rules.
+5. Cites a decision record (`docs/adr/0002-my-team-chose-a-layered-parser-fallback.md`)
+   from inside its own instructions, assuming a file outside its bundle exists —
+   `CODING_STANDARDS.md`, Self-containment.
 
 **Compliant**
 
-- The corrected fixture — no violations found, once its two source violations were
-  fixed: the description gained an explicit trigger clause ("Use when the user asks to
-  audit... or types `/audit-rules`") and the repo-layout-specific symlink example was
-  generalized to "A symlink counts as the file it points to."
+- `spreadsheet-cell-merger` — no violations found: explicit "When to use"/"When not to
+  use" sections, a third-person description naming concrete triggers ("merge cells,"
+  "collapse repeated row labels"), a worked example depicting evergreen designed
+  behavior, and no citation to anything outside its own bundle.
 
-Step 6 aggregated these into the report shape above. Three of the four fixtures came
-back with violations — including both real, already-shipped skills, which had no prior
-indication of drift — and the fourth, corrected specifically to fix those two skills'
-genuine findings, came back clean, exercising the "Compliant" single-line path as well.
-That's the mechanism doing its actual job: catching drift a reviewer hadn't noticed by
-eye, not just detecting the defects it was built to detect.
+Step 6 aggregated these into the report shape above: one fixture came back with five
+violations spanning both source documents, and the other — built clean on purpose —
+exercised the "Compliant" single-line path. That's the mechanism doing its actual job:
+finding a real cross-document mix of defects in one pass and correctly clearing the
+other. Because both fixtures are synthetic and never committed, this passage stays
+accurate no matter how this repo's own skills change later.
