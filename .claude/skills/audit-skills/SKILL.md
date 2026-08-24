@@ -51,8 +51,8 @@ other skill's.
 - Reconciling `docs/skill-writing-best-practices.md` itself against external sources —
   that's `skill-writing-standards`' job. This skill only checks existing skills against
   whatever the two documents currently say; it never edits either of them.
-- Auto-fixing a violation, or filing a per-skill or per-violation issue — this skill only
-  reports, and only ever files one batched issue for the whole run, and only when asked.
+- Auto-fixing a violation, or filing a per-violation issue — this skill only reports,
+  and only ever files one issue per skill that has violations, and only when asked.
 
 ## Resolving what to check
 
@@ -96,13 +96,12 @@ checked:
 
 ## Issue filing
 
-8. Report-only by default. Only when the user explicitly asks, file **exactly one
-   batched GitHub issue for the whole run** — never one per skill, never one per
-   violation — listing every violation found, grouped by skill, via this repo's own
+8. Report-only by default. Only when the user explicitly asks, file **one GitHub issue
+   per skill that has violations** — never one batched issue for the whole run, never one
+   per violation — each listing every violation found for that skill, via this repo's own
    issue-creation convention (`docs/agents/issue-tracker.md`: "publish to the issue
-   tracker" means `gh issue create --title "..." --body "..."`). This is proportionate to
-   this repo's current scale (a handful of skills total); revisit the batching if that
-   stops being true.
+   tracker" means `gh issue create --title "..." --body "..."`). A skill with zero
+   violations gets no issue.
 
 ## Worked example
 
