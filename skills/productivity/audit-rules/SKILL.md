@@ -1,7 +1,7 @@
 ---
 name: audit-rules
 disable-model-invocation: true
-description: Reads every active rule file and installed skill/agent description, and reports contradictions and unresolved overlaps between them, proposing edits only to files the user can edit directly.
+description: Reads every active rule file and installed skill/agent description, and reports contradictions and unresolved overlaps between them, proposing edits only to files the user can edit directly. Use when the user asks to audit, review, or check their rules, CLAUDE.md files, or installed skills/agents for contradictions, conflicts, or overlap, or types /audit-rules.
 ---
 
 # Audit rules
@@ -46,8 +46,8 @@ that category rather than inventing content.
    target.
 2. Project: `./CLAUDE.md`, `./.claude/rules/*.md`, and the repo's own `CLAUDE.local.md`
    if present — resolved from the current working directory's project root. Read-only;
-   never an edit target, even when a finding's other side is personal. A symlink (this
-   repo's own `CLAUDE.md -> AGENTS.md`) counts as the file it points to.
+   never an edit target, even when a finding's other side is personal. A symlinked rule
+   file counts as the file it points to.
 3. Managed-policy: check for a `CLAUDE.md`/`rules/*.md` colocated with the platform's
    managed-settings directory — macOS `/Library/Application Support/ClaudeCode/`, Linux
    `/etc/claude-code/`, Windows `C:\ProgramData\ClaudeCode\`. Most machines have none.
