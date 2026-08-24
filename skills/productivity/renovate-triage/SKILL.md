@@ -29,8 +29,12 @@ labels a PR — every merge decision stays the maintainer's.
 ## Dependencies
 
 Requires an authenticated `gh` CLI — every step shells out to it (`gh pr list`, `gh pr
-view`, `gh pr checks`, `gh api`, `gh pr comment`). `git` is also used but is ambient on
-any machine capable of running Claude Code, so it isn't listed here.
+view`, `gh pr checks`, `gh api`, `gh pr comment`). Also requires `npm` and `node` — `npm`
+to resolve a dependency's repository URL (`npm view <dep> repository.url`), and `node`
+to run this skill's bundled verdict and validation scripts
+(`${CLAUDE_SKILL_DIR}/scripts/`). `git` is also used but, like the rest of a standard
+shell, is ambient on any machine capable of running Claude Code, so it isn't listed here
+— `npm` and `node` are not equally guaranteed.
 
 ## When to use
 
@@ -84,38 +88,35 @@ from steps 1–2:
    normally group across ecosystems, so a mix is evidence of an unusual PR this skill
    isn't designed to read correctly, not a partial-npm PR to triage anyway.
 5. An out-of-scope PR is never silently dropped: on a full scan, list it in the final
-   summary report (step 19) under a "skipped — non-npm ecosystem" heading, naming which
+   summary report (step 17) under a "skipped — non-npm ecosystem" heading, naming which
    file(s) triggered the exclusion. On an explicit single-PR target, report the same
    thing in place of a verdict and stop for that PR.
 
 ## Gathering evidence, per npm dependency
 
-Steps 6–11 run once per dependency changed in the PR — for a PR Renovate grouped into
-several dependencies, once per dependency in the group (see step 15 for how the
+Steps 6–10 run once per dependency changed in the PR — for a PR Renovate grouped into
+several dependencies, once per dependency in the group (see step 12 for how the
 per-dependency results roll up).
 
 6. Read the old and new version for this dependency from the PR's title or body (both
    fixed Renovate output formats naming the dependency and its version range).
-7. Classify the bump size — `patch`, `minor`, or `major` — from the semver difference
-   between the two versions. This needs no threshold: semver already defines the
-   boundary.
-8. Look for a changelog or release notes, in this fixed order, stopping at the first
+7. Look for a changelog or release notes, in this fixed order, stopping at the first
    hit: (a) the dependency's GitHub Releases, via `gh api
    repos/<dep-owner>/<dep-repo>/releases` once the dependency's repository URL is
    resolved from its npm registry metadata (`npm view <dep> repository.url`); (b) the
    dependency's own `CHANGELOG.md` at its new release tag, read from the same
    repository. "No changelog or release notes found anywhere" (relevant to the
    major-bump hard-stop below) means both (a) and (b) came back empty.
-9. If a changelog or release notes were found, scan them for an explicit
+8. If a changelog or release notes were found, scan them for an explicit
    breaking-change callout (a "Breaking Changes" heading, or prose stating a breaking
    change) and judge whether it's actually relevant to this codebase's usage — cross-
    reference the callout's described change (a removed export, a changed function
-   signature, a changed default) against the call sites found in step 11. A callout
+   signature, a changed default) against the call sites found in step 10. A callout
    naming something this codebase never touches does not count as relevant.
-10. Check CI status for the PR: `gh pr checks <number>` — classify as `failing`,
-    `pending` (checks exist but haven't finished), or `passing` (no failing or pending
-    checks).
-11. Compute blast radius: count the distinct tracked files in the current repo that
+9. Check CI status for the PR: `gh pr checks <number>` — classify as `failing`,
+   `pending` (checks exist but haven't finished), or `passing` (no failing or pending
+   checks).
+10. Compute blast radius: count the distinct tracked files in the current repo that
     import or require this dependency — `git grep -lE "['\"]<dep>(/|['\"])" -- '*.js'
     '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs'`. Treat the count as **large** when it exceeds
     10 distinct files. Ten is the point past which reviewing every call site by hand
@@ -124,47 +125,55 @@ per-dependency results roll up).
     to, so a clean changelog is enough to stand on its own; above it, the sheer count is
     itself the practical reason a bump needs a closer look, independent of what the
     changelog says. This applies identically whether the dependency sits in
-    `dependencies` or `devDependencies` — placement is reported as context (step 17) but
+    `dependencies` or `devDependencies` — placement is reported as context (step 14) but
     never changes the verdict.
 
 ## Computing the verdict, per dependency
 
-12. **Hard-stops**, checked first — any one alone forces `blocked`, and skips baseline
-    and escalation entirely for this dependency:
-    - An explicit breaking-change callout relevant to this codebase's actual usage
-      (step 9).
-    - A failing CI check (step 10).
-    - A major bump with no changelog or release notes found anywhere (step 8).
-13. **Baseline**, only reached when no hard-stop fired:
-    - Patch or minor bump, changelog found → `safe`.
-    - Major bump, changelog found, no relevant breaking-change callout → `needs-review`,
-      regardless of blast radius (a major bump's baseline is never `safe` — the version
-      jump alone is enough to warrant a human glance even on a clean changelog).
-    - Patch or minor bump, no changelog found → `needs-review`. This combination has no
-      user story of its own, but it doesn't fit the major-bump hard-stop (which is
-      specifically about major bumps) and it can't honestly reach `safe` either — `safe`
-      means a changelog was actually read and found clean, not merely that no danger
-      signal happened to fire.
-14. **Escalations**, applied to the baseline, each by exactly one tier: large blast
-    radius (step 11); CI pending rather than passing (step 10). `blocked` is reached
-    *only* via a hard-stop in step 12 — no combination of baseline and escalations ever
-    produces it, even when both escalations fire on the same dependency. This keeps a
-    genuinely dangerous signal (a hard-stop) from ever being diluted by, or confused
-    with, an accumulation of merely-cautious ones: `needs-review` is the ceiling
-    anything but a hard-stop can reach.
+11. Compute the bump size and the verdict together by running
+    `node ${CLAUDE_SKILL_DIR}/scripts/compute-verdict-cli.js --old-version <old>
+    --new-version <new> --changelog-found <true|false> --breaking-callout
+    <true|false> --ci-status <passing|pending|failing> --blast-radius-large
+    <true|false>`, using the facts gathered in steps 6–10 — classifying the bump size
+    itself needs no configurable threshold, since semver already defines the
+    patch/minor/major boundary, so it's folded into the same deterministic call rather
+    than judged separately. **Execute this script directly for each dependency — it
+    deterministically implements the decision table below, so the table must never be
+    hand-recomputed or re-derived from the prose.** It prints `{ bumpSize, verdict,
+    reason }` as JSON. The rules it implements:
+    - **Hard-stops**, checked first — any one alone forces `blocked`, and skips baseline
+      and escalation entirely for this dependency: an explicit breaking-change callout
+      relevant to this codebase's actual usage (step 8); a failing CI check (step 9); a
+      major bump with no changelog or release notes found anywhere (step 7).
+    - **Baseline**, only reached when no hard-stop fired: patch or minor bump with a
+      changelog found → `safe`; major bump with a changelog found and no relevant
+      breaking-change callout → `needs-review`, regardless of blast radius (a major
+      bump's baseline is never `safe` — the version jump alone is enough to warrant a
+      human glance even on a clean changelog); patch or minor bump with no changelog
+      found → `needs-review` (this can't honestly reach `safe` — `safe` means a
+      changelog was actually read and found clean, not merely that no danger signal
+      happened to fire — but it also doesn't fit the major-bump hard-stop, which is
+      specifically about major bumps).
+    - **Escalations**, applied to the baseline, each by exactly one tier: large blast
+      radius (step 10); CI pending rather than passing (step 9). `blocked` is reached
+      *only* via a hard-stop — no combination of baseline and escalations ever produces
+      it, even when both escalations fire on the same dependency. This keeps a genuinely
+      dangerous signal (a hard-stop) from ever being diluted by, or confused with, an
+      accumulation of merely-cautious ones: `needs-review` is the ceiling anything but a
+      hard-stop can reach.
 
 ## Rolling up a grouped PR
 
-15. A PR grouping several dependencies gets a per-dependency verdict breakdown (steps
-    6–14 run once per dependency) plus one overall rollup verdict, shown at the top of
+12. A PR grouping several dependencies gets a per-dependency verdict breakdown (steps
+    6–11 run once per dependency) plus one overall rollup verdict, shown at the top of
     the comment, equal to the worst (most severe: `blocked` > `needs-review` > `safe`)
     verdict among its dependencies — so one risky dependency in an otherwise-boring
     bundle is never hidden behind the others.
 
 ## Writing the Agent brief
 
-16. Only for a dependency (or PR, if ungrouped) whose final verdict is `blocked`: name
-    the concrete call sites to inspect (the file list from step 11's blast-radius grep,
+13. Only for a dependency (or PR, if ungrouped) whose final verdict is `blocked`: name
+    the concrete call sites to inspect (the file list from step 10's blast-radius grep,
     not just a count), and point to the specific changelog or release-notes section that
     triggered the hard-stop. If the hard-stop was a failing CI check, name the specific
     failing check(s) instead of a changelog section. If the changelog links a migration
@@ -176,28 +185,40 @@ per-dependency results roll up).
 
 ## Posting the comment
 
-17. Compose one comment body per PR: an HTML-comment marker (`<!--
-    renovate-triage:verdict -->`, used only for the idempotency check in the next step,
-    never shown in the rendered comment) followed by the verdict (with the
-    per-dependency breakdown from step 15 for a grouped PR), the one-line reason each
+14. Compose one comment body per PR: an HTML-comment marker (`<!--
+    renovate-triage:verdict -->`, used for the validation gate below and the idempotency
+    check in step 16, never shown in the rendered comment) followed by the verdict (with
+    the per-dependency breakdown from step 12 for a grouped PR), the one-line reason each
     tier or hard-stop fired, each dependency's `dependencies`/`devDependencies`
-    placement as context, and the Agent brief section when step 16 produced one.
-18. Search the PR's existing comments for the marker: `gh api
-    repos/<owner>/<repo>/issues/<number>/comments --jq '.[] | select(.body |
-    contains("renovate-triage:verdict")) | .id'`. If a match exists, update it in place
-    — `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body=@<file>` —
-    rather than posting a second one. If no match exists, create it — `gh pr comment
-    <number> --body-file <file>`. Invoking the skill is sufficient authorization to
-    write or update every comment touched in the run; there is no separate per-PR
-    confirmation prompt.
+    placement as context, and the Agent brief section when step 13 produced one.
+15. Before any comment write executes for this run, validate every composed body: run
+    `node ${CLAUDE_SKILL_DIR}/scripts/validate-comment-body-cli.js <verdict>
+    <body-file>` for each PR's body from step 14. **Execute this script directly for
+    every PR in the batch before posting any of them — it is the machine-checkable gate
+    for the whole run, not a manual double-check.** It confirms the verdict is one of
+    the three valid tiers, the idempotency marker appears exactly once, and an Agent
+    brief section is present if and only if the verdict is `blocked`. A PR whose body
+    fails validation is skipped for posting — report it in step 17 alongside the reason
+    validation gave, rather than letting a malformed comment reach a real PR — while
+    every other PR in the batch still proceeds.
+16. For every PR whose body passed step 15's validation: search the PR's existing
+    comments for the marker: `gh api repos/<owner>/<repo>/issues/<number>/comments
+    --jq '.[] | select(.body | contains("renovate-triage:verdict")) | .id'`. If a match
+    exists, update it in place — `gh api -X PATCH
+    repos/<owner>/<repo>/issues/comments/<id> -f body=@<file>` — rather than posting a
+    second one. If no match exists, create it — `gh pr comment <number> --body-file
+    <file>`. Invoking the skill is sufficient authorization to write or update every
+    comment touched in the run; there is no separate per-PR confirmation prompt beyond
+    step 15's validation gate.
 
 ## Reporting
 
-19. Report in-session, in addition to the PR comments: every PR checked, its verdict (or
+17. Report in-session, in addition to the PR comments: every PR checked, its verdict (or
     per-dependency breakdown for a grouped PR), whether its comment was created or
-    updated, and every PR skipped for being out of ecosystem scope (step 5) with the
-    reason why. On a no-target scan that found zero open Renovate PRs, this report is
-    exactly the "no open Renovate PRs found" line from step 3 — never silence.
+    updated, every PR skipped for being out of ecosystem scope (step 5), and every PR
+    skipped for failing step 15's validation gate — each with the reason why. On a
+    no-target scan that found zero open Renovate PRs, this report is exactly the "no
+    open Renovate PRs found" line from step 3 — never silence.
 
 ## Worked example
 
@@ -218,14 +239,14 @@ baseline, and escalation individually, plus the grouped-PR rollup:
 
 Fixture 1 alone already fires a hard-stop, so its `blocked` verdict holds regardless of
 its small blast radius — confirming hard-stops short-circuit baseline/escalation
-entirely (step 12). Fixture 5 shows the blast-radius escalation on its own pushing an
+entirely (step 11). Fixture 5 shows the blast-radius escalation on its own pushing an
 otherwise-clean minor bump from `safe` to `needs-review`, without touching `blocked` —
-confirming the `needs-review` ceiling from step 14. Fixture 8's `bundler-cli` verdict
-(`safe`) never appears at the top level; only the rollup does, per step 15.
+confirming the `needs-review` ceiling from step 11. Fixture 8's `bundler-cli` verdict
+(`safe`) never appears at the top level; only the rollup does, per step 12.
 
 **Comment idempotency**, checked against one real open Renovate PR on this repo at dry-
 run time (a synthetic fixture is an equally valid substitute when none is open): the
-first run found no comment containing the `renovate-triage:verdict` marker, so step 18
+first run found no comment containing the `renovate-triage:verdict` marker, so step 16
 took the create branch (`gh pr comment`). Re-running the skill against the same PR with
 no new commits found the marker in the existing comment and took the update branch (`gh
 api -X PATCH`) instead — the PR ended the second run with exactly one `renovate-triage`
