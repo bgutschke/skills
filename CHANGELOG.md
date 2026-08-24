@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/bgutschke/skills/compare/v1.5.1...v1.6.0) (2026-08-24)
+
+
+### Features
+
+* **renovate-triage:** add multi-ecosystem support ([84b2ad6](https://github.com/bgutschke/skills/commit/84b2ad69632e623f3c4e92c79852da59932f8020)), closes [#67](https://github.com/bgutschke/skills/issues/67)
+
 ## [1.5.1](https://github.com/bgutschke/skills/compare/v1.5.0...v1.5.1) (2026-08-24)
 
 
