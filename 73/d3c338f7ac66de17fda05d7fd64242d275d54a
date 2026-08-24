@@ -1,0 +1,92 @@
+skills/productivity/renovate-triage/scripts/compute-verdict.js
+  s_a8155d57bb2c72::t_e52895cb565058 14-17
+skills/productivity/renovate-triage/scripts/resolve-datasource.test.js
+  s_a8155d57bb2c72::t_a4cba4aa5d1880 42-46,49
+  s_a8155d57bb2c72::t_87ca881e51eb74 1-7,50
+  s_a8155d57bb2c72::t_c50607f645beb1 47-48
+  s_a8155d57bb2c72::t_66db83145175b9 23-41
+  s_a8155d57bb2c72::t_dc10dfa0f89c2a 13-22
+  s_a8155d57bb2c72::t_c6bf40cd893f2e 8-12
+skills/productivity/renovate-triage/SKILL.md
+  s_a8155d57bb2c72::t_aa4201c327c6a8 244
+  s_a8155d57bb2c72::t_8c281f5e73173f 32
+  s_a8155d57bb2c72::t_00d8e7d37df2a4 172
+  s_a8155d57bb2c72::t_10f23715043445 24-31,33-36,57-62,74-85,105-107,115-121,123-169,171,173-176,183-209,220-243,245,247,249,272,274-277,283-297,299,301-305,322-330,338,373-375,409-413
+  s_3dadfe17f48e06::t_b8781f82e50940 4
+  s_3dadfe17f48e06::t_9d517bd738fe96 5
+  s_3dadfe17f48e06::t_c58b9e5c12adb7 100
+  s_3dadfe17f48e06::t_6383160dd77d9f 170
+  s_3dadfe17f48e06::t_4d085931190020 122
+  s_3dadfe17f48e06::t_f1ed7f98d05e7c 177,179-182
+  s_3dadfe17f48e06::t_2a681fa297a4b9 381-401,405,407-408,415-427,430
+  s_3dadfe17f48e06::t_6216b888602af9 37-45,49-51
+  s_3dadfe17f48e06::t_536f342ddb08b7 210-219
+  s_3dadfe17f48e06::t_809944ed07f654 97-99,101-102,108-111
+  s_3dadfe17f48e06::t_44e5b2389edbe1 178
+  s_3dadfe17f48e06::t_19f096c382f13b 248,252-265,268
+  s_3dadfe17f48e06::t_d0b6d5f301d248 251
+  s_3dadfe17f48e06::t_bbc982a6f5d2d1 309-310,313-317,321,334,336-337,339-343,345,348-355,363,367,369-372
+docs/adr/0013-renovate-triage-datasource-resolution-is-config-driven.md
+  s_a8155d57bb2c72::t_d4c842a1d76623 1-30
+skills/productivity/renovate-triage/scripts/classify-bump-size.test.js
+  s_a8155d57bb2c72::t_1bb75fb2ac11a6 20-29
+skills/productivity/renovate-triage/scripts/resolve-datasource-cli.js
+  s_a8155d57bb2c72::t_a262628374e76b 1-33
+skills/productivity/renovate-triage/scripts/classify-bump-size.js
+  s_a8155d57bb2c72::t_a930425455789d 6,15
+docs/adr/0015-renovate-triage-adapters-use-only-authoritative-metadata.md
+  s_a8155d57bb2c72::t_d8fd51229684bc 1-30
+CONTEXT.md
+  s_a8155d57bb2c72::t_d4fec1fd5ff8df 90-109
+  s_c5b17028c8bc78::t_f4c55b3504013c 110-122
+skills/productivity/renovate-triage/scripts/compute-verdict.test.js
+  s_a8155d57bb2c72::t_9832edce6cbec8 66-83
+skills/productivity/renovate-triage/scripts/resolve-datasource.js
+  s_a8155d57bb2c72::t_6d0c2ef35fb833 36-38,52-54
+  s_a8155d57bb2c72::t_9caad9e8d3db04 40,42,49
+  s_a8155d57bb2c72::t_6002f4369c8cb6 15-34
+  s_a8155d57bb2c72::t_d6ca342fad6b41 39,41,43-44,50
+  s_a8155d57bb2c72::t_fc598facf3b946 1-14,35,45-48,51
+docs/adr/0014-renovate-triage-orchestration-is-pr-level-only.md
+  s_a8155d57bb2c72::t_e59d2b66d2caa7 1-29
+docs/adr/0016-renovate-triage-opportunity-scan-default-on.md
+  s_c5b17028c8bc78::t_236cc41b25ba28 1-53
+skills/productivity/renovate-triage/scripts/validate-comment-body.js
+  s_3dadfe17f48e06::t_533181c89241a1 4-6,12-54,75
+  s_3dadfe17f48e06::t_0d96a08ca5eefa 76
+skills/productivity/renovate-triage/scripts/validate-comment-body.test.js
+  s_3dadfe17f48e06::t_8226ed42f3706d 59-83
+  s_3dadfe17f48e06::t_76f8e5fd15a7b8 9-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "73d3c338f7ac66de17fda05d7fd64242d275d54a",
+  "prompts": {},
+  "sessions": {
+    "s_3dadfe17f48e06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ede6549-54aa-4c1a-923c-e93010496ade",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    },
+    "s_a8155d57bb2c72": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "050a3aba-ba13-4109-9ba5-bebd725d7129",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    },
+    "s_c5b17028c8bc78": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50b8ddcc-d4b7-4674-be27-fdb938487294",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
