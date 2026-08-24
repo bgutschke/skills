@@ -28,6 +28,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Verify release notes render commit content
+        run: npm run verify:release-notes
+
       - name: Lint Markdown
         run: npm run lint:md
 
