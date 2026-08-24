@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/bgutschke/skills/compare/v1.6.0...v1.7.0) (2026-08-24)
+
+
+### Features
+
+* **renovate-triage:** add Opportunity scan alongside risk verdict ([64de8c9](https://github.com/bgutschke/skills/commit/64de8c9407faadb416587fbcc9f02e6455acda37)), closes [#69](https://github.com/bgutschke/skills/issues/69)
+
 # [1.6.0](https://github.com/bgutschke/skills/compare/v1.5.1...v1.6.0) (2026-08-24)
 
 
