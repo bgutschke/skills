@@ -1,0 +1,29 @@
+skills/productivity/renovate-triage/FIXTURES.md
+  s_7b2971fb23c711::t_bcd902b3b40ffa 61
+skills/productivity/renovate-triage/scripts/extract-upstream-repo.test.js
+  s_7b2971fb23c711::t_984bdce693f82c 56-64
+skills/productivity/renovate-triage/scripts/extract-upstream-repo-cli.js
+  s_7b2971fb23c711::t_572db4a8b87c31 28-35
+skills/productivity/renovate-triage/scripts/extract-upstream-repo.js
+  s_7b2971fb23c711::t_866684298a200f 4,9-11,15
+skills/productivity/renovate-triage/SKILL.md
+  s_7b2971fb23c711::t_b19fc85567bc97 380-387
+  s_7b2971fb23c711::t_8660949d2eb16f 452
+  s_7b2971fb23c711::t_9c049d8dcc585b 416-425
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "3d51bdea4221d9bfa4d6e833d574c0e6fa27fc25",
+  "prompts": {},
+  "sessions": {
+    "s_7b2971fb23c711": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4851cb18-9671-4351-bc28-84159c49e031",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
