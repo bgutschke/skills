@@ -1,0 +1,34 @@
+.claude/skills/audit-skills/SKILL.md
+  s_52c1dd9254c28a::t_ec79787c21a3ac 109-142,146-159
+  s_52c1dd9254c28a::t_dffb8198c40813 1-108,143-145
+CODING_STANDARDS.md
+  s_3b29163ba3abbc::t_50fcd2aa1446e8 44-49,52-53
+CONTEXT.md
+  s_3b29163ba3abbc::t_f582be4d5867a0 36-46
+docs/adr/0008-repo-maintenance-skills-stay-under-claude-skills.md
+  s_3b29163ba3abbc::t_14a95f6c4c5021 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "784f7086bb445cceabbe1285a7f91687e49b36dc",
+  "prompts": {},
+  "sessions": {
+    "s_3b29163ba3abbc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f0768968-ad6d-4374-86aa-1a8fcef9ecec",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    },
+    "s_52c1dd9254c28a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "73f7a9bb-2561-4fe5-8ff0-e65b9d15aa78",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
