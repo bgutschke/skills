@@ -1,0 +1,36 @@
+skills/productivity/renovate-triage/SKILL.md
+  s_e423e8d7e6cc26::t_2b73618cef2e2d 10-27
+  s_e423e8d7e6cc26::t_28c253c288a153 210-217,223
+  s_e423e8d7e6cc26::t_85b378d1914c5a 69
+  s_e423e8d7e6cc26::t_5a4aeced272585 196
+  s_e423e8d7e6cc26::t_6f57c840ff0c4e 1-9,28-49,51-68,70-86,88-93,95-195,197-209,218-222,224-232
+  s_e423e8d7e6cc26::t_9aaa80df38f601 94
+  s_e423e8d7e6cc26::t_1e100bb6247342 87
+  s_e423e8d7e6cc26::t_1a846adaae7af1 50
+docs/adr/0012-renovate-triage-risk-verdict-uses-hard-stops-not-a-score.md
+  s_e423e8d7e6cc26::t_33a9748440e007 1-52
+README.md
+  s_e423e8d7e6cc26::t_f7ed0758fa149d 43-45
+.claude-plugin/plugin.json
+  s_e423e8d7e6cc26::t_cc5af40150e56c 18-19
+CONTEXT.md
+  s_e423e8d7e6cc26::t_fbc3531655dda9 66-89
+skills/productivity/README.md
+  s_e423e8d7e6cc26::t_f321ddb343f79f 9-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "b21230bda0087d8dc27078df4f5cf0726832a11b",
+  "prompts": {},
+  "sessions": {
+    "s_e423e8d7e6cc26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fbd3c8f3-f1f6-4425-a276-d35e7b2d7f95",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
