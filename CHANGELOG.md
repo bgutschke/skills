@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/bgutschke/skills/compare/v1.4.6...v1.5.0) (2026-08-24)
+
+
+### Features
+
+* **productivity:** add renovate-triage skill ([814f56c](https://github.com/bgutschke/skills/commit/814f56c460d807f74c6988ffab927f161565f3ec)), closes [#63](https://github.com/bgutschke/skills/issues/63)
+
 ## [1.4.6](https://github.com/bgutschke/skills/compare/v1.4.5...v1.4.6) (2026-08-24)
 
 
