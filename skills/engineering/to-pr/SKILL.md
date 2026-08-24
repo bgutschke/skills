@@ -2,7 +2,7 @@
 name: to-pr
 disable-model-invocation: true
 argument-hint: "[<PR number or URL>] [--ready|--draft] [--base <branch>]"
-description: Open a new PR from the current branch (draft by default, title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch.
+description: User-invoked via /to-pr only, never auto-fired. Open a new PR from the current branch (draft by default, title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch.
 ---
 
 # to-pr
@@ -12,6 +12,12 @@ already open. Both paths compose the same way: ground every section in the actua
 and commit history, respect the target repo's own PR template structure, and never
 invent content. Neither path prompts for confirmation beyond the invocation itself —
 running `/to-pr` is the only authorization step, since it has exactly one user.
+
+## Dependencies
+
+Requires an authenticated `gh` CLI — every path shells out to it (`gh pr view`, `gh pr
+create`, `gh pr edit`, `gh api`, `gh repo view`). `git` and `base64` are also used but are
+ambient on any machine capable of running Claude Code, so they aren't listed here.
 
 ## When to use
 
@@ -237,9 +243,11 @@ one:
   `AGENTS.md`/`CLAUDE.md`) counts as a documented PR-title convention too, unless the
   repo's docs distinguish PR titles from commit messages explicitly.
 - **Inferred convention**, only if no documented one applies: `gh pr list --state merged
-  --base <resolved-base> --json title -L 20`. Fewer than 5 results: skip this tier
-  entirely — below 5 samples a shared prefix is as likely to be coincidence as
-  convention, so there's not enough history to call anything established. Otherwise
+  --base <resolved-base> --json title -L 30` — 30 matches `gh pr list`'s own default result
+  limit, so the sample size tracks the tool's natural page rather than an arbitrary number.
+  Fewer than 5 results: skip this tier entirely — below 5 samples a shared prefix is as
+  likely to be coincidence as convention, so there's not enough history to call anything
+  established. Otherwise
   compare the sampled titles across three dimensions *together*: a leading prefix format
   (Conventional-Commits `type(scope): `, a ticket bracket like `[ABC-123]`, an emoji, or
   none), the capitalization of the first word after any prefix, and the presence or
@@ -287,8 +295,8 @@ checking the inferred tier, the documented-convention check finds this repo's ow
 Conventional Commits rule in `CLAUDE.md` — so the documented tier applies and the
 inferred-tier query never runs. Confirming what that inferred tier *would* have found
 had no documented convention existed: `gh pr list --state merged --base main --json
-title -L 20` returned 9 merged PRs, 8 of which share the `type(scope): ` or `type: `
-prefix format, lowercase first word, and no trailing period (89%, above the 80% floor) —
+title -L 30` returned 30 merged PRs, 29 of which share the `type(scope): ` or `type: `
+prefix format, lowercase first word, and no trailing period (97%, above the 80% floor) —
 so on an undocumented repo this same branch would have landed in the inferred tier
 instead of the plain default, with the same result either way, since the first commit's
 subject already matches that shape verbatim. Because the documented tier's reformatting
