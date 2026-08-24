@@ -6,6 +6,10 @@ function bodyWithMarker(rest) {
   return `${MARKER}\n${rest}`;
 }
 
+function bodyWithOpportunities(sectionContent) {
+  return bodyWithMarker(`Verdict: safe\n\n### Opportunities\n\n${sectionContent}\n`);
+}
+
 describe('validateCommentBody', () => {
   it('accepts a well-formed safe-verdict body with no Agent brief', () => {
     const result = validateCommentBody(bodyWithMarker('Verdict: safe'), 'safe');
@@ -51,5 +55,30 @@ describe('validateCommentBody', () => {
     const result = validateCommentBody('Verdict: risky', 'risky');
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(1);
+  });
+
+  it('rejects a body with an Opportunities heading followed by banned boilerplate', () => {
+    const result = validateCommentBody(bodyWithOpportunities('No opportunities found.'), 'safe');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('Opportunities'))).toBe(true);
+  });
+
+  it('rejects a body with an Opportunities heading followed by no content', () => {
+    const result = validateCommentBody(bodyWithMarker('Verdict: safe\n\n### Opportunities\n'), 'safe');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('Opportunities'))).toBe(true);
+  });
+
+  it('accepts a body with a populated Opportunities section', () => {
+    const result = validateCommentBody(
+      bodyWithOpportunities('- New capability: `fetchBatch()` replaces this repo’s manual pagination loop.'),
+      'safe'
+    );
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
+  it('accepts a body with no Opportunities heading at all', () => {
+    const result = validateCommentBody(bodyWithMarker('Verdict: safe'), 'safe');
+    expect(result).toEqual({ valid: true, errors: [] });
   });
 });
