@@ -41,16 +41,16 @@ guidance, so it lives separately from this file's terse, in-house rules.
 
 Complete `AGENTS.md`'s "To add a skill" steps, then:
 
-- **Meet the required structure and style bar** in
-  [`docs/skill-writing-best-practices.md`](docs/skill-writing-best-practices.md) — when to
-  use it, when not to, a worked example, and a well-designed `description`.
+- **Run `audit-skills` against the new skill** — checks the required structure and style
+  bar from [`docs/skill-writing-best-practices.md`](docs/skill-writing-best-practices.md)
+  (when to use it, when not to, a worked example, a well-designed `description`) and this
+  file's own Self-containment rule (citations to files outside the skill's own directory
+  that assume this repo's layout) in one pass, replacing what used to be two separate
+  by-eye checks.
 - **Dry-run the skill** against a realistic sample task before committing. `validate
   --strict` only checks structural validity — frontmatter, file layout — not that the
-  skill actually does what it claims.
-- **Check for outside-bundle references** — scan for citations to files outside the
-  skill's own directory that assume this repo's layout (see Self-containment above). A dry
-  run won't catch this: a dead citation is inert prose, never dereferenced when the skill
-  actually runs.
+  skill actually does what it claims. `audit-skills` doesn't cover this either — it checks
+  the `SKILL.md` against the written bar, not whether the skill performs its task.
 - **Run `writing-for-agents` against the draft, or apply its concepts by hand if it isn't
   installed** — a real second pass over the actual text against that skill's concepts
   (context pointers, information hierarchy, leading words, pruning no-op sentences), not a

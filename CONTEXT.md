@@ -33,3 +33,14 @@ Two invocable units that could both plausibly fire for the same request, with no
 **Invocable unit**:
 A skill or an agent — anything with a `description` the model matches against to decide whether to fire automatically. The rules auditor's semantic-distinction check only compares invocable units that can be auto-invoked; a unit with `disable-model-invocation: true` (or an agent that only runs when named explicitly) is exempt from that check.
 *Avoid*: "skill" alone when an agent is equally in scope.
+
+### Skill compliance audit
+
+**Skill compliance bar**:
+The combined requirement set a `SKILL.md` must satisfy: `CODING_STANDARDS.md`'s house
+rules (required structure, self-containment, no emojis, no marketing language) plus
+`docs/skill-writing-best-practices.md`'s externally-sourced structure, naming, and
+description-design guidance. Checked live against both documents' current content, never
+against an embedded or duplicated copy.
+*Avoid*: "best practices" alone for this — that names only the externally-sourced half of
+the two documents.
