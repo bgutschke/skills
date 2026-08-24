@@ -116,7 +116,7 @@ never drift, unlike a worked example that names a real skill and reports its cur
 compliance as fact.
 
 Step 4's checklist sub-agent returned a topic-tagged checklist covering required
-structure, naming, description design, self-containment, and style. Step 5's two
+structure, naming, description design, self-containment, style, and sizing. Step 5's two
 parallel per-fixture sub-agents then checked each fixture against it:
 
 **`invoice-line-splitter`**
@@ -131,7 +131,7 @@ parallel per-fixture sub-agents then checked each fixture against it:
 4. Marketing/hype language in both the description ("our revolutionary,
    industry-leading parsing engine") and the body ("best-in-class... with unmatched
    accuracy") — `CODING_STANDARDS.md`, Style and content rules.
-5. Cites a decision record (`docs/adr/0002-my-team-chose-a-layered-parser-fallback.md`)
+5. Cites a decision record (`docs/adr/0042-my-team-chose-a-layered-parser-fallback.md`)
    from inside its own instructions, assuming a file outside its bundle exists —
    `CODING_STANDARDS.md`, Self-containment.
 
