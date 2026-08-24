@@ -1,0 +1,27 @@
+docs/skill-writing-best-practices.md
+  s_c6a084315c189a::t_64eef97ec997bd 232-235
+CONTEXT.md
+  s_c6a084315c189a::t_7417c65df4f2a1 58-65
+CODING_STANDARDS.md
+  s_c6a084315c189a::t_d37ab8c5118ba7 33-41
+docs/adr/0010-non-ambient-dependency-listing-convention.md
+  s_c6a084315c189a::t_583e5e89f7a8c0 1-41
+docs/adr/0011-no-voodoo-constants-covers-prose-embedded-constants.md
+  s_c6a084315c189a::t_1e1fbf657d4fff 1-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "0d932d60c76dc55587d34f8c2e5ffb7e56bb0956",
+  "prompts": {},
+  "sessions": {
+    "s_c6a084315c189a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d5dc7928-73c5-4dee-8477-246d4d72f649",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
