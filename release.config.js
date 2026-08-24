@@ -1,25 +1,8 @@
 module.exports = {
   branches: ['main'],
   plugins: [
-    ['@semantic-release/commit-analyzer', { preset: 'conventionalcommits' }],
-    ['@semantic-release/release-notes-generator', {
-      preset: 'conventionalcommits',
-      presetConfig: {
-        types: [
-          { type: 'feat', section: 'Features' },
-          { type: 'fix', section: 'Bug Fixes' },
-          { type: 'perf', section: 'Performance Improvements' },
-          { type: 'revert', section: 'Reverts' },
-          { type: 'docs', section: 'Documentation' },
-          { type: 'style', section: 'Styling' },
-          { type: 'refactor', section: 'Code Refactoring' },
-          { type: 'test', section: 'Tests' },
-          { type: 'build', section: 'Build System' },
-          { type: 'ci', section: 'Continuous Integration' },
-          { type: 'chore', section: 'Chores' },
-        ],
-      },
-    }],
+    ['@semantic-release/commit-analyzer', { preset: 'angular' }],
+    ['@semantic-release/release-notes-generator', { preset: 'angular' }],
     '@semantic-release/changelog',
     ['@semantic-release/npm', { npmPublish: false }],
     // Owns the `.claude-plugin/plugin.json` version bump directly, rather than pulling in

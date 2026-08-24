@@ -1,6 +1,14 @@
 ## [1.4.2](https://github.com/bgutschke/skills/compare/v1.4.1...v1.4.2) (2026-08-23)
 
+### Bug Fixes
+
+* **engineering:** justify to-pr title-inference thresholds ([f5ba4d8](https://github.com/bgutschke/skills/commit/f5ba4d8d7ac5b0eebcee8cd9061150ec38a5e4f3))
+
 ## [1.4.1](https://github.com/bgutschke/skills/compare/v1.4.0...v1.4.1) (2026-08-23)
+
+### Bug Fixes
+
+* **productivity:** remove repo-specific citations from audit-rules ([90b162d](https://github.com/bgutschke/skills/commit/90b162d94e209bd8447ac193a01b38242abf9991))
 
 ## 1.4.0 (2026-08-23)
 

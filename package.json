@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "jest",
+    "verify:release-notes": "node scripts/verify-release-notes.mjs",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "prepare": "husky"
   },
