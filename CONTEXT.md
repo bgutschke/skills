@@ -104,9 +104,71 @@ the language with the mechanism Renovate used to find it.
 A declarative bundle — where to look for a changelog or release notes, and how to search
 the codebase for usage sites — that evidence-gathering dispatches to once a PR's changed
 file has a resolved *Datasource*. One adapter per datasource, replacing a hardcoded
-evidence-gathering flow written out separately per ecosystem.
+evidence-gathering flow written out separately per ecosystem. For `docker`, one
+resolution can consult two repositories — see *Packaging repository* and *Upstream
+repository*.
 *Avoid*: assuming an adapter is itself a sub-agent — the term names the evidence-gathering
-strategy, not a claim about what process or context executes it.
+strategy, not a claim about what process or context executes it. Also avoid assuming one
+adapter run means one repository consulted.
+
+**Packaging repository**:
+For the `docker` datasource, the repository a Datasource adapter resolves directly from
+registry metadata (a GHCR package's linked repository, or a Docker Hub image's
+`source_url`). For a Docker Official Image this is reliably a repository maintaining the
+Dockerfile and build tooling, not the wrapped software's own project — its commit
+history speaks to build/packaging concerns only, and it may have no GitHub Releases or
+`CHANGELOG.md` at all.
+*Avoid*: treating this repository as authoritative for the wrapped software's own
+behavior changes — see *Upstream repository*.
+
+**Upstream repository**:
+For the `docker` datasource, the project whose software is packaged into the image —
+found by scanning the *Packaging repository*'s Dockerfile or version-pin files at the
+target tag for an embedded GitHub release/tag/tarball URL pointing at a different
+repository. When found, the adapter's GitHub-Releases-then-`CHANGELOG.md` lookup runs
+there too, supplementing rather than replacing the packaging repository's own lookup —
+each can independently carry breaking-change-relevant content (the packaging repository
+for the image's build/runtime interface, the upstream repository for the software's
+actual behavior). The major-bump *no changelog found anywhere* hard-stop requires both to
+come up empty, not just one. When the embedded-URL scan finds no candidate, or finds more
+than one with no way to tell which is authoritative, the adapter never guesses — it stays
+with packaging-repository-only evidence.
+*Avoid*: assuming every docker image has one — a GHCR image self-published by the
+software's own project typically has no separate upstream to find, since the packaging
+repository already is the upstream one.
+
+**Security advisory**:
+An explicit security disclosure found while gathering changelog evidence — an explicit
+CVE identifier, a GitHub Security Advisory ID, a "Security" heading, or explicit
+urgency/vulnerability language — always reported once found, with no call-site
+cross-reference against the consuming codebase's actual usage. Reported in its own
+comment section alongside but never merged into the *Risk verdict*, regardless of tier.
+Unlike *Opportunity*, both its widened fetch (every release between old and new,
+inclusive) and its reporting are unconditional, with no `--no-opportunities`-style
+opt-out — a security fix can hide inside any skipped intermediate version, and a
+heuristic usage check can produce a false negative for a vulnerability in baseline
+behavior (e.g. an RDB-loading RCE that applies regardless of which APIs a caller uses),
+so suppressing an urgent warning is a worse failure than one extra section on a PR that
+turns out not to touch the affected feature.
+*Avoid*: assuming this is cross-referenced against call sites the way an *Opportunity*
+is — that was considered and rejected specifically because urgency and merge-risk are
+different axes; letting a security disclosure change the verdict tier, or escalate it,
+is the same mistake in the other direction — *Risk verdict* answers "is this safe to
+merge," which a security fix usually already is.
+
+**Changelog found**:
+The result of a Datasource adapter's GitHub-Releases-then-`CHANGELOG.md` lookup order
+actually returning content — never a fallback to a raw compare/diff view between two
+tags, even when that's the only thing available (e.g. a repository with neither
+Releases nor a `CHANGELOG.md`). A compare view's commit messages aren't curated for
+user-facing disclosure the way release notes are — a repo can carry ten commits of
+build-tooling noise across a bump that, upstream, was actually a security release, with
+nothing in those commits saying so. When neither lookup tier returns content, the
+result is "no changelog found," identical to the case where no repository could be
+resolved at all.
+*Avoid*: treating a compare/diff URL as satisfying this term just because Renovate's own
+PR body links one as a fallback "Release Notes" section — Renovate's fallback and this
+skill's evidence bar are different concerns.
 
 **Opportunity**:
 A relevant capability change found while scanning a minor or major bump's full release
