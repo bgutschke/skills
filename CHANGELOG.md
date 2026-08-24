@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/bgutschke/skills/compare/v1.5.0...v1.5.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **renovate-triage:** correct audit-flagged compliance gaps ([8a54167](https://github.com/bgutschke/skills/commit/8a54167421f90b3e7860ede4f8c15860fcac50f2))
+
 # [1.5.0](https://github.com/bgutschke/skills/compare/v1.4.6...v1.5.0) (2026-08-24)
 
 
