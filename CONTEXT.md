@@ -63,3 +63,27 @@ running Claude Code (e.g. an authenticated `gh` CLI). Part of the Skill complian
 checked mechanically by `audit-skills`.
 *Avoid*: listing ambient tools (`git`, `base64`, and the rest of a standard shell) here —
 that's noise, not signal, and the convention deliberately excludes them.
+
+### Renovate PR triage
+
+**Risk verdict**:
+A Renovate PR's classification into one of three tiers — `safe`, `needs-review`, or
+`blocked` — computed by a fixed hard-stop rule list (an explicit breaking-change
+callout, a failing CI check, or a major bump with no changelog found anywhere, each
+alone forcing `blocked`) with a bump-size baseline underneath, rather than a weighted
+score. Blast radius (how widely the dependency is used in the consuming codebase) and
+CI-pending status can each escalate the baseline by one tier; dev-only vs. production
+placement is reported as context but never changes the verdict — both are escalated
+identically.
+*Avoid*: a binary safe/not-safe split — it collapses "changelog silent on breaking
+changes" and "changelog explicitly warns of breaking changes" into one bucket, losing a
+real confidence distinction. Also avoid a weighted/scored model — the hard-stop shape
+was chosen specifically so every verdict traces to one named reason.
+
+**Agent brief**:
+A `blocked`-verdict's handoff content, written into the same PR comment as the risk
+verdict rather than a separate artifact. Addressed to an agent continuing the
+investigation, not a human skimming for discretion — concrete starting points: which
+call sites to inspect, which changelog or migration-guide sections to read.
+*Avoid*: attaching this to `needs-review` — that tier means a human should glance and
+decide, not that information is missing.
