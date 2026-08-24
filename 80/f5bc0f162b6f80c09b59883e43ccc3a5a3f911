@@ -1,0 +1,30 @@
+docs/adr/0012-renovate-triage-risk-verdict-uses-hard-stops-not-a-score.md
+  s_e423e8d7e6cc26::t_33a9748440e007 1-52
+README.md
+  s_e423e8d7e6cc26::t_3ee2e883ecba3c 43-45
+skills/productivity/renovate-triage/SKILL.md
+  s_e423e8d7e6cc26::t_6f57c840ff0c4e 1-187,189-224
+  s_e423e8d7e6cc26::t_5a4aeced272585 188
+skills/productivity/README.md
+  s_e423e8d7e6cc26::t_62036ac88c1861 9-10
+.claude-plugin/plugin.json
+  s_e423e8d7e6cc26::t_cc5af40150e56c 18-19
+CONTEXT.md
+  s_e423e8d7e6cc26::t_fbc3531655dda9 66-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "80f5bc0f162b6f80c09b59883e43ccc3a5a3f911",
+  "prompts": {},
+  "sessions": {
+    "s_e423e8d7e6cc26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fbd3c8f3-f1f6-4425-a276-d35e7b2d7f95",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
