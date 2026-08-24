@@ -1,0 +1,44 @@
+skills/productivity/renovate-triage/scripts/validate-comment-body-cli.js
+  s_2746b6c9fe942c::t_762f6ed1652e69 11-18
+  s_2746b6c9fe942c::t_e6913b1380ef6b 1-10,19-24
+skills/productivity/renovate-triage/scripts/classify-bump-size.test.js
+  s_2746b6c9fe942c::t_82cd28aa7f9221 1-23
+skills/productivity/renovate-triage/scripts/compute-verdict.test.js
+  s_2746b6c9fe942c::t_4bfc1cbb9e06fa 1,59-64
+  s_2746b6c9fe942c::t_845cb5b3bbd3f5 2-58,65-66
+skills/productivity/renovate-triage/scripts/compute-verdict-cli.js
+  s_2746b6c9fe942c::t_9f7b9a471f3c0c 1,4,8-18,20-22,28-39
+  s_2746b6c9fe942c::t_ccba764e538422 2-3,5-7,19,23-27
+skills/productivity/renovate-triage/scripts/validate-comment-body.js
+  s_2746b6c9fe942c::t_1ac3b70bb0108e 1-32
+skills/productivity/renovate-triage/scripts/compute-verdict.js
+  s_2746b6c9fe942c::t_faea809d1e4e6b 32-34,37
+  s_2746b6c9fe942c::t_2633d018543f39 1-31,35-36
+skills/productivity/renovate-triage/scripts/validate-comment-body.test.js
+  s_2746b6c9fe942c::t_7ddfee7dd6e6ec 1-55
+skills/productivity/renovate-triage/SKILL.md
+  s_2746b6c9fe942c::t_8003dfcd7d6369 32-37
+  s_2746b6c9fe942c::t_021f03c58a0553 91
+  s_2746b6c9fe942c::t_e50de76ce221ba 167-168,175-176,188-191,193-212,216,218-221
+  s_2746b6c9fe942c::t_068a6aaa4bd8e9 242,244-245
+  s_2746b6c9fe942c::t_f6a3f805777114 249
+  s_2746b6c9fe942c::t_61227bf6a4287d 97-98,103,110,114,116-119,128,133-163
+skills/productivity/renovate-triage/scripts/classify-bump-size.js
+  s_2746b6c9fe942c::t_9537cabab9a8a2 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "c85235f19a37e14d07d1d80519ee14d628b5eaca",
+  "prompts": {},
+  "sessions": {
+    "s_2746b6c9fe942c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2473f3b3-232d-42af-b2d9-998af102aa3c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
