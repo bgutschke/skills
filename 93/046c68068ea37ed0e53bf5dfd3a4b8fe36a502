@@ -1,0 +1,74 @@
+skills/productivity/renovate-triage/SKILL.md
+  s_72a3fb08433951::t_b05612fd81ded4 352-354
+  s_72a3fb08433951::t_05a3c5205ab5b4 315
+  s_72a3fb08433951::t_5d8497dee8ea96 298-303
+  s_72a3fb08433951::t_d2641dc4a647e7 273-274
+  s_72a3fb08433951::t_9b47d13c84e0e3 369-370
+  s_72a3fb08433951::t_bdd24a4ab3c96f 317-318
+  s_72a3fb08433951::t_6e082ec15ccb6f 208-233,261-272,275-278,280-297,306-314
+skills/productivity/renovate-triage/scripts/extract-release-notes-from-pr-body-cli.js
+  s_72a3fb08433951::t_e4e922307ec095 1-38
+skills/productivity/renovate-triage/FIXTURES.md
+  s_72a3fb08433951::t_420884b9b54dc6 6-16
+  s_72a3fb08433951::t_b74ace580c9b70 40-41,44-45
+  s_72a3fb08433951::t_ea2378129c1e25 42-43
+  s_72a3fb08433951::t_bb156b58480c20 91-108,110-111
+  s_72a3fb08433951::t_fa867c14acadca 109
+  s_72a3fb08433951::t_56ca7617eb1370 112-113
+  s_72a3fb08433951::t_7f1ce3bac4f204 47
+  s_72a3fb08433951::t_3bcb6ed642e2c7 46
+skills/productivity/renovate-triage/scripts/extract-release-notes-from-pr-body.test.js
+  s_72a3fb08433951::t_2d087c0722e104 47-65
+  s_72a3fb08433951::t_24a58c6c2e87a4 101-130
+  s_72a3fb08433951::t_17eb8e3c21c905 1-27,131
+  s_72a3fb08433951::t_ed276db9d5bc7b 28-46
+  s_72a3fb08433951::t_46b3aeb49267ff 66-100
+CONTEXT.md
+  s_6b752697b3c4c2::t_a62c2a7db4d938 130-139,141,144-145
+  s_6b752697b3c4c2::t_ff24bd62270ba6 142-143
+  s_6b752697b3c4c2::t_99806c706e0dc5 184-191,194-201
+docs/adr/0019-renovate-triage-accepts-pr-body-release-notes-as-changelog.md
+  s_6b752697b3c4c2::t_34ed8d4e5a8195 44-47,63-65,70-71
+  s_6b752697b3c4c2::t_12a72dec65a02e 1-43,48-62,66-69,72-76
+skills/productivity/renovate-triage/scripts/extract-oci-source-label.test.js
+  s_72a3fb08433951::t_b881f11398255e 1-8,49
+  s_72a3fb08433951::t_70167a0fdd0d10 15-26
+  s_72a3fb08433951::t_bb4ca205031caf 9-14
+  s_72a3fb08433951::t_6a36c9da34b39d 27-37
+  s_72a3fb08433951::t_da48a24c45c800 38-48
+skills/productivity/renovate-triage/scripts/extract-release-notes-from-pr-body.js
+  s_72a3fb08433951::t_a69b1427d503a0 2,5-10
+  s_72a3fb08433951::t_0dc0ef1c6d5592 1,3-4,11-16,18-29
+  s_72a3fb08433951::t_5840dd4f11d774 17
+skills/productivity/renovate-triage/scripts/extract-oci-source-label-cli.js
+  s_72a3fb08433951::t_c613151fefb66a 1-34
+skills/productivity/renovate-triage/scripts/extract-oci-source-label.js
+  s_72a3fb08433951::t_ca708f5ae5cbb8 1,6-8
+  s_72a3fb08433951::t_b9856e41866851 4
+  s_72a3fb08433951::t_e7adae531dff45 2-3
+  s_72a3fb08433951::t_f7a6e4a91f3ed2 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "93046c68068ea37ed0e53bf5dfd3a4b8fe36a502",
+  "prompts": {},
+  "sessions": {
+    "s_6b752697b3c4c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "44241a73-dc43-4c94-9106-0f81b0d973e2",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    },
+    "s_72a3fb08433951": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3c59183b-c275-44e6-932e-fdf066383586",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
