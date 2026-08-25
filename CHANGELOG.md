@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/bgutschke/skills/compare/v1.8.0...v1.9.0) (2026-08-25)
+
+
+### Features
+
+* **renovate-triage:** add PR comment skeleton file ([4013ed6](https://github.com/bgutschke/skills/commit/4013ed647cb9ad39138fd62430f90d06963bd0b3)), closes [#74](https://github.com/bgutschke/skills/issues/74)
+
 # [1.8.0](https://github.com/bgutschke/skills/compare/v1.7.1...v1.8.0) (2026-08-25)
 
 
