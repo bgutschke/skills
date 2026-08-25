@@ -486,7 +486,7 @@ are identical regardless of datasource.
     comments for the marker: `gh api repos/<owner>/<repo>/issues/<number>/comments
     --jq '.[] | select(.body | contains("renovate-triage:verdict")) | .id'`. If a match
     exists, update it in place — `gh api -X PATCH
-    repos/<owner>/<repo>/issues/comments/<id> -f body=@<file>` — rather than posting a
+    repos/<owner>/<repo>/issues/comments/<id> -F body=@<file>` — rather than posting a
     second one. If no match exists, create it — `gh pr comment <number> --body-file
     <file>`. Invoking the skill is sufficient authorization to write or update every
     comment touched in the run; there is no separate per-PR confirmation prompt beyond
