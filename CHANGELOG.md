@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/bgutschke/skills/compare/v1.9.0...v1.10.0) (2026-08-25)
+
+
+### Features
+
+* **renovate-triage:** add OCI-label and PR-body changelog leads ([45a5232](https://github.com/bgutschke/skills/commit/45a52324ad94054b3853a50e1ba029fb264ff1e7)), closes [#78](https://github.com/bgutschke/skills/issues/78)
+
 # [1.9.0](https://github.com/bgutschke/skills/compare/v1.8.0...v1.9.0) (2026-08-25)
 
 
