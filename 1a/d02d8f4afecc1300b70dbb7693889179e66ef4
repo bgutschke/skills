@@ -1,0 +1,19 @@
+.github/PULL_REQUEST_TEMPLATE.md
+  s_da7ec1bf9bd9d3::t_9ce73ecbdaae80 3-4,7-8,10-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1ad02d8f4afecc1300b70dbb7693889179e66ef4",
+  "prompts": {},
+  "sessions": {
+    "s_da7ec1bf9bd9d3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1001bd2-2d82-4765-a6f1-31f80f8bf18f",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
