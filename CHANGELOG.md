@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/bgutschke/skills/compare/v1.10.0...v1.10.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **renovate-triage:** use -F not -f for gh api body file read ([91ae043](https://github.com/bgutschke/skills/commit/91ae0433f2e2968bbe6041c753a8870f3dad114d))
+
 # [1.10.0](https://github.com/bgutschke/skills/compare/v1.9.0...v1.10.0) (2026-08-25)
 
 
