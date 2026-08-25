@@ -408,33 +408,32 @@ are identical regardless of datasource.
 
 ## Posting the comment
 
-20. Compose one comment body per PR: an HTML-comment marker (`<!--
-    renovate-triage:verdict -->`, used for the validation gate below and the
-    idempotency check in step 22, never shown in the rendered comment) followed by the
-    verdict (with the per-dependency breakdown from step 18 for a grouped PR), the
-    one-line reason each tier or hard-stop fired, each dependency's production/dev-only
-    placement as context, the Agent brief section when step 19 produced one, and — kept
-    in its own "Opportunities" section, separate from both the verdict and the Agent
-    brief — each dependency's findings from step 16, omitted entirely (no placeholder
-    line) for a dependency step 16 produced nothing for. Each dependency's Security
-    advisory finding from step 15, when present, must also be made available to render,
-    reported alongside but never merged into the verdict or the Agent brief — the same
-    placement principle Opportunities already follow — but its exact heading text,
-    placement relative to other sections, and per-dependency subsection shape are
-    settled by whatever comment-composition convention is current at implementation
-    time, not fixed here.
+20. Compose one comment body per PR following the literal shape in
+    `${CLAUDE_SKILL_DIR}/COMMENT-SKELETON.md` — copy that file's structure rather than
+    re-deriving the comment's shape from prose. It fixes the section order (marker, tier
+    line, per-dependency breakdown, Security advisories, Agent brief, Opportunities) and
+    the table-vs-prose choice for the per-dependency breakdown; this flow feeds it the
+    marker string (`<!-- renovate-triage:verdict -->`, used for the validation gate below
+    and the idempotency check in step 22, never shown in the rendered comment), the tier
+    line's reason from step 17, step 18's per-dependency rollup (including each
+    dependency's production/dev-only placement), step 19's Agent brief section when one
+    was produced, each dependency's Security advisory finding from step 15 when present,
+    and — kept in its own "Opportunities" section, separate from both the verdict and the
+    Agent brief — each dependency's findings from step 16, omitted entirely (no
+    placeholder line) for a dependency step 16 produced nothing for.
 21. Before any comment write executes for this run, validate every composed body: run
     `node ${CLAUDE_SKILL_DIR}/scripts/validate-comment-body-cli.js <verdict>
     <body-file>` for each PR's body from step 20. **Execute this script directly for
     every PR in the batch before posting any of them — it is the machine-checkable gate
     for the whole run, not a manual double-check.** It confirms the verdict is one of
-    the three valid tiers, the idempotency marker appears exactly once, an Agent brief
-    section is present if and only if the verdict is `blocked`, and any "Opportunities"
-    heading in the body is followed by real content rather than an empty section or
-    boilerplate empty-state text. A PR whose body fails validation is skipped for
-    posting — report it in step 23 alongside the reason validation gave, rather than
-    letting a malformed comment reach a real PR — while every other PR in the batch
-    still proceeds.
+    the three valid tiers, the idempotency marker appears exactly once, the tier line's
+    label matches the computed verdict, an Agent brief section is present if and only if
+    the verdict is `blocked` and — when present — its body is fenced in a ` ```text `
+    block, and any "Opportunities" heading in the body is followed by real content
+    rather than an empty section or boilerplate empty-state text. A PR whose body fails
+    validation is skipped for posting — report it in step 23 alongside the reason
+    validation gave, rather than letting a malformed comment reach a real PR — while
+    every other PR in the batch still proceeds.
 22. For every PR whose body passed step 21's validation: search the PR's existing
     comments for the marker: `gh api repos/<owner>/<repo>/issues/<number>/comments
     --jq '.[] | select(.body | contains("renovate-triage:verdict")) | .id'`. If a match

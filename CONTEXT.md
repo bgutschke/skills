@@ -88,6 +88,20 @@ call sites to inspect, which changelog or migration-guide sections to read.
 *Avoid*: attaching this to `needs-review` — that tier means a human should glance and
 decide, not that information is missing.
 
+**Comment skeleton**:
+The literal, section-by-section shape of the one PR comment `renovate-triage` posts per
+PR (`renovate-triage/COMMENT-SKELETON.md`) — marker, tier line, per-dependency
+breakdown, Security advisories, Agent brief, Opportunities, in a fixed order — copied
+structurally on every run rather than re-derived from prose each time, the same
+reference-by-file mechanism `pr-readiness`'s own report-skeleton file uses for its PR
+comment. `scripts/validate-comment-body.js` mechanically enforces the parts of this
+shape it can check (the marker, the tier line's label, the Agent brief's fence, the
+Opportunities section's non-emptiness); section order and the table-vs-prose choice
+aren't machine-checked, and rely on the skeleton file being followed by hand.
+*Avoid*: calling this a "report skeleton" the way `pr-readiness` names its own file —
+this section already calls the artifact "the same PR comment," never "report," so this
+term should stay consistent with that.
+
 **Datasource**:
 Renovate's own name for a dependency's versioning source and lookup mechanism — `npm`,
 `docker`, `pypi`, `ansible-galaxy`, `github-releases`, and others. A built-in manager

@@ -4,6 +4,9 @@ const AGENT_BRIEF_HEADING = 'Agent brief';
 const OPPORTUNITIES_HEADING = 'Opportunities';
 const HEADING_LINE_PATTERN = /^#{1,6}\s+.*$/gm;
 const BANNED_EMPTY_OPPORTUNITY_PHRASES = ['no opportunities found', 'none found', 'no opportunities', 'nothing found'];
+const TIER_LABEL = { safe: 'SAFE', 'needs-review': 'NEEDS-REVIEW', blocked: 'BLOCKED' };
+const TIER_LINE_PATTERN = new RegExp(`^(${Object.values(TIER_LABEL).join('|')})\\s+—`, 'm');
+const AGENT_BRIEF_FENCE_PATTERN = /^```text\n[\s\S]*\n```$/;
 
 function countOccurrences(haystack, needle) {
   return haystack.split(needle).length - 1;
@@ -17,6 +20,18 @@ function findHeadingLines(body) {
     headings.push({ index: match.index, text: match[0] });
   }
   return headings;
+}
+
+function headingLevel(headingText) {
+  return headingText.match(/^#+/)[0].length;
+}
+
+function findSectionEnd(body, headings, i) {
+  const level = headingLevel(headings[i].text);
+  for (let j = i + 1; j < headings.length; j += 1) {
+    if (headingLevel(headings[j].text) <= level) return headings[j].index;
+  }
+  return body.length;
 }
 
 function normalizeForBannedPhraseMatch(text) {
@@ -35,8 +50,7 @@ function validateOpportunitiesSections(body) {
     if (!heading.text.includes(OPPORTUNITIES_HEADING)) return;
 
     const sectionStart = heading.index + heading.text.length;
-    const sectionEnd = i + 1 < headings.length ? headings[i + 1].index : body.length;
-    const content = body.slice(sectionStart, sectionEnd).trim();
+    const content = body.slice(sectionStart, findSectionEnd(body, headings, i)).trim();
     const label = heading.text.replace(/^#+\s*/, '').trim();
 
     if (!content) {
@@ -46,6 +60,35 @@ function validateOpportunitiesSections(body) {
 
     if (BANNED_EMPTY_OPPORTUNITY_PHRASES.includes(normalizeForBannedPhraseMatch(content))) {
       errors.push(`Opportunities section "${label}" must not use an empty-state placeholder — omit the section entirely instead`);
+    }
+  });
+
+  return errors;
+}
+
+function validateTierLineLabel(body, verdict) {
+  const match = body.match(TIER_LINE_PATTERN);
+  if (!match) return [];
+
+  const label = match[1];
+  if (label !== TIER_LABEL[verdict]) {
+    return [`tier line label "${label}" does not match the expected label for verdict "${verdict}"`];
+  }
+  return [];
+}
+
+function validateAgentBriefFence(body) {
+  const errors = [];
+  const headings = findHeadingLines(body);
+
+  headings.forEach((heading, i) => {
+    if (!heading.text.includes(AGENT_BRIEF_HEADING)) return;
+
+    const sectionStart = heading.index + heading.text.length;
+    const content = body.slice(sectionStart, findSectionEnd(body, headings, i)).trim();
+
+    if (!AGENT_BRIEF_FENCE_PATTERN.test(content)) {
+      errors.push('an Agent brief section must fence its body in a ```text block');
     }
   });
 
@@ -73,6 +116,8 @@ function validateCommentBody(body, verdict) {
   }
 
   errors.push(...validateOpportunitiesSections(body));
+  errors.push(...validateTierLineLabel(body, verdict));
+  errors.push(...validateAgentBriefFence(body));
 
   return { valid: errors.length === 0, errors };
 }

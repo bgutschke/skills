@@ -1,6 +1,8 @@
 const { validateCommentBody, MARKER, VALID_VERDICTS } = require('./validate-comment-body');
 
-const AGENT_BRIEF = '## Agent brief\n\nInspect these call sites.';
+const AGENT_BRIEF = '## Agent brief\n\n```text\nInspect these call sites.\n```';
+const UNFENCED_AGENT_BRIEF = '## Agent brief\n\nInspect these call sites.';
+const TIER_LABEL = { safe: 'SAFE', 'needs-review': 'NEEDS-REVIEW', blocked: 'BLOCKED' };
 
 function bodyWithMarker(rest) {
   return `${MARKER}\n${rest}`;
@@ -8,6 +10,10 @@ function bodyWithMarker(rest) {
 
 function bodyWithOpportunities(sectionContent) {
   return bodyWithMarker(`Verdict: safe\n\n### Opportunities\n\n${sectionContent}\n`);
+}
+
+function bodyWithTierLine(label, rest = '') {
+  return bodyWithMarker(`${label} — some reason${rest}`);
 }
 
 describe('validateCommentBody', () => {
@@ -77,8 +83,48 @@ describe('validateCommentBody', () => {
     expect(result).toEqual({ valid: true, errors: [] });
   });
 
+  it('accepts a body with an Opportunities heading containing one ### subsection per dependency', () => {
+    const result = validateCommentBody(
+      bodyWithMarker(
+        'Verdict: safe\n\n## Opportunities\n\n### widget-cli\n\nNew `--dry-run` flag.\n\n### widget-server\n\nDeprecates `.get()`.\n'
+      ),
+      'safe'
+    );
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
   it('accepts a body with no Opportunities heading at all', () => {
     const result = validateCommentBody(bodyWithMarker('Verdict: safe'), 'safe');
     expect(result).toEqual({ valid: true, errors: [] });
+  });
+
+  it.each(Object.entries(TIER_LABEL))('accepts a tier line whose label matches the %s verdict', (verdict, label) => {
+    const body = verdict === 'blocked' ? bodyWithTierLine(label, `\n\n${AGENT_BRIEF}`) : bodyWithTierLine(label);
+    const result = validateCommentBody(body, verdict);
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
+  it('rejects a tier line whose label does not match the verdict', () => {
+    const result = validateCommentBody(bodyWithTierLine(TIER_LABEL.safe), 'blocked');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('tier line'))).toBe(true);
+  });
+
+  it('accepts an Agent brief heading followed by a fenced ```text block', () => {
+    const result = validateCommentBody(bodyWithMarker(`Verdict: blocked\n\n${AGENT_BRIEF}`), 'blocked');
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
+  it('rejects an Agent brief heading followed by unfenced prose', () => {
+    const result = validateCommentBody(bodyWithMarker(`Verdict: blocked\n\n${UNFENCED_AGENT_BRIEF}`), 'blocked');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes('fence'))).toBe(true);
+  });
+
+  it('reports both an old and a new violated check at once', () => {
+    const result = validateCommentBody(bodyWithTierLine(TIER_LABEL.safe), 'risky');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes(VALID_VERDICTS.join(', ')))).toBe(true);
+    expect(result.errors.some((e) => e.includes('tier line'))).toBe(true);
   });
 });
