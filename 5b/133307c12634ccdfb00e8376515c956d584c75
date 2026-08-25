@@ -1,0 +1,39 @@
+CONTEXT.md
+  s_014f847286c2ea::t_bbf5c00807c56a 98
+skills/productivity/renovate-triage/scripts/validate-comment-body.test.js
+  s_014f847286c2ea::t_25d4ac3f3fcd7b 101-102,107-108
+  s_014f847286c2ea::t_81502314c92b7e 5,15-16
+  s_014f847286c2ea::t_8a9833382b79c2 125
+skills/productivity/renovate-triage/SKILL.md
+  s_014f847286c2ea::t_793b9a1af2e8df 430
+skills/productivity/renovate-triage/scripts/validate-comment-body.js
+  s_014f847286c2ea::t_314161d95a9061 7-8
+  s_014f847286c2ea::t_261caa0a247199 69,73-75
+  s_014f847286c2ea::t_5847ae98df9bdf 119
+docs/adr/0018-renovate-triage-comment-skeleton-file.md
+  s_014f847286c2ea::t_83619ff4aa4393 8-15
+  s_014f847286c2ea::t_fdd1417e79846b 23
+  s_014f847286c2ea::t_e205ffc6c6954d 80,82
+  s_014f847286c2ea::t_c19c5efe8cd0c7 55
+  s_014f847286c2ea::t_9d1ee84d07a9f8 35-44
+skills/productivity/renovate-triage/COMMENT-SKELETON.md
+  s_014f847286c2ea::t_467e8a2d7107cf 30,33-36
+  s_014f847286c2ea::t_95fbbb573243dc 55-57
+  s_014f847286c2ea::t_82c4779718ad4f 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "5b133307c12634ccdfb00e8376515c956d584c75",
+  "prompts": {},
+  "sessions": {
+    "s_014f847286c2ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fef348e7-a56c-4902-89dc-2dbb628f7f29",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
