@@ -205,12 +205,32 @@ are identical regardless of datasource.
       tag, read from the same repository.
     - **docker**: a packaging repository from registry-published metadata only, never
       guessed from the image name (`pihole/pihole`'s real source is
-      `pi-hole/docker-pi-hole`, not a same-named repo) — a GHCR image's linked
-      repository (`gh api orgs/<org>/packages/container/<image>`, its `repository`
-      field), or a Docker Hub image's `source_url` field (`curl -s
-      https://hub.docker.com/v2/repositories/<namespace>/<image>/`). Once this packaging
-      repository is found, run the same GitHub-Releases-then-`CHANGELOG.md` order as
-      npm's (a)/(b) against it.
+      `pi-hole/docker-pi-hole`, not a same-named repo), tried in this order, stopping at
+      the first hit:
+      1. The image manifest's own OCI config labels — fetched from the registry API
+         directly, regardless of which registry hosts the image: an anonymous bearer
+         token (`curl -s
+         "https://auth.docker.io/token?service=registry.docker.io&scope=repository:<namespace>/<image>:pull"`),
+         the manifest list for the target tag, the platform-specific manifest it points
+         to, and finally that manifest's config blob, whose JSON body carries a
+         `config.Labels` object. Write that `Labels` object to a file and run `node
+         ${CLAUDE_SKILL_DIR}/scripts/extract-oci-source-label-cli.js --labels-file
+         <path>`. **Execute this script directly — it deterministically checks
+         `org.opencontainers.image.source`, then `.url`, and parses an `owner/repo` pair
+         out of a `github.com` URL, never guessed by hand from either label's raw text.**
+         A `found` result names the packaging repository. A `none` result (neither
+         label present, or the present label points at a non-`github.com` host) falls
+         through to the next tier.
+      2. The existing registry field, kept as a cheap secondary check since it's
+         occasionally still populated even when OCI labels are absent — a GHCR image's
+         linked repository (`gh api orgs/<org>/packages/container/<image>`, its
+         `repository` field), or a Docker Hub image's `source_url` field (`curl -s
+         https://hub.docker.com/v2/repositories/<namespace>/<image>/`) — the latter a
+         relic of Docker Hub's old "automated builds" linking feature, empty for
+         ordinary Docker Hub images in practice, not just edge cases.
+
+      Once a packaging repository is found via either tier above, run the same
+      GitHub-Releases-then-`CHANGELOG.md` order as npm's (a)/(b) against it.
 
       Always also look for a second, upstream repository, supplementing rather than
       replacing the packaging-repository lookup above: fetch the packaging repository's
@@ -238,37 +258,64 @@ are identical regardless of datasource.
       Never a guess from the namespace or collection name. Once found, the same
       GitHub-Releases-then-`CHANGELOG.md` order.
 
-    "No changelog or release notes found anywhere" (relevant to the major-bump hard-stop
-    below) means the adapter's lookup — including its own registry-metadata step for
-    docker/pypi/ansible-galaxy — came back empty at every stage; for docker
-    specifically, this means both the packaging-tier lookup and, when an upstream
-    repository was found, the upstream-tier lookup, came back empty. A `none` or
-    `ambiguous` upstream-extraction result means only the packaging tier's own emptiness
-    matters — the upstream tier contributes nothing to this determination. A raw
-    compare/diff view between two tags never counts as a changelog found, at either
-    tier, for any datasource — only an actual GitHub Release or `CHANGELOG.md` section
-    does.
+    **For every datasource, as a final tier**, tried only after every registry-metadata
+    lookup above for that datasource has come back empty (for docker: both the
+    packaging-repo tier and, when a candidate was found, the upstream-repo tier): check
+    Renovate's own PR-body "Release Notes" section for this dependency, using the body
+    text steps 1–2 already fetched (`gh pr view --json body`) — no extra fetch. Write
+    that body to a file and run `node
+    ${CLAUDE_SKILL_DIR}/scripts/extract-release-notes-from-pr-body-cli.js --body-file
+    <path> --dependency <name>`. **Execute this script directly — it deterministically
+    locates this dependency's own Release Notes section (never another dependency's, on
+    a grouped PR) and classifies it, never re-derived by hand.** A `found` result's text
+    satisfies the "changelog found" check below and feeds the breaking-change-callout
+    scan (step 12) exactly like any other tier's text — but never the Security advisory
+    scan (step 15) or the Opportunity scan (step 16) — see the "combined text" paragraph
+    below. A `compare-link-only` result (the section's only content is a bare Compare
+    Source link, no itemized entries) or an `absent` result (no section for this
+    dependency at all) contributes nothing — the adapter's own registry-metadata tiers'
+    emptiness still stands.
 
-    Whenever more than one tier returns content (docker's packaging and upstream tiers
-    both resolving a changelog), every downstream scan — the breaking-change-callout
-    scan (step 12), the Security advisory scan (step 15), and the Opportunity scan (step
-    16) — reads the combined text of every tier that returned content, not just
-    whichever tier resolved first; each tier can independently carry relevant content
-    (the packaging repository for the image's build/runtime interface, the upstream
-    repository for the software's actual behavior).
+    "No changelog or release notes found anywhere" (relevant to the major-bump hard-stop
+    below) means every tier for that datasource — including this PR-body fallback —
+    came back empty at every stage; for docker specifically, this means the
+    packaging-tier lookup, the upstream-tier lookup (when a candidate was found), and
+    the PR-body fallback all came back empty. A `none` or `ambiguous` upstream-extraction
+    result means only the packaging tier's own emptiness matters — the upstream tier
+    contributes nothing to this determination. A raw compare/diff view between two tags
+    never counts as a changelog found, at any tier, for any datasource — including when
+    that bare link is the only thing the PR-body fallback's own section offers — only an
+    actual GitHub Release, a `CHANGELOG.md` section, or the PR body's own genuine
+    itemized Release Notes content does.
+
+    Whenever more than one registry-metadata tier returns content (docker's packaging
+    and upstream tiers both resolving a changelog), every downstream scan — the
+    breaking-change-callout scan (step 12), the Security advisory scan (step 15), and
+    the Opportunity scan (step 16) — reads the combined text of every such tier that
+    returned content, not just whichever tier resolved first; each tier can
+    independently carry relevant content (the packaging repository for the image's
+    build/runtime interface, the upstream repository for the software's actual
+    behavior). The PR-body fallback's text feeds only the "changelog found" check above
+    and step 12's breaking-change-callout scan — never the Security advisory scan (step
+    15) or the Opportunity scan (step 16), since Renovate truncates a very large
+    changelog when rendering the PR body, so it can't be assumed to enumerate every
+    intermediate version the way a direct range-fetch can; the fallback exists only to
+    answer "changelog found," never to supply the range those two scans require.
 
     The full old→new release range is always fetched once a source is found via the
-    fixed order above (at either docker tier), for every bump size and regardless of
-    `--no-opportunities` — GitHub Releases already return every release, so keep every
-    entry whose tag falls in the old→new range instead of only the latest; for
-    `CHANGELOG.md`, read every dated or versioned section between the old and new
-    version headings, not just the top one. This full range is what the unconditional
-    Security advisory scan (step 15) reads. Step 16's Opportunity scan still only reads
-    this same range for a minor or major bump when `--no-opportunities` wasn't passed —
-    nothing about Opportunity's own trigger condition changes, only the fact that the
-    range it reads is no longer fetched conditionally on its behalf alone.
+    fixed registry-metadata order above (at either docker tier), for every bump size and
+    regardless of `--no-opportunities` — GitHub Releases already return every release,
+    so keep every entry whose tag falls in the old→new range instead of only the
+    latest; for `CHANGELOG.md`, read every dated or versioned section between the old
+    and new version headings, not just the top one. This full range is what the
+    unconditional Security advisory scan (step 15) reads. Step 16's Opportunity scan
+    still only reads this same range for a minor or major bump when
+    `--no-opportunities` wasn't passed — nothing about Opportunity's own trigger
+    condition changes, only the fact that the range it reads is no longer fetched
+    conditionally on its behalf alone.
 12. If any changelog or release notes text was found in step 11 (the combined text of
-    every tier that returned content, for docker), scan it for an explicit
+    every tier that returned content, for docker, plus the PR-body fallback's text when
+    it resolved `found`), scan it for an explicit
     breaking-change callout (a "Breaking Changes" heading, or prose stating a breaking
     change) and judge whether it's actually relevant to this codebase's usage — cross-
     reference the callout's described change (a removed export, a changed function
@@ -302,8 +349,9 @@ are identical regardless of datasource.
 ## Running the Security advisory scan
 
 15. For every dependency, regardless of bump size and regardless of
-    `--no-opportunities`: write the combined changelog text gathered in step 11 to a
-    file and run `node ${CLAUDE_SKILL_DIR}/scripts/detect-security-advisory-cli.js
+    `--no-opportunities`: write the combined changelog text gathered in step 11's
+    range-fetch (never the PR-body fallback's text) to a file and run `node
+    ${CLAUDE_SKILL_DIR}/scripts/detect-security-advisory-cli.js
     <changelog-file>` once per dependency. **Execute this script directly — it
     deterministically checks for an explicit CVE identifier, a GitHub Security Advisory
     ID, a "Security" heading, or explicit urgency/vulnerability language, OR-combined,
@@ -318,8 +366,8 @@ are identical regardless of datasource.
 ## Running the Opportunity scan
 
 16. For a minor or major bump (step 10) only, and only when `--no-opportunities` wasn't
-    passed: scan the combined changelog text gathered in step 11 (the widened range) for
-    two kinds of finding only — a newly-added capability, or an existing capability the
+    passed: scan the combined changelog text gathered in step 11's range-fetch (the
+    widened range; never the PR-body fallback's text) for two kinds of finding only — a newly-added capability, or an existing capability the
     dependency now marks deprecated — no other category (a performance note, a
     config-only addition) counts. Keep a finding only when it's actually relevant to
     this codebase's usage, cross-referenced against the same call sites found in step 14

@@ -127,13 +127,22 @@ adapter run means one repository consulted.
 
 **Packaging repository**:
 For the `docker` datasource, the repository a Datasource adapter resolves directly from
-registry metadata (a GHCR package's linked repository, or a Docker Hub image's
-`source_url`). For a Docker Official Image this is reliably a repository maintaining the
-Dockerfile and build tooling, not the wrapped software's own project — its commit
-history speaks to build/packaging concerns only, and it may have no GitHub Releases or
-`CHANGELOG.md` at all.
+registry-published metadata, checked in this order: the image manifest's own OCI config
+labels (`org.opencontainers.image.source`, then `.url`) — read from the registry API
+itself, applicable regardless of which registry hosts the image, and the most durable of
+the three signals since it's self-declared by the image's own build tooling; a GHCR
+package's linked repository; or a Docker Hub image's `source_url` field, kept as a cheap
+final check even though it's empty for ordinary Docker Hub images in practice. For a
+Docker Official Image this is reliably a repository maintaining the Dockerfile and build
+tooling, not the wrapped software's own project — its commit history speaks to
+build/packaging concerns only, and it may have no GitHub Releases or `CHANGELOG.md` at
+all.
 *Avoid*: treating this repository as authoritative for the wrapped software's own
-behavior changes — see *Upstream repository*.
+behavior changes — see *Upstream repository*. Also avoid assuming a name match between
+the image and a plausible-looking GitHub repository is ever a resolution path here — `ADR
+0015`'s guessing rejection still stands; OCI labels resolve this correctly even when the
+image name and the real repository name diverge (e.g. `prom/node-exporter`'s actual
+source is `prometheus/node_exporter`).
 
 **Upstream repository**:
 For the `docker` datasource, the project whose software is packaged into the image —
@@ -172,17 +181,24 @@ merge," which a security fix usually already is.
 
 **Changelog found**:
 The result of a Datasource adapter's GitHub-Releases-then-`CHANGELOG.md` lookup order
-actually returning content — never a fallback to a raw compare/diff view between two
-tags, even when that's the only thing available (e.g. a repository with neither
-Releases nor a `CHANGELOG.md`). A compare view's commit messages aren't curated for
+actually returning content — whether the adapter fetched that content itself, or is
+reading the identical content Renovate's own PR body already rendered in its "Release
+Notes" section (itemized entries sourced from the dependency's actual GitHub Releases),
+since both are the same underlying source and the PR body's copy costs no extra fetch.
+Never satisfied by a raw compare/diff view between two tags, even when that's the only
+thing available (e.g. a repository with neither Releases nor a `CHANGELOG.md`) —
+including when a bare compare/diff link is the only thing Renovate's own PR body offers
+as its "Release Notes" section. A compare view's commit messages aren't curated for
 user-facing disclosure the way release notes are — a repo can carry ten commits of
 build-tooling noise across a bump that, upstream, was actually a security release, with
-nothing in those commits saying so. When neither lookup tier returns content, the
-result is "no changelog found," identical to the case where no repository could be
-resolved at all.
-*Avoid*: treating a compare/diff URL as satisfying this term just because Renovate's own
-PR body links one as a fallback "Release Notes" section — Renovate's fallback and this
-skill's evidence bar are different concerns.
+nothing in those commits saying so. When neither tier returns content, the result is "no
+changelog found," identical to the case where no repository could be resolved at all.
+*Avoid*: treating *any* PR-body "Release Notes" content as automatically suspect —only a
+bare compare/diff link is the excluded case; genuine itemized release content the PR body
+already carries is the same evidence the adapter would fetch itself, just already in
+hand. Also avoid assuming this content is available for every dependency in a grouped
+PR's full old→new range — see *Opportunity* and *Security advisory*, which still rely on
+the adapter's own range-fetch for that.
 
 **Opportunity**:
 A relevant capability change found while scanning a minor or major bump's full release
