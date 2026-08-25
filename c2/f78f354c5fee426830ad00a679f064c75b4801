@@ -1,0 +1,43 @@
+skills/productivity/renovate-triage/COMMENT-SKELETON.md
+  s_b25e60b992ee5c::t_51fd40036af8ca 64
+  s_b25e60b992ee5c::t_5e7c9b1672f5a2 83,90
+  s_b25e60b992ee5c::t_a6055d59b393c6 1-3,5-10,21-22,24-28,30-34,36-42,44-63,65-82,84-89,91-97,99-120
+  s_b25e60b992ee5c::t_bf48a789e606ac 43
+  s_b25e60b992ee5c::t_223f78c6202ebb 11-20
+  s_b25e60b992ee5c::t_fedb42394ce229 23,29
+  s_b25e60b992ee5c::t_0380cd48e469fe 98
+docs/adr/0018-renovate-triage-comment-skeleton-file.md
+  s_b25e60b992ee5c::t_19246d45c2ee5f 2-4,6-16,18-28,30-62,65-66,74-79
+CONTEXT.md
+  s_b25e60b992ee5c::t_e0bf8080de9b14 91-104
+skills/productivity/renovate-triage/scripts/validate-comment-body.js
+  s_b25e60b992ee5c::t_3dfb5c85b6b07d 53
+  s_b25e60b992ee5c::t_e5200eb2b7d29f 88
+  s_b25e60b992ee5c::t_a25ec8a2fcf048 69-87,89-97,119-120
+  s_b25e60b992ee5c::t_b19acf2b3a636f 25-36
+  s_b25e60b992ee5c::t_1920259ab0edf5 8
+  s_b25e60b992ee5c::t_c07d877f313e69 7,9
+skills/productivity/renovate-triage/scripts/validate-comment-body.test.js
+  s_b25e60b992ee5c::t_5837929d1853d7 100-129
+  s_b25e60b992ee5c::t_bf08a8d7d2cb9b 17-18
+  s_b25e60b992ee5c::t_20b4855f45e9c8 3-5,15-16
+  s_b25e60b992ee5c::t_f2a0a4f857ed16 86-95
+skills/productivity/renovate-triage/SKILL.md
+  s_b25e60b992ee5c::t_c90ad10874f0e9 412-416,429-433,435-436
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "c2f78f354c5fee426830ad00a679f064c75b4801",
+  "prompts": {},
+  "sessions": {
+    "s_b25e60b992ee5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2cf2575-312f-4fc7-804b-0f8fff40a275",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
