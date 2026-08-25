@@ -1,3 +1,15 @@
+# [1.8.0](https://github.com/bgutschke/skills/compare/v1.7.1...v1.8.0) (2026-08-25)
+
+
+### Bug Fixes
+
+* **renovate-triage:** correct upstream-repo edge cases from review ([952087b](https://github.com/bgutschke/skills/commit/952087bbda73601eaa61af3af2c8c00ffc8a1093)), closes [#73](https://github.com/bgutschke/skills/issues/73)
+
+
+### Features
+
+* **renovate-triage:** add docker upstream repo, security advisory scan ([fc40b56](https://github.com/bgutschke/skills/commit/fc40b56db16c628ec2fd2ed2e5780c2d7a7fadd6)), closes [hi#urgency](https://github.com/hi/issues/urgency) [#75](https://github.com/bgutschke/skills/issues/75)
+
 ## [1.7.1](https://github.com/bgutschke/skills/compare/v1.7.0...v1.7.1) (2026-08-24)
 
 
