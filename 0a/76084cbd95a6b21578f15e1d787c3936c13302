@@ -1,0 +1,19 @@
+.gitignore
+  s_eef621c0037625::t_db4fc71a5b2d2d 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "0a76084cbd95a6b21578f15e1d787c3936c13302",
+  "prompts": {},
+  "sessions": {
+    "s_eef621c0037625": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "27c77360-7fab-4139-8895-bdff36585fd7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
