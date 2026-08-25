@@ -3,8 +3,17 @@
 A synthetic scenario set, fabricated for this dry run and discarded afterward — never
 committed, so a fixture PR can't be mistaken for a real one — covering each hard-stop,
 baseline, and escalation individually, the grouped-PR rollup, one fixture per
-datasource, each Opportunity-scan shape, the docker adapter's dual-repo lookup, and the
-Security advisory scan. Step numbers below refer to `SKILL.md`.
+datasource, each Opportunity-scan shape, the docker adapter's dual-repo lookup, the
+docker adapter's OCI-label and PR-body-fallback tiers, and the Security advisory scan.
+Step numbers below refer to `SKILL.md`.
+
+## Contents
+
+1. [Fixture table](#fixture-table)
+2. [Walkthrough](#walkthrough)
+3. [Comment idempotency](#comment-idempotency)
+
+## Fixture table
 
 | # | Fixture | Datasource | Bump | Changelog | CI | Blast radius | Verdict | Opportunity | Security advisory | Why |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -28,6 +37,14 @@ Security advisory scan. Step numbers below refer to `SKILL.md`.
 | 18 | `sample-webapp` | docker | minor | packaging repo changelog found, clean; upstream extraction result `none` — no embedded GitHub URL in the Dockerfile or version-pin files | passing | 3 files | `safe` | — | — | docker adapter: no upstream candidate found, adapter stays packaging-repository-only rather than guessing; baseline unaffected |
 | 19 | `sample-parser` | npm | patch | found, clean of breaking changes, but one release's notes name a GHSA ID | passing | 2 files | `safe` | — (patch bump, Opportunity scan doesn't run) | **found**: GHSA ID in the full old→new range | npm adapter: the full range is fetched unconditionally even at a patch bump, since the Security advisory scan needs it regardless of what Opportunity would ever read; advisory found and reported independent of the `safe` verdict |
 | 20 | `sample-toolkit` | docker | major | packaging repo: no changelog; upstream repo found via extraction, but its own GitHub-Releases-then-`CHANGELOG.md` lookup is also empty — no changelog found anywhere at either tier | passing | 4 files | `blocked` | — | — | hard-stop: major bump, no changelog found at either the packaging or the upstream tier; Agent brief names both `owner/repo`s already checked |
+| 21 | `sample-agent` | docker | minor | registry field (GHCR linkage) empty; resolved via the image's own `org.opencontainers.image.source` OCI label alone, clean | passing | 2 files | `safe` | — | — | docker adapter: OCI-label tier resolves the packaging repo when the existing registry field is empty |
+| 22 | `sample-legacy-image` | docker | patch | OCI labels absent (`none` from both `.source` and `.url`); resolved via the existing GHCR linked-repository field instead, clean | passing | 1 file | `safe` | — | — | docker adapter, no-regression check: OCI-label tier falls through cleanly to the existing registry field when labels are absent |
+| 23 | `sample-vpn-agent` | docker | minor | OCI labels absent, Docker Hub `source_url` empty, upstream extraction `none`; Renovate's own PR-body Release Notes section (Features/Bug Fixes/Maintenance, itemized) resolves `found` via the PR-body fallback | passing | 1 file | `safe` | — | — | docker adapter: PR-body fallback resolves "changelog found" once every registry-level lookup for this datasource comes up empty |
+| 24 | `sample-abandoned-image` | docker | major | OCI labels absent, registry field empty, upstream extraction `none`; PR body's Release Notes section for this dependency is only a bare Compare Source link (`compare-link-only`) — no changelog found anywhere | passing | 3 files | `blocked` | — | — | hard-stop: major bump, no changelog found anywhere — the PR-body fallback's bare compare-link doesn't satisfy "changelog found," since a compare view's commit messages aren't curated for user-facing disclosure the way release notes are |
+| 25 | `sample-parser-lib` | npm | minor | the dependency's repository (resolved from npm registry metadata) has neither GitHub Releases nor a `CHANGELOG.md`; Renovate's PR-body Release Notes section resolves `found` via the universal fallback | passing | 2 files | `safe` | — | — | npm adapter: the PR-body fallback applies outside docker too, once npm's own registry-metadata lookup comes up empty |
+| 26 | grouped: `widget-alpha` (PR-body fallback resolves `found`, its own GitHub-Releases/`CHANGELOG.md` lookup empty) + `widget-beta` (own GitHub-Releases lookup already resolves; PR-body fallback never consulted) | npm | — | — | — | — | overall `safe` | — | — | grouped PR: per-dependency PR-body extraction stays scoped to each dependency's own section — `widget-alpha`'s fallback content never bleeds into `widget-beta`'s, nor is `widget-beta`'s richer lookup ever overridden by the fallback |
+
+## Walkthrough
 
 Fixture 1 alone already fires a hard-stop, so its `blocked` verdict holds regardless of
 its small blast radius — confirming hard-stops short-circuit baseline/escalation
@@ -71,8 +88,29 @@ empty, and that its Agent brief (step 19) names both repositories already checke
 `owner/repo`, so a follow-up agent doesn't re-derive the dual-repo resolution from
 scratch.
 
-**Comment idempotency**, checked against one real open Renovate PR on this repo at dry-
-run time (a synthetic fixture is an equally valid substitute when none is open): the
+Fixtures 21–26 confirm the docker adapter's OCI-label lead and the universal PR-body
+fallback each behave as designed. Fixture 21 confirms the OCI-label tier resolves a
+packaging repository on its own when the existing registry field is empty. Fixture 22 is
+the no-regression check: with OCI labels absent, resolution falls through cleanly to the
+existing registry field, exactly as it did before this work. Fixture 23 confirms the
+PR-body fallback: every registry-level lookup for the datasource comes up empty, but the
+PR body's own genuine itemized content still resolves "changelog found," so the bump
+doesn't fall through to "no changelog found anywhere" just because no registry-level
+source was found. Fixture 24 confirms the fallback's evidence bar holds: a bare
+compare-link in the PR body's own Release Notes section is `compare-link-only`, not
+`found`, so the major-bump hard-stop still fires — a compare view's commit messages
+aren't curated for user-facing disclosure the way genuine release notes are, at this tier
+exactly as at every other. Fixture 25 confirms the fallback isn't docker-specific — it
+resolves "changelog found" for an npm dependency once npm's own registry-metadata lookup
+comes up empty. Fixture 26 confirms per-dependency scoping on a grouped PR: one
+dependency's genuine PR-body content is read only from its own section, never blended
+with or substituted for the other dependency's already-successful registry-metadata
+lookup.
+
+## Comment idempotency
+
+Checked against one real open Renovate PR on this repo at dry-run time (a synthetic
+fixture is an equally valid substitute when none is open): the
 first run found no comment containing the `renovate-triage:verdict` marker, so step 22
 took the create branch (`gh pr comment`). Re-running the skill against the same PR with
 no new commits found the marker in the existing comment and took the update branch (`gh
