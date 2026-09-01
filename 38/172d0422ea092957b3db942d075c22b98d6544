@@ -1,0 +1,40 @@
+skills/productivity/curate-memory/SKILL.md
+  s_2f22b27a20957c::t_507ebe71c1f044 40-47,55-59
+  s_2f22b27a20957c::t_6b19fc858d9fb3 48-54
+  s_2f22b27a20957c::t_f47ec535bbc863 88-93
+  s_2f22b27a20957c::t_faa7c446a042a7 227-232,238-240
+skills/productivity/curate-memory/scripts/curation-plan.js
+  s_2f22b27a20957c::t_3f176544f32bb2 134,141-142
+  s_2f22b27a20957c::t_a9e6d3becd4a52 22-32,35,40-47,53-58,62-71,73-102
+  s_2f22b27a20957c::t_0212907b15ad40 59-61
+  s_2f22b27a20957c::t_d6bf47343138d0 276
+skills/productivity/curate-memory/scripts/curation-plan.test.js
+  s_2f22b27a20957c::t_42d32024296983 148-332
+  s_2f22b27a20957c::t_2c87ae9c69e73b 70,72
+skills/productivity/curate-memory/scripts/curation-plan-cli.js
+  s_2f22b27a20957c::t_f2fe61ff182e95 28-32
+  s_2f22b27a20957c::t_146e2436ae9c26 79
+  s_2f22b27a20957c::t_7ef6792553aab7 7
+  s_2f22b27a20957c::t_ae131ea99ba6ef 108-110,113-117,119
+  s_2f22b27a20957c::t_f4096056edae02 155,167
+  s_2f22b27a20957c::t_c1b0b23e44dc4c 66,78,80-93,103-107,111-112,118,120-153,156-166,168-170,179-180,188,205-209
+  s_2f22b27a20957c::t_cc85dd7fd6d075 23-27,33,40
+  s_2f22b27a20957c::t_ace9025f11ebb7 154
+  s_2f22b27a20957c::t_2030bf9fe4cc34 210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "38172d0422ea092957b3db942d075c22b98d6544",
+  "prompts": {},
+  "sessions": {
+    "s_2f22b27a20957c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2936681-71ef-48d3-bde1-018eb4226e10",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
