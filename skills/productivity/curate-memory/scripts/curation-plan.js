@@ -1,7 +1,7 @@
-// ADR 0022: a token budget bounds the thing actually being spent, so a pass costs roughly
-// the same in a chatty project as in a quiet one. Measured over a 112-session store at
-// design time, the 20 newest sessions came to 134,000 prose tokens and the 30 newest to
-// 177,000, so 150,000 covers roughly a month of active work.
+// A token budget bounds the thing actually being spent, so a pass costs roughly the same
+// in a chatty project as in a quiet one. Measured over a 112-session store at design time,
+// the 20 newest sessions came to 134,000 prose tokens and the 30 newest to 177,000, so
+// 150,000 covers roughly a month of active work.
 const DEFAULT_TOKEN_BUDGET = 150_000;
 
 // A secondary guard for the case where sessions are individually tiny and the budget alone
