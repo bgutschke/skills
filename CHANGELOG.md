@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/bgutschke/skills/compare/v1.14.0...v1.15.0) (2026-09-01)
+
+
+### Features
+
+* **curate-memory:** handle cold start and degenerate memory stores ([464233d](https://github.com/bgutschke/skills/commit/464233da2b476f47c47c266069666915193f83b7)), closes [#94](https://github.com/bgutschke/skills/issues/94)
+
 # [1.14.0](https://github.com/bgutschke/skills/compare/v1.13.0...v1.14.0) (2026-09-01)
 
 
