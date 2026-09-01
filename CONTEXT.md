@@ -39,8 +39,8 @@ A skill or an agent — anything with a `description` the model matches against 
 **Rule tree**:
 A root *Rule file* plus every file reachable from it by import or mention edge, walked in
 one pass by `refactor-rule-tree`. Bounded by node class rather than a fixed depth — see
-*Restructurable*, *Verify-only*, and *Resolve-only* — and stops hard at the
-personal/project scope boundary rather than crossing it.
+*Restructurable*, *Verify-only*, and *Resolve-only* — and stops hard at the boundary
+between a *Personal rule file* and a *Project rule file* rather than crossing it.
 *Avoid*: reading this as every rule file a machine happens to have — a tree is rooted at
 one file the pass was pointed at, not the union of every personal and project file that
 exists.
@@ -69,10 +69,10 @@ at.
 **Dead**:
 A pointer verdict: a well-formed, fully-qualified path that resolves nowhere once checked
 against the citing file's own directory, the repo root, and the home directory.
-*Avoid*: confusing with *Unverifiable* — a glob, an angle-bracket placeholder, a bare
-family filename, an extension-only mention, a partial path, or an unexpanded harness path
-variable is never *Dead*; it is ambiguous, not broken, and a hand-rolled resolver that
-collapsed this distinction produced seven false *Dead* verdicts against a real repository.
+*Avoid*: confusing with *Unverifiable* — anything merely ambiguous rather than well-formed
+and fully-qualified (see that entry for the full list of ambiguous shapes) is never
+*Dead*; a hand-rolled resolver that collapsed this distinction produced seven false *Dead*
+verdicts against a real repository.
 
 **Unrouted**:
 A pointer verdict describing a target confirmed to exist inside the tree, but that nothing
@@ -87,9 +87,10 @@ A pointer verdict for a reference that cannot be cleanly resolved either way: a 
 angle-bracket placeholder, a bare family filename, an extension-only mention, a partial
 path, or an unexpanded harness path variable. Reported with the ordered list of roots
 tried, so a partial-path citation can be reported with its completion already computed.
-*Avoid*: treating this as a softer synonym for *Dead* — see that entry; the fourth verdict
-exists specifically so a confirmation gate is never asked to approve deleting a reference
-that was actually correct.
+*Avoid*: treating this as a softer synonym for *Dead* — a dead pointer is well-formed and
+fully-qualified but resolves nowhere; an unverifiable one was never cleanly resolvable in
+the first place. The fourth verdict exists specifically so a confirmation gate is never
+asked to approve deleting a reference that was actually correct.
 
 **Precedence content**:
 Prose stating which of two invocable units, or two pieces of guidance, takes priority for
