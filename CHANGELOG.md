@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/bgutschke/skills/compare/v1.10.1...v1.11.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **curate-memory:** correct output placement, counts, and exit codes ([09a32a4](https://github.com/bgutschke/skills/commit/09a32a4fc38b16a6fe35bebf489e93c1f69dcfd8)), closes [#90](https://github.com/bgutschke/skills/issues/90)
+
+
+### Features
+
+* **curate-memory:** add thinnest end-to-end curation pass ([2b4645f](https://github.com/bgutschke/skills/commit/2b4645fa3c74322a4571abae3bd85504a23331ad)), closes [#90](https://github.com/bgutschke/skills/issues/90)
+
 ## [1.10.1](https://github.com/bgutschke/skills/compare/v1.10.0...v1.10.1) (2026-08-25)
 
 
