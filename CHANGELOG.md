@@ -1,3 +1,15 @@
+# [1.16.0](https://github.com/bgutschke/skills/compare/v1.15.0...v1.16.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **curate-memory:** address review findings on the worked example ([233db51](https://github.com/bgutschke/skills/commit/233db519c837af71aff0f028a1daa9e12f8e0cdc))
+
+
+### Features
+
+* **curate-memory:** rebuild worked example from real fixtures ([6d7a33e](https://github.com/bgutschke/skills/commit/6d7a33e32c7a9af1971158ac1553afcd337511b5)), closes [#95](https://github.com/bgutschke/skills/issues/95)
+
 # [1.15.0](https://github.com/bgutschke/skills/compare/v1.14.0...v1.15.0) (2026-09-01)
 
 
