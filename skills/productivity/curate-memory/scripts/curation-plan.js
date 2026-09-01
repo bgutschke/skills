@@ -330,9 +330,87 @@ function byNewestFirst(left, right) {
   return right.modifiedAt.localeCompare(left.modifiedAt);
 }
 
+// A memory's own candidate contract already writes a concrete file, command, or flag
+// inside a backtick span wherever it names one — that's the same convention this text
+// asks its reader to follow elsewhere in this file. An inline code span is therefore the
+// one surface this pass can check without chasing plain words through prose, which would
+// produce false positives with no way to bound them.
+const INLINE_CODE_SPAN = /`([^`\n]+)`/g;
+const FLAG_PATTERN = /^--?[a-zA-Z][\w-]*$/;
+// The extension itself must start with a letter, not a digit — otherwise a dotted version
+// number (`1.13.0`) or a semver-ish range (`v2.1`) reads as a file, since both end in a
+// dot followed by digits the same shape a real extension has.
+const FILE_PATTERN = /[\\/]|\.[a-zA-Z][a-zA-Z0-9]{0,7}$/;
+
+function extractVerificationTargets(body) {
+  const seen = new Set();
+  const targets = [];
+  for (const match of body.matchAll(INLINE_CODE_SPAN)) {
+    const value = match[1].trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    targets.push({ value, kind: classifyTargetKind(value) });
+  }
+  return targets;
+}
+
+function classifyTargetKind(value) {
+  if (FLAG_PATTERN.test(value)) return 'flag';
+  if (FILE_PATTERN.test(value)) return 'file';
+  return 'command';
+}
+
+// Every retained memory is checked, never just the changed ones — a memory carried
+// forward unchanged can still have gone stale because the repo moved on, with no session
+// ever contradicting it. A failed check never removes anything here: it only annotates,
+// because a search that finds nothing is not proof the thing is gone.
+function verifyRetainedMemories(memories, workingTree) {
+  const filePaths = workingTree.filePaths ?? [];
+  const mentionedValues = workingTree.mentionedValues ?? new Set();
+  return memories.map((memory) => {
+    const targets = extractVerificationTargets(memory.body).map((target) => ({
+      ...target,
+      status: targetIsPresent(target, filePaths, mentionedValues) ? 'verified' : 'unverifiable',
+    }));
+    return { name: memory.name, targets, status: summarizeVerificationStatus(targets) };
+  });
+}
+
+// A path match is checked regardless of kind, since `classifyTargetKind` is a heuristic
+// that can call a real, extension-less filename (`Makefile`) a command — the path check
+// still finds it. Only a command or flag falls back to the mention scan: a file that
+// missed the path check is never given that fallback, since a stale file's own name can
+// still turn up as a substring somewhere else in the tree (a changelog entry, this very
+// report), and reporting that as "verified" would be the one wrong guess this check must
+// not make — a false "unverifiable" costs a glance the user dismisses; a false "verified"
+// costs the thing this whole check exists to catch.
+function targetIsPresent(target, filePaths, mentionedValues) {
+  if (matchesFilePath(target.value, filePaths)) return true;
+  return target.kind !== 'file' && mentionedValues.has(target.value);
+}
+
+// An exact relative path is unambiguous. A bare filename matched only by suffix is not:
+// this repo alone holds a `SKILL.md` per skill, so a memory naming just "SKILL.md" could
+// mean any of them. Suffix matching only counts when it resolves to exactly one file —
+// otherwise it is exactly the ambiguous case that must fall through to `unverifiable`
+// rather than default to "verified" on a coincidence of naming.
+function matchesFilePath(value, filePaths) {
+  const normalized = value.replace(/^\.\//, '');
+  if (filePaths.includes(normalized)) return true;
+  const suffixMatches = filePaths.filter((filePath) => filePath.endsWith(`/${normalized}`));
+  return suffixMatches.length === 1;
+}
+
+function summarizeVerificationStatus(targets) {
+  if (targets.length === 0) return 'no-targets';
+  return targets.every((target) => target.status === 'verified') ? 'verified' : 'unverifiable';
+}
+
 module.exports = {
   resolvePool,
   planDigest,
+  extractVerificationTargets,
+  verifyRetainedMemories,
   encodeProjectDirectoryName,
   STORE_DIRECTORY_NAME,
   DEFAULT_TOKEN_BUDGET,

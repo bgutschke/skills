@@ -7,6 +7,8 @@ const { execFileSync } = require('child_process');
 const {
   resolvePool,
   planDigest,
+  extractVerificationTargets,
+  verifyRetainedMemories,
   encodeProjectDirectoryName,
   STORE_DIRECTORY_NAME,
   DEFAULT_TOKEN_BUDGET,
@@ -19,10 +21,17 @@ const USAGE = `Usage:
   curation-plan-cli.js [--memory-dir <path>] [--token-budget <n>] [--dry-run]
       plan a pass and write one session digest file per batch
   curation-plan-cli.js --verify-store <digest> re-hash the input store and compare
+  curation-plan-cli.js --verify-memories <candidate store path>
+      check every retained memory's named files, commands, and flags against the working
+      tree and report each as verified, unverifiable, or carrying nothing concrete to check
 
 --token-budget overrides the default prose-token budget (${DEFAULT_TOKEN_BUDGET}).
 --dry-run resolves the plan and writes the digests as usual; it changes nothing here — it
   is a signal reported back in the plan for the skill to stop on before it mines.`;
+
+// A file this large is treated as unlikely to be prose worth scanning for a command or
+// flag mention, and reading it in full would cost more than the check is worth.
+const MAX_SCAN_BYTES = 2_000_000;
 
 const STORE_INDEX_NAME = 'MEMORY.md';
 
@@ -30,6 +39,8 @@ function main(argv) {
   const options = parseArgs(argv);
   if (options.help) return exitWith(USAGE, 0);
   if (options.unknown) return exitWith(`Unrecognised argument: ${options.unknown}\n${USAGE}`, 1);
+
+  if (options.verifyMemories) return verifyMemories(options.verifyMemories);
 
   const tokenBudget = resolveTokenBudget(options.tokenBudget);
   if (tokenBudget === null) return exitWith(`--token-budget must be a positive integer, got "${options.tokenBudget}"\n${USAGE}`, 1);
@@ -61,10 +72,11 @@ function main(argv) {
 // the pass treats a zero exit as "carry on", so a silent success here would send it into
 // mining with no digest to mine.
 function parseArgs(argv) {
-  const options = { memoryDir: null, verifyStore: null, tokenBudget: null, dryRun: false, help: false, unknown: null };
+  const options = { memoryDir: null, verifyStore: null, verifyMemories: null, tokenBudget: null, dryRun: false, help: false, unknown: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--memory-dir') options.memoryDir = argv[i += 1] ?? null;
     else if (argv[i] === '--verify-store') options.verifyStore = argv[i += 1] ?? null;
+    else if (argv[i] === '--verify-memories') options.verifyMemories = argv[i += 1] ?? null;
     else if (argv[i] === '--token-budget') options.tokenBudget = argv[i += 1] ?? null;
     else if (argv[i] === '--dry-run') options.dryRun = true;
     else if (argv[i] === '--help') options.help = true;
@@ -292,6 +304,94 @@ function writeJson(filePath, value) {
 
 function countReason(skipped, reason) {
   return skipped.filter((session) => session.reason === reason).length;
+}
+
+// Reads the candidate store the skill just wrote and the working tree it sits beside, then
+// hands both to the pure checker. Every read here goes through `fs` and `git` invoked
+// directly rather than a shell, so a hook that rewrites `grep`, `find`, or `ls` for the Bash
+// tool has nothing to intercept: this runs inside the node process the skill already
+// launched, never as a separate shell command of its own.
+function verifyMemories(candidateStorePath) {
+  if (!fs.existsSync(candidateStorePath)) return exitWith(`No candidate store at ${candidateStorePath}.`, 1);
+
+  const repoToplevel = readRepoToplevel();
+  if (!repoToplevel) return exitWith('Not inside a git repository; verification has no working tree to check against.', 1);
+
+  const memories = readCandidateMemories(candidateStorePath);
+  const filePaths = readWorkingTreeFilePaths(repoToplevel);
+  const mentionedValues = scanForMentions(repoToplevel, filePaths, collectNonFileTargetValues(memories));
+
+  console.log(JSON.stringify({
+    status: 'checked',
+    candidateStore: candidateStorePath,
+    verification: verifyRetainedMemories(memories, { filePaths, mentionedValues }),
+  }, null, 2));
+  return 0;
+}
+
+function readCandidateMemories(storePath) {
+  return fs
+    .readdirSync(storePath, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== STORE_INDEX_NAME)
+    .map((entry) => ({ name: entry.name, body: fs.readFileSync(path.join(storePath, entry.name), 'utf8') }));
+}
+
+// Tracked files alone would miss a memory naming something added on this branch but not
+// yet committed, so an untracked-but-not-ignored listing is unioned in alongside it.
+function readWorkingTreeFilePaths(repoToplevel) {
+  const tracked = readGitFileList(['ls-files'], repoToplevel);
+  const untracked = readGitFileList(['ls-files', '--others', '--exclude-standard'], repoToplevel);
+  return [...new Set([...(tracked ?? []), ...(untracked ?? [])])];
+}
+
+// `git ls-files` reports paths relative to the directory it runs in, not the repo root —
+// without pinning `cwd` here, a verify-memories run from any directory but the toplevel
+// would list paths that don't match what `scanForMentions` joins against `repoToplevel`,
+// silently turning every file lookup into a miss.
+function readGitFileList(args, cwd) {
+  try {
+    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
+function collectNonFileTargetValues(memories) {
+  const values = new Set();
+  for (const memory of memories) {
+    for (const target of extractVerificationTargets(memory.body)) {
+      if (target.kind !== 'file') values.add(target.value);
+    }
+  }
+  return values;
+}
+
+// One pass over the working tree's files checks every outstanding command or flag target
+// at once, rather than one scan per target, so the cost of a check is bounded by the size
+// of the tree and not by how many things the store names.
+function scanForMentions(repoToplevel, filePaths, targetValues) {
+  const remaining = new Set(targetValues);
+  const found = new Set();
+  for (const relativePath of filePaths) {
+    if (remaining.size === 0) break;
+    const content = readIfScannable(path.join(repoToplevel, relativePath));
+    if (content === null) continue;
+    for (const value of remaining) {
+      if (!content.includes(value)) continue;
+      found.add(value);
+      remaining.delete(value);
+    }
+  }
+  return found;
+}
+
+function readIfScannable(absolutePath) {
+  try {
+    if (fs.statSync(absolutePath).size > MAX_SCAN_BYTES) return null;
+    return fs.readFileSync(absolutePath, 'utf8');
+  } catch {
+    return null;
+  }
 }
 
 function verifyStore(store, expected) {

@@ -1,28 +1,31 @@
 ---
 name: curate-memory
 disable-model-invocation: true
-description: Runs one curation pass over the current project's memory store — reads the newest session transcripts, filters them to real user and assistant prose, and writes a complete candidate store beside the input plus one report listing every merge, drop, rewrite, and addition with its justification and a citation to the session that supports it. The input store is never opened for writing, and the pass adopts nothing: it prints the command to adopt the candidate store and the command to discard it. Use when the user types /curate-memory, or asks to curate, consolidate, clean up, de-duplicate, or prune their memory store or memory files.
+description: Runs one curation pass over the current project's memory store — reads the newest session transcripts, filters them to real user and assistant prose, and writes a complete candidate store beside the input plus one report listing every merge, drop, rewrite, and addition with its justification and a citation to the session that supports it. Every retained memory naming a concrete file, command, or flag is also checked against the working tree and reported verified or unverifiable — a failed check only annotates the report, it never drops the memory. The input store is never opened for writing, and the pass adopts nothing: it prints the command to adopt the candidate store and the command to discard it. Use when the user types /curate-memory, or asks to curate, consolidate, clean up, de-duplicate, or prune their memory store or memory files.
 ---
 
 # curate-memory
 
 Perform one **curation pass** over the memory store belonging to the current project, and
 write a **candidate store** beside it: duplicates merged, entries contradicted by a later
-session replaced with the newest value, and guidance repeated in conversation but never
-recorded surfaced as a new memory.
+session replaced with the newest value, guidance repeated in conversation but never
+recorded surfaced as a new memory, and every retained memory naming a concrete file,
+command, or flag checked against the working tree.
 
-Two properties hold on every run, and everything below is arranged to keep them:
+Three properties hold on every run, and everything below is arranged to keep them:
 
 - **The input store is never opened for writing.** It is hashed before the pass and
   re-hashed after, and the pass reports the comparison.
 - **The pass adopts nothing.** It writes to a new directory and prints the command to
   adopt it and the command to discard it. Which of those to run is the user's call.
+- **A failed working-tree check only annotates.** It never removes a memory or softens its
+  wording, because a search that finds nothing is not proof the thing it names is gone.
 
 ## Dependencies
 
 Requires `node` to run the bundled plan script (`scripts/curation-plan-cli.js`), which
-every step below invokes to resolve the pool, select and batch sessions, and verify the
-input store.
+every step below invokes to resolve the pool, select and batch sessions, verify the input
+store, and check retained memories against the working tree.
 
 ## When to use
 
@@ -236,7 +239,34 @@ per memory, derived from that memory's own frontmatter:
 Never copy the input index forward and patch it. The index is derived data, and patching is
 how it drifts from the files it points at.
 
-## Step 5: Write the report
+## Step 5: Verify against the working tree
+
+A memory can go stale with no session ever contradicting it — it names a file, a command,
+or a flag, and the repo moved on without comment. Mining history alone cannot catch that,
+so every memory retained in step 4 is checked directly against the working tree:
+
+```bash
+node ${CLAUDE_SKILL_DIR}/scripts/curation-plan-cli.js --verify-memories <candidateStore>
+```
+
+For each retained memory, this reads every backtick-quoted span in its body — the same
+surface a candidate's own `body` field already writes a concrete name into — and checks
+each one: a file-shaped span (a path separator, or a filename with an extension) against
+the working tree's tracked and untracked-but-not-ignored files; anything else against a
+single scan of those same files' contents, so a command or flag mentioned anywhere in the
+tree counts. It reports each memory `verified` (every span it names checked out),
+`unverifiable` (at least one did not), or `no-targets` (nothing concrete to check). This
+runs entirely inside the node process the skill already launched — reading files through
+`fs` and invoking `git` directly rather than through a shell — so a hook that rewrites
+`grep`, `find`, or `ls` for the Bash tool has nothing here to intercept.
+
+An `unverifiable` result never changes the candidate store. A failed check is not proof
+the thing it names is gone — the name may have moved, may be built at runtime, or may
+simply be missed by a substring scan — so the memory stays in the candidate store exactly
+as step 4 wrote it. Carry each memory's status into step 6's report instead: that is where
+the user gets to see the claim and overrule it.
+
+## Step 6: Write the report
 
 One report at `paths.report`, opening with the preflight figures from step 1, then one
 entry per decision — including the ones taken against a miner's proposal, since a rejected
@@ -256,7 +286,26 @@ Every entry states its intent, what the store now holds, why, and the session th
 it. An entry with no citation does not belong in the report, and the change it describes
 does not belong in the candidate store.
 
-## Step 6: Verify and hand off
+Then, for every memory that survives into the candidate store, state which of three
+distinct things is true of it — a memory earns exactly one:
+
+- **Verified** — step 5 checked out everything it named. Nothing further to say beyond
+  whatever decision entry already covers it, if any.
+- **Unverifiable** — step 5 could not find something it named. Name what it named and what
+  the check could not find, since that is the one thing the user needs to overrule it in a
+  second: `**Unverifiable:** names \`docs/runbooks/deploy.md\`, not found in the working
+  tree.`
+- **Contradicted by a later session** — the memory carries a `replace` decision above.
+  Label it with this exact phrase here too, so a reader scanning the report for what's
+  stale and why finds every reason in one place, rather than having to infer from a
+  `replace` heading that this is the mining-based counterpart to an `unverifiable` line.
+
+Never merge the second and third into one "stale" label — they come from different
+evidence (the working tree versus a later session) and are overruled differently: a session
+citation can be checked by reading that session, while an `unverifiable` result can be
+checked by looking at the working tree directly.
+
+## Step 7: Verify and hand off
 
 Re-hash the input store and confirm the pass changed nothing, passing the digest the
 preflight printed:
@@ -318,9 +367,21 @@ One miner returned nine candidates. Three survived step 3:
   the store never recorded it.
 
 A fourth candidate was rejected: the miner proposed dropping `runbook-location.md` because
-it names a path it could not find. Nothing in the digest says that file moved or was
-deleted — only that a search missed it — so the memory stays in the candidate store, and
-the report records the rejection and the reason.
+a session's own search for the path it names came up empty. A session's failed search is
+not proof of anything either, so the memory stays in the candidate store, and the report
+records the rejection and the reason.
+
+Step 5 then runs `--verify-memories` against the four retained memories. `retry-budget.md`
+and `deploy-window.md` both come back `verified` — each names a flag or file the working
+tree still has. `no-force-push-shared.md` comes back `no-targets` — its guidance names
+nothing concrete. `runbook-location.md` comes back `unverifiable`: the path it names,
+`docs/runbooks/deploy.md`, does not resolve to any tracked or untracked file. That result
+changes nothing in the candidate store — the memory is written exactly as step 4 left it —
+but step 6's report now carries two independent reasons `runbook-location.md` is in
+question: a session that searched for the same path and failed, and the working tree
+itself confirming the path isn't there. The report keeps them as separate lines rather than
+collapsing them into one, since a reader can check the second directly and the first only
+by reading the session.
 
 The input store re-hashed to the digest the preflight printed. The pass closed by printing
 the adopt and discard commands, and ran neither.

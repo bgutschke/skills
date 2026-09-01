@@ -1,6 +1,8 @@
 const {
   resolvePool,
   planDigest,
+  extractVerificationTargets,
+  verifyRetainedMemories,
   DEFAULT_TOKEN_BUDGET,
   DEFAULT_SESSION_CAP,
   DEFAULT_BATCH_WINDOW_TOKENS,
@@ -652,5 +654,135 @@ describe('planDigest', () => {
       expect(plan.batches).toHaveLength(10);
       expect(plan.totals.reduceEngaged).toBe(true);
     });
+  });
+});
+
+describe('extractVerificationTargets', () => {
+  it('extracts a file target from a backtick span containing a path separator', () => {
+    expect(extractVerificationTargets('see `scripts/curation-plan.js` for the module')).toEqual([
+      { value: 'scripts/curation-plan.js', kind: 'file' },
+    ]);
+  });
+
+  it('extracts a file target from a bare filename carrying an extension', () => {
+    expect(extractVerificationTargets('named in `MEMORY.md`')).toEqual([{ value: 'MEMORY.md', kind: 'file' }]);
+  });
+
+  it('extracts a flag target from a backtick span starting with a dash', () => {
+    expect(extractVerificationTargets('pass `--dry-run` to stop early')).toEqual([{ value: '--dry-run', kind: 'flag' }]);
+  });
+
+  it('extracts a command target from a backtick span with no separator, extension, or dash', () => {
+    expect(extractVerificationTargets('run `rtk` before falling back to plain `find`')).toEqual([
+      { value: 'rtk', kind: 'command' },
+      { value: 'find', kind: 'command' },
+    ]);
+  });
+
+  it('ignores prose outside any backtick span', () => {
+    expect(extractVerificationTargets('the retry cap is per request, not per call')).toEqual([]);
+  });
+
+  it('de-duplicates a value repeated across several spans', () => {
+    expect(extractVerificationTargets('`rtk` rewrites commands; without `rtk` a hook cannot')).toEqual([
+      { value: 'rtk', kind: 'command' },
+    ]);
+  });
+
+  it('classifies a dotted version number as a command rather than a file', () => {
+    expect(extractVerificationTargets('pinned to `1.13.0`')).toEqual([{ value: '1.13.0', kind: 'command' }]);
+  });
+
+  it('classifies a semver-ish range as a command rather than a file', () => {
+    expect(extractVerificationTargets('requires `v2.1`')).toEqual([{ value: 'v2.1', kind: 'command' }]);
+  });
+});
+
+describe('verifyRetainedMemories', () => {
+  function memory(name, body) {
+    return { name, body };
+  }
+
+  it('reports a memory verified when its named file exists at that exact path', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `scripts/curation-plan.js`')], {
+      filePaths: ['scripts/curation-plan.js'],
+    });
+    expect(result).toEqual([
+      { name: 'a.md', targets: [{ value: 'scripts/curation-plan.js', kind: 'file', status: 'verified' }], status: 'verified' },
+    ]);
+  });
+
+  it('reports a memory verified when its named file is matched by a nested suffix', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `curation-plan.js`')], {
+      filePaths: ['skills/productivity/curate-memory/scripts/curation-plan.js'],
+    });
+    expect(result[0].status).toBe('verified');
+  });
+
+  it('reports a memory unverifiable, but still present, when its named file cannot be found', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `docs/runbooks/deploy.md`')], { filePaths: [] });
+    expect(result).toEqual([
+      { name: 'a.md', targets: [{ value: 'docs/runbooks/deploy.md', kind: 'file', status: 'unverifiable' }], status: 'unverifiable' },
+    ]);
+  });
+
+  it('reports a memory verified when its named command or flag was found mentioned in the tree', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'pass `--dry-run` to stop early')], {
+      filePaths: [],
+      mentionedValues: new Set(['--dry-run']),
+    });
+    expect(result[0].status).toBe('verified');
+  });
+
+  it('reports a memory unverifiable when its named command or flag was not found mentioned anywhere', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'pass `--long-retired-flag`')], {
+      filePaths: [],
+      mentionedValues: new Set(),
+    });
+    expect(result[0].status).toBe('unverifiable');
+  });
+
+  it('reports no-targets for a memory naming nothing concrete', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'always squash before merging')], { filePaths: [] });
+    expect(result[0]).toEqual({ name: 'a.md', targets: [], status: 'no-targets' });
+  });
+
+  it('reports a memory unverifiable overall when only some of its targets are found', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `scripts/curation-plan.js` and pass `--gone-flag`')], {
+      filePaths: ['scripts/curation-plan.js'],
+      mentionedValues: new Set(),
+    });
+    expect(result[0].status).toBe('unverifiable');
+    expect(result[0].targets).toEqual([
+      { value: 'scripts/curation-plan.js', kind: 'file', status: 'verified' },
+      { value: '--gone-flag', kind: 'flag', status: 'unverifiable' },
+    ]);
+  });
+
+  it('never drops a memory whose targets are all unverifiable — it stays in the returned list', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `docs/gone.md`'), memory('b.md', 'no targets here')], {
+      filePaths: [],
+    });
+    expect(result.map((entry) => entry.name)).toEqual(['a.md', 'b.md']);
+  });
+
+  it('verifies an extension-less filename misclassified as a command by matching it against the working tree anyway', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `Makefile`')], { filePaths: ['Makefile'] });
+    expect(result[0]).toEqual({ name: 'a.md', targets: [{ value: 'Makefile', kind: 'command', status: 'verified' }], status: 'verified' });
+  });
+
+  it('reports unverifiable, not verified, when a bare filename matches more than one file in the tree', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `SKILL.md`')], {
+      filePaths: ['skills/to-pr/SKILL.md', 'skills/audit-skills/SKILL.md'],
+    });
+    expect(result[0].status).toBe('unverifiable');
+  });
+
+  it('does not fall back to a content mention for a file-kind target that missed the path check', () => {
+    const result = verifyRetainedMemories([memory('a.md', 'see `docs/gone.md`')], {
+      filePaths: [],
+      mentionedValues: new Set(['docs/gone.md']),
+    });
+    expect(result[0].status).toBe('unverifiable');
   });
 });
