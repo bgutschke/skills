@@ -1,14 +1,32 @@
-// A single miner holds one batch of prose alongside the existing store and its
-// instructions inside a working window of roughly 60,000 tokens. Measured over a
-// 112-session store at design time, the 20 newest sessions came to 134,000 prose tokens
-// — about 6,700 each — so 8 sessions comes to roughly 54,000 and still leaves the miner
-// room to reason. Raising this is what a later token-budget pass replaces, not tunes.
-const DEFAULT_SESSION_LIMIT = 8;
+// ADR 0022: a token budget bounds the thing actually being spent, so a pass costs roughly
+// the same in a chatty project as in a quiet one. Measured over a 112-session store at
+// design time, the 20 newest sessions came to 134,000 prose tokens and the 30 newest to
+// 177,000, so 150,000 covers roughly a month of active work.
+const DEFAULT_TOKEN_BUDGET = 150_000;
+
+// A secondary guard for the case where sessions are individually tiny and the budget alone
+// would pull in a very long tail. Mirrors the documented per-run session limit of the
+// upstream managed-agents feature this technique is drawn from.
+const DEFAULT_SESSION_CAP = 100;
 
 // Of the same 112 sessions, 16 fell below 500 prose tokens; every one was an aborted
 // session or a single question, carrying nothing a curation pass could act on. Skipping
-// them keeps a selection slot for a session that has something in it.
+// them keeps a selection slot for a session that has something in it, and they never count
+// against the budget or the cap.
 const NEAR_EMPTY_FLOOR_TOKENS = 500;
+
+// A single miner holds one batch of prose alongside the existing store and its
+// instructions inside a working window of roughly this many tokens. At ~6,700 prose
+// tokens per session (134,000 prose tokens across the 20 newest sessions in the same
+// measurement), 60,000 holds about 8-9 sessions and still leaves the miner room to reason.
+// Raising the token budget above adds batches at this fixed size rather than enlarging
+// them, which is what lets a deeper pass be a wider fan-out instead of a redesign.
+const DEFAULT_BATCH_WINDOW_TOKENS = 60_000;
+
+// Candidate volume starts competing with the store itself for the parent's synthesis
+// context once this many miners have run: below it, one round of parent decisions is
+// cheaper than a merge pass over merge passes.
+const DEFAULT_REDUCE_THRESHOLD_MINERS = 8;
 
 // The real tokenizer is not available offline, and this figure never bills anything: it
 // only ranks sessions against each other and against the floor above. Four characters per
@@ -127,7 +145,7 @@ function resolveOutputs({ path }) {
   return {
     candidateStore: `${path}-candidate`,
     report: `${path}-candidate-REPORT.md`,
-    sessionDigest: `${path}-candidate-session-digest.json`,
+    sessionDigestDirectory: `${path}-candidate-session-digest`,
   };
 }
 
@@ -142,34 +160,73 @@ function buildPool(projectDirectory, transcriptFiles, provenance) {
     }));
 }
 
-function planDigest({ sessions, sessionLimit = DEFAULT_SESSION_LIMIT }) {
+function planDigest({
+  sessions,
+  tokenBudget = DEFAULT_TOKEN_BUDGET,
+  sessionCap = DEFAULT_SESSION_CAP,
+  batchWindowTokens = DEFAULT_BATCH_WINDOW_TOKENS,
+  reduceThresholdMiners = DEFAULT_REDUCE_THRESHOLD_MINERS,
+}) {
   const classification = {};
   const digested = sessions
     .map((session) => digestSession(session, classification))
     .sort(byNewestFirst);
 
+  // The cap is checked before the budget so it acts as the secondary guard it's meant to
+  // be: once it's full, remaining sessions are capped out even if the budget has room,
+  // which is exactly the tiny-sessions case it exists for.
   const selected = [];
   const skipped = [];
+  let budgetSpent = 0;
   for (const session of digested) {
     if (session.proseTokens < NEAR_EMPTY_FLOOR_TOKENS) {
       skipped.push(skip(session, 'near-empty'));
-    } else if (selected.length < sessionLimit) {
-      selected.push(session);
+    } else if (selected.length >= sessionCap) {
+      skipped.push(skip(session, 'beyond-session-cap'));
+    } else if (budgetSpent >= tokenBudget) {
+      skipped.push(skip(session, 'beyond-token-budget'));
     } else {
-      skipped.push(skip(session, 'beyond-session-limit'));
+      selected.push(session);
+      budgetSpent += session.proseTokens;
     }
   }
+
+  const batches = batchSessions(selected, batchWindowTokens);
 
   return {
     selected,
     skipped,
+    batches,
     classification,
     totals: {
       sessionsRead: sessions.length,
       sessionsSelected: selected.length,
-      proseTokens: selected.reduce((total, session) => total + session.proseTokens, 0),
+      proseTokens: budgetSpent,
+      batchCount: batches.length,
+      reduceEngaged: batches.length > reduceThresholdMiners,
     },
   };
+}
+
+// Batches never reorder the selection — each is a contiguous run of the newest-first list,
+// so a correction and its follow-up always land with the same reader. A batch closes once
+// the next session would push it past the window, and a single session bigger than the
+// window becomes a batch of one rather than being split across two readers.
+function batchSessions(selected, batchWindowTokens) {
+  const batches = [];
+  let current = [];
+  let currentTokens = 0;
+  for (const session of selected) {
+    if (current.length > 0 && currentTokens + session.proseTokens > batchWindowTokens) {
+      batches.push(current);
+      current = [];
+      currentTokens = 0;
+    }
+    current.push(session);
+    currentTokens += session.proseTokens;
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
 }
 
 function digestSession({ sessionId, modifiedAt, records }, classification) {
@@ -273,4 +330,13 @@ function byNewestFirst(left, right) {
   return right.modifiedAt.localeCompare(left.modifiedAt);
 }
 
-module.exports = { resolvePool, planDigest, encodeProjectDirectoryName, STORE_DIRECTORY_NAME };
+module.exports = {
+  resolvePool,
+  planDigest,
+  encodeProjectDirectoryName,
+  STORE_DIRECTORY_NAME,
+  DEFAULT_TOKEN_BUDGET,
+  DEFAULT_SESSION_CAP,
+  DEFAULT_BATCH_WINDOW_TOKENS,
+  DEFAULT_REDUCE_THRESHOLD_MINERS,
+};

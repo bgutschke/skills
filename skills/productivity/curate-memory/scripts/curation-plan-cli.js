@@ -4,11 +4,25 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
-const { resolvePool, planDigest, encodeProjectDirectoryName, STORE_DIRECTORY_NAME } = require('./curation-plan');
+const {
+  resolvePool,
+  planDigest,
+  encodeProjectDirectoryName,
+  STORE_DIRECTORY_NAME,
+  DEFAULT_TOKEN_BUDGET,
+  DEFAULT_SESSION_CAP,
+  DEFAULT_BATCH_WINDOW_TOKENS,
+  DEFAULT_REDUCE_THRESHOLD_MINERS,
+} = require('./curation-plan');
 
 const USAGE = `Usage:
-  curation-plan-cli.js [--memory-dir <path>]   plan a pass and write the session digest
-  curation-plan-cli.js --verify-store <digest> re-hash the input store and compare`;
+  curation-plan-cli.js [--memory-dir <path>] [--token-budget <n>] [--dry-run]
+      plan a pass and write one session digest file per batch
+  curation-plan-cli.js --verify-store <digest> re-hash the input store and compare
+
+--token-budget overrides the default prose-token budget (${DEFAULT_TOKEN_BUDGET}).
+--dry-run resolves the plan and writes the digests as usual; it changes nothing here — it
+  is a signal reported back in the plan for the skill to stop on before it mines.`;
 
 const STORE_INDEX_NAME = 'MEMORY.md';
 
@@ -16,6 +30,9 @@ function main(argv) {
   const options = parseArgs(argv);
   if (options.help) return exitWith(USAGE, 0);
   if (options.unknown) return exitWith(`Unrecognised argument: ${options.unknown}\n${USAGE}`, 1);
+
+  const tokenBudget = resolveTokenBudget(options.tokenBudget);
+  if (tokenBudget === null) return exitWith(`--token-budget must be a positive integer, got "${options.tokenBudget}"\n${USAGE}`, 1);
 
   const environment = readEnvironment(options.memoryDir);
   if (!environment) return exitWith('Not inside a git repository; a pass is scoped to one project.', 1);
@@ -37,21 +54,32 @@ function main(argv) {
 
   return options.verifyStore
     ? verifyStore(located.store, options.verifyStore)
-    : plan(environment, located, worktreeStateRecords);
+    : plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun: options.dryRun });
 }
 
 // A mistyped flag reports itself and fails, rather than printing usage and exiting zero:
 // the pass treats a zero exit as "carry on", so a silent success here would send it into
 // mining with no digest to mine.
 function parseArgs(argv) {
-  const options = { memoryDir: null, verifyStore: null, help: false, unknown: null };
+  const options = { memoryDir: null, verifyStore: null, tokenBudget: null, dryRun: false, help: false, unknown: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--memory-dir') options.memoryDir = argv[i += 1] ?? null;
     else if (argv[i] === '--verify-store') options.verifyStore = argv[i += 1] ?? null;
+    else if (argv[i] === '--token-budget') options.tokenBudget = argv[i += 1] ?? null;
+    else if (argv[i] === '--dry-run') options.dryRun = true;
     else if (argv[i] === '--help') options.help = true;
     else options.unknown ??= argv[i];
   }
   return options;
+}
+
+// null means "not given" (fall back to the module default); NaN or non-positive means the
+// flag was given something that isn't a usable budget, which the caller reports and exits
+// on rather than silently falling back to the default.
+function resolveTokenBudget(raw) {
+  if (raw === null) return undefined;
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : null;
 }
 
 function readEnvironment(memoryDirectory) {
@@ -152,7 +180,7 @@ function tryParseJson(text) {
   }
 }
 
-function plan(environment, located, worktreeStateRecords) {
+function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun }) {
   const worktreeTranscriptFiles = {};
   const worktreeMemoryFiles = {};
   for (const { directoryName } of located.worktrees) {
@@ -168,28 +196,58 @@ function plan(environment, located, worktreeStateRecords) {
     worktreeTranscriptFiles,
     worktreeMemoryFiles,
   });
-  const digest = planDigest({ sessions: resolved.pool.map(readSession) });
-  writeJson(resolved.outputs.sessionDigest, { sessions: digest.selected });
+  const digest = planDigest({ sessions: resolved.pool.map(readSession), tokenBudget });
+  const batches = writeBatchDigests(resolved.outputs.sessionDigestDirectory, digest.batches);
 
   console.log(JSON.stringify({
     status: 'planned',
+    dryRun,
     repoToplevel: environment.repoToplevel,
     projectDirectory: resolved.projectDirectory,
     store: describeStore(resolved.store),
     worktrees: resolved.worktrees,
     orphanStores: resolved.orphanStores,
     preflight: {
+      tokenBudget: tokenBudget ?? DEFAULT_TOKEN_BUDGET,
+      sessionCap: DEFAULT_SESSION_CAP,
       sessionsInPool: resolved.pool.length,
       sessionsSelected: digest.totals.sessionsSelected,
       sessionsSkippedNearEmpty: countReason(digest.skipped, 'near-empty'),
-      sessionsBeyondLimit: countReason(digest.skipped, 'beyond-session-limit'),
+      sessionsBeyondBudget: countReason(digest.skipped, 'beyond-token-budget'),
+      sessionsBeyondCap: countReason(digest.skipped, 'beyond-session-cap'),
       proseTokens: digest.totals.proseTokens,
       recordsByClass: digest.classification,
       selected: digest.selected.map(({ sessionId, modifiedAt, proseTokens, provenance }) => ({ sessionId, modifiedAt, proseTokens, provenance })),
+      batchWindowTokens: DEFAULT_BATCH_WINDOW_TOKENS,
+      batches,
+      reduceThresholdMiners: DEFAULT_REDUCE_THRESHOLD_MINERS,
+      reduceEngaged: digest.totals.reduceEngaged,
     },
     paths: resolved.outputs,
   }, null, 2));
   return 0;
+}
+
+// One miner reads one batch file, so each file is self-contained: it never has to open the
+// shared digest directory or a neighbour's batch to know what it owns. A stale batch file
+// left over from a prior pass at a larger budget would otherwise sit here forever, since
+// nothing else in the pass ever deletes it — so the directory is cleared before every write.
+function writeBatchDigests(directory, batches) {
+  fs.rmSync(directory, { recursive: true, force: true });
+  return batches.map((sessions, index) => {
+    const batchPath = batchFilePath(directory, index);
+    writeJson(batchPath, { sessions });
+    return {
+      index: index + 1,
+      path: batchPath,
+      sessionIds: sessions.map((session) => session.sessionId),
+      proseTokens: sessions.reduce((total, session) => total + session.proseTokens, 0),
+    };
+  });
+}
+
+function batchFilePath(directory, index) {
+  return path.join(directory, `batch-${String(index + 1).padStart(2, '0')}.json`);
 }
 
 function readTranscriptFiles(projectDirectory) {
