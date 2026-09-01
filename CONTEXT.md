@@ -212,3 +212,42 @@ placement (dev-only vs. production).
 *Avoid*: conflating with *Agent brief* — that's investigative handoff for a `blocked`
 verdict's hard-stop; an Opportunity is informational and appears (by default) regardless
 of tier.
+
+### Memory curation
+
+**Memory store**:
+A project's `memory` directory together with the index that points at its contents — the
+files the harness loads as background context at the start of a session. Model-written
+and appended to incrementally over time, rather than hand-authored in one sitting. One
+store belongs to one project, and to exactly one user.
+*Avoid*: "memory file" for the whole thing — that names a single *Memory*. Also avoid
+conflating with *Rule file*: both are prose loaded into context, but a rule file is
+hand-authored and shared, which is why the rules auditor owns it and memory curation
+deliberately does not.
+
+**Memory**:
+One file in a *Memory store*, holding one fact, carrying the harness's frontmatter
+contract. The store's index entry for it is derived from it, not part of it.
+*Avoid*: using it for an index line — that's a pointer to a Memory, not one. Also avoid
+stretching it to a file that has accumulated several facts: that's a store defect to be
+split, not a wider definition of the term.
+
+**Curation pass**:
+One run over one *Memory store*, reading that store plus past session transcripts for the
+same project, and producing a *Candidate store* and a report. Never modifies the store it
+read.
+*Avoid*: "dream" — the term the upstream managed-agents feature this technique is drawn
+from uses for it; say *Curation pass* instead. It carries no meaning for anyone who hasn't
+read that one documentation page, and it names a metaphor rather than the work being done.
+
+**Candidate store**:
+What a *Curation pass* produces: a complete memory store, written beside the input and
+never over it.
+*Avoid*: "diff" or "patch" for this — it is a whole store rather than a list of edits
+against one. Also avoid using it for the input store under any circumstances; the two are
+never the same directory.
+
+**Candidate**:
+One proposed change within a *Candidate store*, carried together with the evidence that
+justifies it.
+*Avoid*: reading a candidate as a decision — it is a proposal.
