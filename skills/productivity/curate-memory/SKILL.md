@@ -44,6 +44,32 @@ store, and check retained memories against the working tree.
 - Curating a project other than the one the working directory sits in. A pass reads one
   store and one project's transcripts, so unrelated corpora are never mixed.
 
+## Degenerate stores
+
+A store isn't always there in the shape the rest of this document assumes. The plan
+script's preflight always reports `store.status`, one of:
+
+- **`present`** — memory files and `MEMORY.md` both exist. The ordinary pass below.
+- **`absent`** — the store directory does not exist at all.
+- **`empty`** — the directory exists but holds no memory files, index or not.
+- **`index-less`** — memory files exist but `MEMORY.md` does not.
+
+The last three have nothing to diff a candidate against, so all three run the same way: a
+**cold start**. Cold start is not a smaller pass — it reads the same transcripts, dispatches
+the same miners, and writes a full candidate store and report — it only differs in that
+every surviving candidate is an `add`, because there is no existing memory to merge into,
+replace, or drop.
+
+The preflight also reports `mode`, computed from `store.status` together with the pool:
+
+- **`curate`** — the store is `present`. Runs regardless of how many sessions are in the
+  pool; re-verifying and re-writing a store unchanged against zero fresh sessions is still a
+  meaningful result.
+- **`cold-start`** — the store is not `present`, but the pool has sessions to mine.
+- **`noop`** — the store is not `present` and the pool is empty too. There is nothing here
+  to act on besides inventing an empty store, which is worse than not running at all — see
+  Step 1's handling of this case.
+
 ## Arguments
 
 `/curate-memory` takes two optional flags, both forwarded to the plan script in Step 1:
@@ -117,35 +143,52 @@ Read the transcripts through this script and never through shell commands. A use
 that rewrites `grep` or `ls` can return an empty result for a directory holding a hundred
 files, and a pass that reads nothing looks exactly like a pass with nothing to find.
 
-Print the preflight to the user as prose: the resolved store and how many memories it
-holds, how many worktrees were found and by which source (`worktrees` in the script's
-output), how many sessions are in the pool, how many were selected, how many were skipped
-as near-empty, how many were left out by the budget and by the cap, and the prose-token
-total against the budget. Then say how many batches (`preflight.batches`) the selection
-split into and, if `preflight.reduceEngaged` is true, that the reduce tier is engaging
-because the batch count passed `preflight.reduceThresholdMiners` (8 by default). If
-`orphanStores` is non-empty, name each one and say plainly that it is not part of this pass
-and is not being merged. Then **continue without asking**, unless `--dry-run` was passed —
-everything the pass writes is additive and lands in a new directory, so there is nothing
-here to confirm.
+Print the preflight to the user as prose: the resolved store, its `status` (present, absent,
+empty, or index-less — see Degenerate stores above), and how many memories it holds, how
+many worktrees were found and by which source (`worktrees` in the script's output), how many
+sessions are in the pool, how many were selected, how many were skipped as near-empty, how
+many were left out by the budget and by the cap, and the prose-token total against the
+budget. Then say how many batches (`preflight.batches`) the selection split into and, if
+`preflight.reduceEngaged` is true, that the reduce tier is engaging because the batch count
+passed `preflight.reduceThresholdMiners` (8 by default). If `orphanStores` is non-empty, name
+each one and say plainly that it is not part of this pass and is not being merged.
 
-Stop and report only if the script exits non-zero — it found no session history for this
-project, which a pass cannot proceed without.
+Check `mode` before deciding whether to continue:
+
+- **`noop`** — stop here. Name the resolved store's actual status (absent, empty, or
+  index-less — already printed above) and state plainly that there is also no session
+  history to curate or rebuild it from, so there is nothing this pass can act on. For
+  `index-less`, say so precisely: the memory files on disk are real, only the index is
+  missing, and it is the absence of anything to check them against — not their absence —
+  that stops the pass here. Do not create a candidate store, a report, or a session digest
+  — writing an empty store would claim a pass happened when nothing was actually curated.
+- **`cold-start`** — say plainly that no usable input store was found (naming which of
+  absent, empty, or index-less applies) and that this pass will build one from the transcripts
+  alone; every change in the eventual report will be an addition. Then continue as below.
+- **`curate`** — the ordinary case. Continue as below.
+
+Then **continue without asking**, unless `--dry-run` was passed — everything the pass writes
+is additive and lands in a new directory, so there is nothing here to confirm.
+
+Stop and report only if the script exits non-zero — it found no session history at all for
+this project, which a pass cannot proceed without.
 
 If `--dry-run` was passed, stop here. Do not dispatch any miners.
 
 ## Step 2: Mine the digest
 
-Read the input store in full: every memory file and the index.
+Read the input store in full: every memory file and the index. Skip this when `mode` is
+`cold-start` — `store.status` is not `present`, so there is nothing yet to read.
 
 Then dispatch **one miner per batch** — for every entry in `preflight.batches`, a subagent
 that reads that batch's own digest file at the entry's `path` and returns candidates. Run
 every batch's miner in parallel; a miner never reads another batch's file or the whole
 digest, which is what keeps one miner's window bounded by its batch regardless of how many
-batches the pass has. Give each one the input store's contents in its prompt, since it
-needs to know what already exists to propose a relationship to it. Run every miner on this
-session's model rather than a cheaper tier: "is this memory stale?" is a nuanced call whose
-failure is silent.
+batches the pass has. Give each one the input store's contents in its prompt, since it needs
+to know what already exists to propose a relationship to it — in a cold-start pass, say
+plainly in that same prompt that the store is empty, so the miner knows every candidate it
+returns should be `new`. Run every miner on this session's model rather than a cheaper tier:
+"is this memory stale?" is a nuanced call whose failure is silent.
 
 Each **candidate** carries:
 
@@ -187,21 +230,30 @@ judgment stays reserved for Step 3.
 
 Do this yourself; never delegate it. A miner sees one slice of history and cannot know what
 a later session said, so its `intent` is a proposal — re-decide every relationship against
-the whole store and every candidate:
+the whole store and every candidate. The decision you record is not always spelled the same
+as the `intent` that proposed it: a `new` candidate becomes an **add** decision below, and a
+`stale` candidate becomes a **drop** decision — `merge` and `replace` carry the same word
+through unchanged.
 
 - **merge** two memories only when they state the same lesson. Write the merged sentence
   out; that wording is the thing the user is being asked to approve.
 - **replace** when a later session contradicts an existing memory. The newest statement
   wins.
-- **drop** only on evidence that the memory is wrong or has been superseded — never on a
-  search that failed to find something a memory names. A search that finds nothing is not
-  proof of absence, and a wrongly-dropped memory is gone without the user learning it
-  existed.
+- **drop** (a `stale` candidate) only on evidence that the memory is wrong or has been
+  superseded — never on a search that failed to find something a memory names. A search
+  that finds nothing is not proof of absence, and a wrongly-dropped memory is gone without
+  the user learning it existed.
 - **split** a file that has accumulated several facts into one file per fact.
-- **add** a memory for guidance a session gave that the store never recorded.
+- **add** (a `new` candidate) a memory for guidance a session gave that the store never
+  recorded.
 
 Every decision needs a justification and a citation, so discard any candidate whose
 evidence you cannot point at in the digest.
+
+In a **cold-start** pass this collapses on its own: with no existing memory to merge into,
+replace, or drop, every surviving candidate is an `add`. Nothing here changes — you are
+still re-deciding each one against the whole set of candidates and discarding any without a
+citation, there is simply nothing on the other side of the relationship.
 
 ## Step 4: Write the candidate store
 
@@ -268,9 +320,12 @@ the user gets to see the claim and overrule it.
 
 ## Step 6: Write the report
 
-One report at `paths.report`, opening with the preflight figures from step 1, then one
-entry per decision — including the ones taken against a miner's proposal, since a rejected
-candidate is a decision the user may want to overturn:
+One report at `paths.report`, opening with the preflight figures from step 1 — and, when
+`mode` was `cold-start`, a line stating that plainly and naming which of absent, empty, or
+index-less the input store was, so the user understands up front why every entry below is an
+addition rather than a merge, replace, or drop — then one entry per decision, including the
+ones taken against a miner's proposal, since a rejected candidate is a decision the user may
+want to overturn:
 
 ```markdown
 ### merge: retry-budget + retries-are-capped
@@ -317,11 +372,16 @@ node ${CLAUDE_SKILL_DIR}/scripts/curation-plan-cli.js --memory-dir <memory direc
 A non-zero exit means the input store changed during the pass. Say so plainly and name the
 candidate store as unsafe to adopt; do not print the adopt command.
 
-Otherwise close by printing both commands, and adopt nothing yourself:
+Otherwise close by printing both commands, and adopt nothing yourself. When `store.status`
+was `absent` there is no prior directory to keep alongside, so the adopt command is just the
+second move — printing the first against a path that doesn't exist would fail on the user:
 
 ```bash
 # adopt — keeps the previous store alongside, so the move is reversible
 mv <store> <store>-superseded && mv <candidateStore> <store>
+
+# adopt, when the input store was absent (a cold start with nothing to supersede)
+mv <candidateStore> <store>
 
 # discard
 rm -rf <candidateStore> <report> <sessionDigestDirectory>

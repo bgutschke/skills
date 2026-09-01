@@ -42,6 +42,7 @@ function resolvePool({
   projectsDirectory,
   projectDirectoryNames,
   memoryDirectory,
+  storeFiles = null,
   transcriptFiles,
   liveWorktreePaths,
   worktreeStateRecords = [],
@@ -50,11 +51,11 @@ function resolvePool({
 }) {
   const directoryName = encodeProjectDirectoryName(repoToplevel);
   if (!projectDirectoryNames.includes(directoryName)) {
-    return { status: 'no-project-directory', projectDirectory: null, store: null, outputs: null, worktrees: [], pool: [], orphanStores: [] };
+    return { status: 'no-project-directory', projectDirectory: null, store: null, outputs: null, worktrees: [], pool: [], orphanStores: [], mode: 'noop' };
   }
 
   const projectDirectory = `${projectsDirectory}/${directoryName}`;
-  const store = resolveStore(projectDirectory, memoryDirectory);
+  const store = resolveStore(projectDirectory, memoryDirectory, storeFiles);
   const worktrees = resolveWorktreeDirectories({
     repoToplevel,
     directoryName,
@@ -62,6 +63,7 @@ function resolvePool({
     liveWorktreePaths,
     worktreeStateRecords,
   });
+  const pool = buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, worktrees, worktreeTranscriptFiles);
 
   return {
     status: 'resolved',
@@ -69,9 +71,21 @@ function resolvePool({
     store,
     outputs: resolveOutputs(store),
     worktrees,
-    pool: buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, worktrees, worktreeTranscriptFiles),
+    pool,
     orphanStores: buildOrphanStores(projectsDirectory, worktrees, worktreeMemoryFiles),
+    mode: classifyPassMode(store, pool),
   };
+}
+
+// A store already holding memories is always worth a pass over, even against zero fresh
+// sessions — re-verifying and re-writing it unchanged is still a meaningful result. Absent
+// that, a non-empty pool is a cold start: there is nothing to diff against, but real prose
+// to build a store from, so every surviving candidate is necessarily an addition. Absent
+// both, there is nothing this pass could act on besides inventing an empty store, which is
+// worse than not running at all — that combination stops instead.
+function classifyPassMode(store, pool) {
+  if (store.status === 'present') return 'curate';
+  return pool.length > 0 ? 'cold-start' : 'noop';
 }
 
 // The pool is the union of live worktrees, worktrees this project's own transcripts
@@ -128,13 +142,26 @@ function encodeProjectDirectoryName(absolutePath) {
   return absolutePath.replaceAll('/', '-').replaceAll('.', '-');
 }
 
-function resolveStore(projectDirectory, memoryDirectory) {
+function resolveStore(projectDirectory, memoryDirectory, storeFiles) {
   const path = memoryDirectory ?? `${projectDirectory}/${STORE_DIRECTORY_NAME}`;
   return {
     path,
     indexPath: `${path}/${STORE_INDEX_NAME}`,
     resolvedBy: memoryDirectory ? 'session-context' : 'encoded-repo-path',
+    status: classifyStoreStatus(storeFiles),
   };
+}
+
+// `storeFiles` is the store directory's own top-level file names, already read by the
+// caller — `null` when the directory does not exist at all. Absent, holding no memory files,
+// and holding memory files but no regenerated index are three different shapes on disk, but
+// a pass treats all three the same way: there is nothing here to diff a candidate against,
+// so every one of them runs as a cold start rather than an ordinary pass.
+function classifyStoreStatus(storeFiles) {
+  if (storeFiles == null) return 'absent';
+  const memoryFiles = storeFiles.filter((name) => name !== STORE_INDEX_NAME);
+  if (memoryFiles.length === 0) return 'empty';
+  return storeFiles.includes(STORE_INDEX_NAME) ? 'present' : 'index-less';
 }
 
 // Every path a pass writes hangs off the store's own path, so the candidate store lands

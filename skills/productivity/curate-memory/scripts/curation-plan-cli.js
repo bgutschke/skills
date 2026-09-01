@@ -203,16 +203,21 @@ function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun 
 
   const resolved = resolvePool({
     ...environment,
+    storeFiles: readStoreFileNames(located.store.path),
     transcriptFiles: readTranscriptFiles(located.projectDirectory),
     worktreeStateRecords,
     worktreeTranscriptFiles,
     worktreeMemoryFiles,
   });
   const digest = planDigest({ sessions: resolved.pool.map(readSession), tokenBudget });
+  // A noop pool is empty by construction, so this already writes zero batch files — but it
+  // still has to run, since it's also what clears a stale digest directory left by an
+  // earlier pass at this same path; skipping it here would leave that behind unclean.
   const batches = writeBatchDigests(resolved.outputs.sessionDigestDirectory, digest.batches);
 
   console.log(JSON.stringify({
     status: 'planned',
+    mode: resolved.mode,
     dryRun,
     repoToplevel: environment.repoToplevel,
     projectDirectory: resolved.projectDirectory,
@@ -273,9 +278,20 @@ function readTranscriptFiles(projectDirectory) {
 }
 
 function readMemoryFileNames(projectDirectory) {
-  const memoryDirectory = path.join(projectDirectory, STORE_DIRECTORY_NAME);
-  if (!fs.existsSync(memoryDirectory)) return [];
-  return fs.readdirSync(memoryDirectory, { withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => entry.name);
+  return readFileNamesIn(path.join(projectDirectory, STORE_DIRECTORY_NAME)) ?? [];
+}
+
+// The resolved store's own status distinguishes "never existed" from "exists and holds
+// nothing", so — unlike `readMemoryFileNames` above, where orphan detection folds an absent
+// worktree store into the same empty result as an existing-but-empty one — this keeps
+// `readFileNamesIn`'s `null` for a directory that isn't there rather than defaulting it away.
+function readStoreFileNames(storePath) {
+  return readFileNamesIn(storePath);
+}
+
+function readFileNamesIn(directory) {
+  if (!fs.existsSync(directory)) return null;
+  return fs.readdirSync(directory, { withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => entry.name);
 }
 
 function readSession({ sessionId, modifiedAt, transcriptPath }) {

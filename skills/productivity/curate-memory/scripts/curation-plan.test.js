@@ -85,6 +85,7 @@ describe('resolvePool', () => {
       worktrees: [],
       pool: [],
       orphanStores: [],
+      mode: 'noop',
     });
   });
 
@@ -116,6 +117,7 @@ describe('resolvePool', () => {
       path: stated,
       indexPath: `${stated}/MEMORY.md`,
       resolvedBy: 'session-context',
+      status: 'absent',
     });
   });
 
@@ -125,6 +127,7 @@ describe('resolvePool', () => {
       path: `${PROJECTS}/${REPO_DIRECTORY}/memory`,
       indexPath: `${PROJECTS}/${REPO_DIRECTORY}/memory/MEMORY.md`,
       resolvedBy: 'encoded-repo-path',
+      status: 'absent',
     });
   });
 
@@ -159,6 +162,71 @@ describe('resolvePool', () => {
     const result = resolvePool(poolInput({ transcriptFiles: [] }));
     expect(result.status).toBe('resolved');
     expect(result.pool).toEqual([]);
+  });
+
+  describe('store status and pass mode', () => {
+    const ONE_TRANSCRIPT = [{ name: 'a.jsonl', modifiedAt: '2026-01-01T00:00:00.000Z' }];
+
+    it('classifies an absent store when no store files were read at all', () => {
+      const result = resolvePool(poolInput({ storeFiles: null }));
+      expect(result.store.status).toBe('absent');
+    });
+
+    it('defaults to an absent store when storeFiles is omitted', () => {
+      const result = resolvePool(poolInput());
+      expect(result.store.status).toBe('absent');
+    });
+
+    it('classifies an empty store when the directory holds no files at all', () => {
+      const result = resolvePool(poolInput({ storeFiles: [] }));
+      expect(result.store.status).toBe('empty');
+    });
+
+    it('classifies an empty store when it holds only a stale index and no memory files', () => {
+      const result = resolvePool(poolInput({ storeFiles: ['MEMORY.md'] }));
+      expect(result.store.status).toBe('empty');
+    });
+
+    it('classifies an index-less store when memory files exist but MEMORY.md does not', () => {
+      const result = resolvePool(poolInput({ storeFiles: ['a-memory.md', 'b-memory.md'] }));
+      expect(result.store.status).toBe('index-less');
+    });
+
+    it('classifies a present store when it holds memory files and an index', () => {
+      const result = resolvePool(poolInput({ storeFiles: ['a-memory.md', 'MEMORY.md'] }));
+      expect(result.store.status).toBe('present');
+    });
+
+    it('runs in curate mode when the store is present, regardless of the pool', () => {
+      const withSessions = resolvePool(poolInput({ storeFiles: ['a-memory.md', 'MEMORY.md'], transcriptFiles: ONE_TRANSCRIPT }));
+      const withoutSessions = resolvePool(poolInput({ storeFiles: ['a-memory.md', 'MEMORY.md'], transcriptFiles: [] }));
+      expect(withSessions.mode).toBe('curate');
+      expect(withoutSessions.mode).toBe('curate');
+    });
+
+    const DEGENERATE_STORE_FILES = [
+      ['absent', null],
+      ['empty', []],
+      ['index-less', ['a-memory.md']],
+    ];
+
+    it.each(DEGENERATE_STORE_FILES)(
+      'runs a cold start when the store is %s but the pool has sessions to mine',
+      (status, storeFiles) => {
+        const result = resolvePool(poolInput({ storeFiles, transcriptFiles: ONE_TRANSCRIPT }));
+        expect(result.store.status).toBe(status);
+        expect(result.mode).toBe('cold-start');
+      },
+    );
+
+    it.each(DEGENERATE_STORE_FILES)(
+      'runs a graceful no-op when the store is %s and the pool has no sessions either',
+      (status, storeFiles) => {
+        const result = resolvePool(poolInput({ storeFiles, transcriptFiles: [] }));
+        expect(result.store.status).toBe(status);
+        expect(result.mode).toBe('noop');
+      },
+    );
   });
 
   describe('worktree-inclusive transcript discovery', () => {
