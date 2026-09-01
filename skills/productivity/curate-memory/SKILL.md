@@ -393,22 +393,26 @@ Run for real, once, against fixtures built for exactly this purpose: a fabricate
 four-memory store belonging to a fabricated project at `/home/dev/work/checkout-api`, and
 three fabricated transcripts. The store and the transcripts were deleted once this example
 was written; nothing below is a claim about any store that still exists. Every command
-shown here is the literal command that produced the output beneath it, run against those
-synthetic fixtures rather than narrated by hand — the only way a worked example can make a
-pass/fail claim without going stale the moment a real store changes.
+shown below is the real invocation, run against those synthetic fixtures rather than
+narrated by hand — the only way a worked example can make a pass/fail claim without going
+stale the moment a real store changes. Steps 5 and 7 reproduce their commands' literal JSON
+output; Step 1's block below is the prose rendering its own instructions call for, built
+from that same real run's numbers rather than copied from raw stdout.
 
 The store held `retry-budget.md` and `retries-are-capped.md`, stating the same lesson in
 different words; `deploy-window.md`, recording a figure a later session revises; and
-`runbook-location.md`, naming a file that was never actually written into the fixture's
-working tree. Three sessions were fabricated to match: one restates the retry-budget lesson
-in passing while debugging something else, one records the deploy window being shortened
-after an incident, and one is a routine lint cleanup with no bearing on anything the store
-holds — included to show the mechanism decline to invent a candidate, not fail to find one.
+`runbook-location.md`, naming a runbook file that existed in the fixture's working tree
+when the memory was written and was later moved out from under that path with no session
+ever mentioning the move. Three sessions were fabricated to match: one restates the
+retry-budget lesson in passing while debugging something else, one records the deploy
+window being shortened after an incident, and one is a routine lint cleanup with no
+bearing on anything the store holds — included to show the mechanism decline to invent a
+candidate, not fail to find one.
 
 Step 1's preflight, from the real command:
 
 ```bash
-node scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory
+node ${CLAUDE_SKILL_DIR}/scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory
 ```
 
 ```text
@@ -439,7 +443,7 @@ forward unchanged, since nothing challenged it.
 Step 5's verification, the real command and its real output:
 
 ```bash
-node scripts/curation-plan-cli.js --verify-memories ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate
+node ${CLAUDE_SKILL_DIR}/scripts/curation-plan-cli.js --verify-memories ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate
 ```
 
 ```json
@@ -461,7 +465,7 @@ tree.`
 Step 7's re-hash, the real command and its real output:
 
 ```bash
-node scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory --verify-store sha256:f1e112448fa932752e7413c5e4611254cca8b9488f1b82d4589964b1834b006f
+node ${CLAUDE_SKILL_DIR}/scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory --verify-store sha256:f1e112448fa932752e7413c5e4611254cca8b9488f1b82d4589964b1834b006f
 ```
 
 ```json
