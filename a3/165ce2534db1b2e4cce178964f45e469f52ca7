@@ -1,0 +1,22 @@
+CONTEXT.md
+  s_96ce69f9c888f3::t_573fd73dc3bb6d 23
+  s_96ce69f9c888f3::t_dae28c31d53654 37-131
+docs/adr/0024-refactor-rule-tree-diverges-on-named-roots-and-whole-plan.md
+  s_96ce69f9c888f3::t_c5acddb06e49e2 1-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a3165ce2534db1b2e4cce178964f45e469f52ca7",
+  "prompts": {},
+  "sessions": {
+    "s_96ce69f9c888f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca189797-893d-44f6-9fde-ae2d58c63d74",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
