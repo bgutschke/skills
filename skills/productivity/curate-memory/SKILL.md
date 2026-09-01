@@ -1,7 +1,8 @@
 ---
 name: curate-memory
 disable-model-invocation: true
-description: Runs one curation pass over the current project's memory store — reads the newest session transcripts, filters them to real user and assistant prose, and writes a complete candidate store beside the input plus one report listing every merge, drop, rewrite, and addition with its justification and a citation to the session that supports it. Every retained memory naming a concrete file, command, or flag is also checked against the working tree and reported verified or unverifiable — a failed check only annotates the report, it never drops the memory. The input store is never opened for writing, and the pass adopts nothing: it prints the command to adopt the candidate store and the command to discard it. Use when the user types /curate-memory, or asks to curate, consolidate, clean up, de-duplicate, or prune their memory store or memory files.
+argument-hint: "[--token-budget <n>] [--dry-run]"
+description: Runs one curation pass over the current project's memory store — reads the newest session transcripts, filters them to real user and assistant prose, and writes a complete candidate store beside the input plus one report listing every merge, drop, rewrite, and addition with its justification and a citation to the session that supports it. Every retained memory naming a concrete file, command, or flag is also checked against the working tree and reported verified or unverifiable — a failed check only annotates the report, it never drops the memory. The input store is never opened for writing, and the pass adopts nothing — it prints the command to adopt the candidate store and the command to discard it. Use when the user types /curate-memory, or asks to curate, consolidate, clean up, de-duplicate, or prune their memory store or memory files.
 ---
 
 # curate-memory
