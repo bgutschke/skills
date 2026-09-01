@@ -1,3 +1,15 @@
+# [1.12.0](https://github.com/bgutschke/skills/compare/v1.11.0...v1.12.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **curate-memory:** name the dispatched subagent "miner" consistently ([064fd16](https://github.com/bgutschke/skills/commit/064fd16c70d8be3c62de738126e3ef5c2dbbed71))
+
+
+### Features
+
+* **curate-memory:** read worktree transcripts into the pool ([b762fba](https://github.com/bgutschke/skills/commit/b762fba9352b1c15df97db6eedcd020fb8a2e3c6)), closes [#91](https://github.com/bgutschke/skills/issues/91)
+
 # [1.11.0](https://github.com/bgutschke/skills/compare/v1.10.1...v1.11.0) (2026-09-01)
 
 
