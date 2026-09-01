@@ -22,14 +22,16 @@ const TRANSCRIPT_EXTENSION = '.jsonl';
 function resolvePool({ repoToplevel, projectsDirectory, projectDirectoryNames, memoryDirectory, transcriptFiles }) {
   const directoryName = encodeProjectDirectoryName(repoToplevel);
   if (!projectDirectoryNames.includes(directoryName)) {
-    return { status: 'no-project-directory', projectDirectory: null, store: null, pool: [] };
+    return { status: 'no-project-directory', projectDirectory: null, store: null, outputs: null, pool: [] };
   }
 
   const projectDirectory = `${projectsDirectory}/${directoryName}`;
+  const store = resolveStore(projectDirectory, memoryDirectory);
   return {
     status: 'resolved',
     projectDirectory,
-    store: resolveStore(projectDirectory, memoryDirectory),
+    store,
+    outputs: resolveOutputs(store),
     pool: buildPool(projectDirectory, transcriptFiles),
   };
 }
@@ -48,6 +50,18 @@ function resolveStore(projectDirectory, memoryDirectory) {
     path,
     indexPath: `${path}/${STORE_INDEX_NAME}`,
     resolvedBy: memoryDirectory ? 'session-context' : 'encoded-repo-path',
+  };
+}
+
+// Every path a pass writes hangs off the store's own path, so the candidate store lands
+// beside its input wherever that input turned out to be. Only the candidate store itself
+// carries the store's shape: the report and the digest are siblings of it rather than
+// contents, or adopting the candidate by a plain move would install them as memories.
+function resolveOutputs({ path }) {
+  return {
+    candidateStore: `${path}-candidate`,
+    report: `${path}-candidate-REPORT.md`,
+    sessionDigest: `${path}-candidate-session-digest.json`,
   };
 }
 

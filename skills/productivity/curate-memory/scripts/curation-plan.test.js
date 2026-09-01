@@ -28,9 +28,9 @@ function session(sessionId, modifiedAt, records) {
 }
 
 // Enough prose to clear the near-empty floor without each fixture spelling out 2,000
-// characters inline.
-function bulkProse(tokens) {
-  return userProse('word '.repeat(tokens));
+// characters inline. 600 five-character words is 3,000 characters, or 750 prose tokens.
+function bulkProse(words) {
+  return userProse('word '.repeat(words));
 }
 
 describe('resolvePool', () => {
@@ -66,8 +66,30 @@ describe('resolvePool', () => {
       status: 'no-project-directory',
       projectDirectory: null,
       store: null,
+      outputs: null,
       pool: [],
     });
+  });
+
+  it('places every output beside the resolved store', () => {
+    const store = `${PROJECTS}/${REPO_DIRECTORY}/memory`;
+    expect(resolvePool(poolInput()).outputs).toEqual({
+      candidateStore: `${store}-candidate`,
+      report: `${store}-candidate-REPORT.md`,
+      sessionDigest: `${store}-candidate-session-digest.json`,
+    });
+  });
+
+  it('follows the store when session context puts it outside the project directory', () => {
+    const stated = '/home/dev/elsewhere/memory';
+    const result = resolvePool(poolInput({ memoryDirectory: stated }));
+    expect(result.outputs.candidateStore).toBe(`${stated}-candidate`);
+  });
+
+  it('keeps the report and the digest outside the candidate store, so a plain move adopts it', () => {
+    const { candidateStore, report, sessionDigest } = resolvePool(poolInput()).outputs;
+    expect(report.startsWith(`${candidateStore}/`)).toBe(false);
+    expect(sessionDigest.startsWith(`${candidateStore}/`)).toBe(false);
   });
 
   it('prefers the memory directory stated in session context over the encoded one', () => {
