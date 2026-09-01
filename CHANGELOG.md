@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/bgutschke/skills/compare/v1.13.0...v1.14.0) (2026-09-01)
+
+
+### Features
+
+* **curate-memory:** check retained memories against working tree ([8029a4b](https://github.com/bgutschke/skills/commit/8029a4b2199fe94a2b541572a7617542723e6d3f)), closes [#93](https://github.com/bgutschke/skills/issues/93)
+
 # [1.13.0](https://github.com/bgutschke/skills/compare/v1.12.0...v1.13.0) (2026-09-01)
 
 
