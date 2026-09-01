@@ -389,59 +389,93 @@ rm -rf <candidateStore> <report> <sessionDigestDirectory>
 
 ## Worked example
 
-A pass over a fabricated store belonging to `/home/dev/work/checkout-api`, whose project
-directory holds 35 transcripts and whose store holds four memories. A branch was worked in
-a worktree at `/home/dev/work/checkout-api/.claude/worktrees/retry-budget-fix` and later
-deleted; its 6 transcripts survive under its own project directory, recovered from a
-`worktree-state` record in the parent's transcripts. Two memories — `retry-budget.md` and
-`retries-are-capped.md` — state the same lesson in different words, and a later session
-revised a figure that a third one records.
+Run for real, once, against fixtures built for exactly this purpose: a fabricated
+four-memory store belonging to a fabricated project at `/home/dev/work/checkout-api`, and
+three fabricated transcripts. The store and the transcripts were deleted once this example
+was written; nothing below is a claim about any store that still exists. Every command
+shown here is the literal command that produced the output beneath it, run against those
+synthetic fixtures rather than narrated by hand — the only way a worked example can make a
+pass/fail claim without going stale the moment a real store changes.
 
-The preflight, printed before any mining:
+The store held `retry-budget.md` and `retries-are-capped.md`, stating the same lesson in
+different words; `deploy-window.md`, recording a figure a later session revises; and
+`runbook-location.md`, naming a file that was never actually written into the fixture's
+working tree. Three sessions were fabricated to match: one restates the retry-budget lesson
+in passing while debugging something else, one records the deploy window being shortened
+after an incident, and one is a routine lint cleanup with no bearing on anything the store
+holds — included to show the mechanism decline to invent a candidate, not fail to find one.
 
-```text
-Store: ~/.claude/projects/-home-dev-work-checkout-api/memory (4 memories)
-Worktrees: 1 found (worktree-state-parent) — no orphan stores
-Pool:  41 sessions (35 current project, 6 worktree) — 35 selected, 6 skipped as near-empty,
-       0 beyond the 150,000-token budget, 0 beyond the 100-session cap
-Prose: 52,140 tokens across 520 messages, in 1 batch (reduce tier dormant — 1 of 8 miners)
-Filtered out: 3,180 tool results, 2,460 tool calls, 1,905 reasoning blocks,
-              6,120 system reminders, 240 skill bodies, 190 slash commands
+Step 1's preflight, from the real command:
+
+```bash
+node scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory
 ```
 
-The corpus is 34 MB on disk; the 52,140 prose tokens are what survives classification.
-Budgeting on raw size would have spent the whole allowance on tool results. All 35
-non-empty sessions fit under the 150,000-token budget, so nothing is truncated by budget or
-cap here — and because their combined prose stays under the 60,000-token batch window, they
-land in a single batch, mined by a single miner.
+```text
+Store: ~/.claude/projects/-home-dev-work-checkout-api/memory (4 memories, present)
+Worktrees: none found — no orphan stores
+Pool:  3 sessions (current project) — 3 selected, 0 skipped as near-empty,
+       0 beyond the 150,000-token budget, 0 beyond the 100-session cap
+Prose: 1,555 tokens across 16 messages, in 1 batch (reduce tier dormant — 1 of 8 miners)
+Filtered out: 5 tool results, 5 tool calls, 2 thinking blocks, 3 session-metadata records,
+              1 skill body, 1 slash command, 1 local command output
+```
 
-One miner returned nine candidates. Three survived step 3:
+One miner read the single batch alongside the store's four memories and returned two
+candidates:
 
-- **merge** `retry-budget.md` and `retries-are-capped.md`. Both say retries are capped per
-  request rather than per call. The candidate store holds one file, `retry-budget.md`,
-  and the merged sentence is written out in it for the user to read.
-- **replace** the body of `deploy-window.md`. It records a 30-minute window; session
-  `c41f0ba2` says "we moved the deploy window to 15 minutes after the incident". The newest
-  statement wins.
-- **add** `no-force-push-shared.md`. Three separate sessions carry the same correction and
-  the store never recorded it.
+- **merge** `retry-budget.md` and `retries-are-capped.md` — evidence: "the cap is per
+  request, three calls inside one request still share the same three retries."
+- **replace** the body of `deploy-window.md` — evidence: "We moved the deploy window to
+  15 minutes after the incident."
 
-A fourth candidate was rejected: the miner proposed dropping `runbook-location.md` because
-a session's own search for the path it names came up empty. A session's failed search is
-not proof of anything either, so the memory stays in the candidate store, and the report
-records the rejection and the reason.
+The lint-cleanup session proposed nothing: nothing in it bears on any existing memory, and
+nothing in it rises to guidance worth recording.
 
-Step 5 then runs `--verify-memories` against the four retained memories. `retry-budget.md`
-and `deploy-window.md` both come back `verified` — each names a flag or file the working
-tree still has. `no-force-push-shared.md` comes back `no-targets` — its guidance names
-nothing concrete. `runbook-location.md` comes back `unverifiable`: the path it names,
-`docs/runbooks/deploy.md`, does not resolve to any tracked or untracked file. That result
-changes nothing in the candidate store — the memory is written exactly as step 4 left it —
-but step 6's report now carries two independent reasons `runbook-location.md` is in
-question: a session that searched for the same path and failed, and the working tree
-itself confirming the path isn't there. The report keeps them as separate lines rather than
-collapsing them into one, since a reader can check the second directly and the first only
-by reading the session.
+Step 3 confirmed both. Step 4 wrote a three-memory candidate store: the merge collapsed two
+files into one, `deploy-window.md` now reads 15 minutes, and `runbook-location.md` carried
+forward unchanged, since nothing challenged it.
 
-The input store re-hashed to the digest the preflight printed. The pass closed by printing
-the adopt and discard commands, and ran neither.
+Step 5's verification, the real command and its real output:
+
+```bash
+node scripts/curation-plan-cli.js --verify-memories ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate
+```
+
+```json
+[
+  { "name": "deploy-window.md", "status": "verified" },
+  { "name": "retry-budget.md", "status": "verified" },
+  { "name": "runbook-location.md", "status": "unverifiable" }
+]
+```
+
+`retry-budget.md` and `deploy-window.md` verified — each names a value still mentioned
+somewhere in the working tree (`RETRY_BUDGET`, `DEPLOY_WINDOW_MINUTES`). `runbook-location.md`
+came back unverifiable: `docs/runbooks/deploy.md` does not resolve to any tracked or
+untracked file. That result changed nothing in the candidate store — the memory stayed
+exactly as step 4 wrote it — but step 6's report carries the one line the user needs to
+overrule it: `**Unverifiable:** names \`docs/runbooks/deploy.md\`, not found in the working
+tree.`
+
+Step 7's re-hash, the real command and its real output:
+
+```bash
+node scripts/curation-plan-cli.js --memory-dir ~/.claude/projects/-home-dev-work-checkout-api/memory --verify-store sha256:f1e112448fa932752e7413c5e4611254cca8b9488f1b82d4589964b1834b006f
+```
+
+```json
+{ "status": "unchanged", "digest": "sha256:f1e112448fa932752e7413c5e4611254cca8b9488f1b82d4589964b1834b006f" }
+```
+
+confirming the input store never changed. The pass closed by printing the adopt and discard
+commands and ran neither:
+
+```bash
+mv ~/.claude/projects/-home-dev-work-checkout-api/memory ~/.claude/projects/-home-dev-work-checkout-api/memory-superseded \
+  && mv ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate ~/.claude/projects/-home-dev-work-checkout-api/memory
+
+rm -rf ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate \
+  ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate-REPORT.md \
+  ~/.claude/projects/-home-dev-work-checkout-api/memory-candidate-session-digest
+```
