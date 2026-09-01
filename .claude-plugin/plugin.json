@@ -16,6 +16,7 @@
   "skills": [
     "./skills/engineering/to-pr",
     "./skills/productivity/audit-rules",
+    "./skills/productivity/curate-memory",
     "./skills/productivity/renovate-triage"
   ]
 }

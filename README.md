@@ -40,6 +40,9 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
   - [audit-rules](./skills/productivity/audit-rules/SKILL.md) — read every active rule
     file and installed skill/agent description and report contradictions or unresolved
     overlaps between them.
+  - [curate-memory](./skills/productivity/curate-memory/SKILL.md) — run one curation pass
+    over the current project's memory store, writing a candidate store and a cited report
+    beside it without ever modifying the input.
   - [renovate-triage](./skills/productivity/renovate-triage/SKILL.md) — read every open
     Renovate PR, or one given by number/URL, for its changelog, release notes, and CI
     status, and post a risk verdict comment per PR.
