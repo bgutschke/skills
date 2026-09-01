@@ -1,0 +1,35 @@
+skills/productivity/curate-memory/SKILL.md
+  s_403ed9d36037a6::t_b223701ebf6736 175,177-181
+  s_403ed9d36037a6::t_45dc5783c29f32 40-48
+  s_403ed9d36037a6::t_24e85f5b2ee3d9 104-110
+skills/productivity/curate-memory/scripts/curation-plan.js
+  s_403ed9d36037a6::t_37e628acf03ee6 56-67
+  s_403ed9d36037a6::t_d7d069634e14be 25,29,33-34
+skills/productivity/curate-memory/scripts/curation-plan.test.js
+  s_403ed9d36037a6::t_a4036577748095 69,74-93
+  s_403ed9d36037a6::t_3f545ffe30945e 31-33
+  s_403ed9d36037a6::t_68e9bd28fa7343 94
+skills/productivity/curate-memory/scripts/curation-plan-cli.js
+  s_403ed9d36037a6::t_c999d2d7dbb7a9 13,18
+  s_403ed9d36037a6::t_762f1a1f7be20d 152-155,157-160
+  s_403ed9d36037a6::t_f0b9ba773ba417 20-49,51-53,55,59,61,63-67,69,71-77,80-81,87,104-140
+  s_403ed9d36037a6::t_c21060b2596d16 83
+  s_403ed9d36037a6::t_542575034f04f1 99
+  s_403ed9d36037a6::t_4977ccc9679f99 141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e96441ff32204d8738540fa7b0fc26a11ed4300a",
+  "prompts": {},
+  "sessions": {
+    "s_403ed9d36037a6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52562248-e87d-4bde-92da-cd6c144a548b",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
