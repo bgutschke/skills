@@ -1,4 +1,11 @@
-const { resolvePool, planDigest } = require('./curation-plan');
+const {
+  resolvePool,
+  planDigest,
+  DEFAULT_TOKEN_BUDGET,
+  DEFAULT_SESSION_CAP,
+  DEFAULT_BATCH_WINDOW_TOKENS,
+  DEFAULT_REDUCE_THRESHOLD_MINERS,
+} = require('./curation-plan');
 
 const PROJECTS = '/home/dev/.claude/projects';
 const REPO = '/home/dev/work/my-app';
@@ -31,6 +38,12 @@ function session(sessionId, modifiedAt, records) {
 // characters inline. 600 five-character words is 3,000 characters, or 750 prose tokens.
 function bulkProse(words) {
   return userProse('word '.repeat(words));
+}
+
+// A session carrying exactly this many prose tokens, at the module's 4-characters-per-token
+// ratio, so budget and window arithmetic in a test is exact rather than approximate.
+function proseOfTokens(tokens) {
+  return userProse('a'.repeat(tokens * 4));
 }
 
 describe('resolvePool', () => {
@@ -78,7 +91,7 @@ describe('resolvePool', () => {
     expect(resolvePool(poolInput()).outputs).toEqual({
       candidateStore: `${store}-candidate`,
       report: `${store}-candidate-REPORT.md`,
-      sessionDigest: `${store}-candidate-session-digest.json`,
+      sessionDigestDirectory: `${store}-candidate-session-digest`,
     });
   });
 
@@ -89,9 +102,9 @@ describe('resolvePool', () => {
   });
 
   it('keeps the report and the digest outside the candidate store, so a plain move adopts it', () => {
-    const { candidateStore, report, sessionDigest } = resolvePool(poolInput()).outputs;
+    const { candidateStore, report, sessionDigestDirectory } = resolvePool(poolInput()).outputs;
     expect(report.startsWith(`${candidateStore}/`)).toBe(false);
-    expect(sessionDigest.startsWith(`${candidateStore}/`)).toBe(false);
+    expect(sessionDigestDirectory.startsWith(`${candidateStore}/`)).toBe(false);
   });
 
   it('prefers the memory directory stated in session context over the encoded one', () => {
@@ -494,33 +507,51 @@ describe('planDigest', () => {
       expect(plan.selected.map((entry) => entry.sessionId)).toEqual(['newest', 'middle', 'older']);
     });
 
-    it('stops at the session limit and records the rest as beyond it', () => {
-      const sessions = Array.from({ length: 4 }, (unused, index) =>
-        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [bulkProse(600)]),
+    it('stops selecting once the token budget is spent, recording the rest as beyond it', () => {
+      const sessions = Array.from({ length: 5 }, (unused, index) =>
+        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [proseOfTokens(750)]),
       );
-      const plan = planDigest({ sessions, sessionLimit: 2 });
-      expect(plan.selected.map((entry) => entry.sessionId)).toEqual(['s3', 's2']);
+      const plan = planDigest({ sessions, tokenBudget: 2000 });
+      expect(plan.selected.map((entry) => entry.sessionId)).toEqual(['s4', 's3', 's2']);
       expect(plan.skipped).toEqual([
-        expect.objectContaining({ sessionId: 's1', reason: 'beyond-session-limit' }),
-        expect.objectContaining({ sessionId: 's0', reason: 'beyond-session-limit' }),
+        expect.objectContaining({ sessionId: 's1', reason: 'beyond-token-budget' }),
+        expect.objectContaining({ sessionId: 's0', reason: 'beyond-token-budget' }),
       ]);
     });
 
-    it('applies a default session limit when none is given', () => {
-      const sessions = Array.from({ length: 12 }, (unused, index) =>
-        session(`s${index}`, `2026-01-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`, [bulkProse(600)]),
+    it('applies the default token budget when none is given', () => {
+      const sessions = Array.from({ length: 4 }, (unused, index) =>
+        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [proseOfTokens(60_000)]),
       );
+      expect(DEFAULT_TOKEN_BUDGET).toBe(150_000);
       const plan = planDigest({ sessions });
-      expect(plan.selected).toHaveLength(8);
+      expect(plan.selected).toHaveLength(3);
+      expect(plan.skipped).toEqual([expect.objectContaining({ sessionId: 's0', reason: 'beyond-token-budget' })]);
     });
 
-    it('skips a near-empty session without spending a selection slot on it', () => {
+    it('applies the session cap as a secondary guard even while the budget still has room', () => {
+      const sessions = Array.from({ length: 4 }, (unused, index) =>
+        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [proseOfTokens(750)]),
+      );
+      const plan = planDigest({ sessions, sessionCap: 2 });
+      expect(plan.selected.map((entry) => entry.sessionId)).toEqual(['s3', 's2']);
+      expect(plan.skipped).toEqual([
+        expect.objectContaining({ sessionId: 's1', reason: 'beyond-session-cap' }),
+        expect.objectContaining({ sessionId: 's0', reason: 'beyond-session-cap' }),
+      ]);
+    });
+
+    it('applies the default session cap when none is given', () => {
+      expect(DEFAULT_SESSION_CAP).toBe(100);
+    });
+
+    it('skips a near-empty session without spending a selection slot or budget on it', () => {
       const plan = planDigest({
         sessions: [
           session('aborted', '2026-03-01T00:00:00.000Z', [userProse('hm')]),
-          session('real', '2026-02-01T00:00:00.000Z', [bulkProse(600)]),
+          session('real', '2026-02-01T00:00:00.000Z', [proseOfTokens(750)]),
         ],
-        sessionLimit: 1,
+        sessionCap: 1,
       });
       expect(plan.selected.map((entry) => entry.sessionId)).toEqual(['real']);
       expect(plan.skipped).toEqual([
@@ -543,22 +574,83 @@ describe('planDigest', () => {
     it('reports the prose-token total over the selected sessions only', () => {
       const plan = planDigest({
         sessions: [
-          session('kept', '2026-03-01T00:00:00.000Z', [bulkProse(600)]),
-          session('dropped', '2026-02-01T00:00:00.000Z', [bulkProse(600)]),
+          session('kept', '2026-03-01T00:00:00.000Z', [proseOfTokens(750)]),
+          session('dropped', '2026-02-01T00:00:00.000Z', [proseOfTokens(750)]),
         ],
-        sessionLimit: 1,
+        sessionCap: 1,
       });
       expect(plan.totals.proseTokens).toBe(plan.selected[0].proseTokens);
-      expect(plan.totals).toEqual({ sessionsRead: 2, sessionsSelected: 1, proseTokens: expect.any(Number) });
+      expect(plan.totals).toEqual(
+        expect.objectContaining({ sessionsRead: 2, sessionsSelected: 1, proseTokens: expect.any(Number) }),
+      );
     });
 
     it('returns an empty plan rather than an error when there are no sessions', () => {
       expect(planDigest({ sessions: [] })).toEqual({
         selected: [],
         skipped: [],
+        batches: [],
         classification: {},
-        totals: { sessionsRead: 0, sessionsSelected: 0, proseTokens: 0 },
+        totals: { sessionsRead: 0, sessionsSelected: 0, proseTokens: 0, batchCount: 0, reduceEngaged: false },
       });
+    });
+  });
+
+  describe('batching', () => {
+    it('groups selected sessions into contiguous batches sized to the window', () => {
+      const sessions = Array.from({ length: 4 }, (unused, index) =>
+        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [proseOfTokens(20_000)]),
+      );
+      const plan = planDigest({ sessions, batchWindowTokens: 60_000 });
+      expect(plan.batches.map((batch) => batch.map((entry) => entry.sessionId))).toEqual([
+        ['s3', 's2', 's1'],
+        ['s0'],
+      ]);
+    });
+
+    it('keeps a single session larger than the window whole rather than splitting it', () => {
+      const sessions = [
+        session('huge', '2026-01-02T00:00:00.000Z', [proseOfTokens(90_000)]),
+        session('small', '2026-01-01T00:00:00.000Z', [proseOfTokens(10_000)]),
+      ];
+      const plan = planDigest({ sessions, batchWindowTokens: 60_000 });
+      expect(plan.batches.map((batch) => batch.map((entry) => entry.sessionId))).toEqual([['huge'], ['small']]);
+    });
+
+    it('applies the default batch window when none is given', () => {
+      expect(DEFAULT_BATCH_WINDOW_TOKENS).toBe(60_000);
+    });
+
+    it('raises the number of batches as the budget rises while the window size stays fixed', () => {
+      const sessions = Array.from({ length: 9 }, (unused, index) =>
+        session(`s${index}`, `2026-01-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`, [proseOfTokens(20_000)]),
+      );
+      const narrow = planDigest({ sessions, tokenBudget: 50_000 });
+      const wide = planDigest({ sessions, tokenBudget: 150_000 });
+      expect(narrow.batches).toHaveLength(1);
+      expect(wide.batches).toHaveLength(3);
+      expect(wide.selected.length).toBeGreaterThan(narrow.selected.length);
+    });
+
+    it('leaves the reduce tier dormant at or below the default miner threshold', () => {
+      const sessions = Array.from({ length: 8 }, (unused, index) =>
+        session(`s${index}`, `2026-01-0${index + 1}T00:00:00.000Z`, [proseOfTokens(10_000)]),
+      );
+      const plan = planDigest({ sessions, batchWindowTokens: 10_000 });
+      expect(DEFAULT_REDUCE_THRESHOLD_MINERS).toBe(8);
+      expect(plan.selected).toHaveLength(8);
+      expect(plan.batches).toHaveLength(8);
+      expect(plan.totals.reduceEngaged).toBe(false);
+    });
+
+    it('engages the reduce tier once the batch count passes the default miner threshold', () => {
+      const sessions = Array.from({ length: 10 }, (unused, index) =>
+        session(`s${index}`, `2026-01-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`, [proseOfTokens(10_000)]),
+      );
+      const plan = planDigest({ sessions, batchWindowTokens: 10_000 });
+      expect(plan.selected).toHaveLength(10);
+      expect(plan.batches).toHaveLength(10);
+      expect(plan.totals.reduceEngaged).toBe(true);
     });
   });
 });
