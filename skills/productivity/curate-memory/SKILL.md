@@ -37,15 +37,26 @@ Two properties hold on every run, and everything below is arranged to keep them:
 
 ## What one pass reads
 
-Sessions recorded against the current project directory, newest first — that directory
-being the one the working directory encodes to, so a pass reads one project's history and
-never mixes in another's.
+Sessions recorded against the current project directory, newest first, plus sessions
+recorded against every worktree this repository has — that directory being the one the
+working directory encodes to, so a pass reads one project's history and never mixes in
+another's.
 
-A git worktree is its own project directory: its sessions and its store are recorded
-separately from the parent checkout's, and neither pass sees the other's. Run the pass from
-the main checkout to curate the main store. A pass run from a worktree curates that
-worktree's own store from that worktree's own sessions, and reports finding no history at
-all when the worktree has not been worked in yet.
+A git worktree is its own project directory: its sessions are recorded separately from the
+parent checkout's. Left there, they would be invisible to a pass run from the main
+checkout — and for anyone who works mostly in worktrees, that is most of the history worth
+mining, including work on worktrees deleted after their branch merged. `git worktree list`
+alone is not enough for this, since it reports only what exists right now and a deleted
+worktree drops out of it while its transcripts stay on disk. The plan script therefore
+unions three sources of worktree paths — live worktrees from `git worktree list`, worktrees
+this project's own transcripts record creating, and worktrees with no creation record found
+by matching a session's original working directory back to this repo's toplevel — and folds
+each one's transcripts into the same pool, tagged with which of the three found it.
+
+A worktree's own memory *store* is located but never merged into the candidate store — a
+memory written on a branch may only ever have been about that branch's task. A non-empty
+one is reported in the preflight as an orphan for the user to decide on, never folded into
+step 4's output.
 
 Transcript records are filtered by class before anything reads them. Kept: real user prose
 and assistant prose. Dropped: tool results and tool calls, assistant reasoning, re-injected
@@ -74,9 +85,12 @@ that rewrites `grep` or `ls` can return an empty result for a directory holding 
 files, and a pass that reads nothing looks exactly like a pass with nothing to find.
 
 Print the preflight to the user as prose: the resolved store and how many memories it
-holds, how many sessions are in the pool, how many were selected, how many were skipped as
-near-empty, and the prose-token total. Then **continue without asking**. Everything the
-pass writes is additive and lands in a new directory, so there is nothing here to confirm.
+holds, how many worktrees were found and by which source (`worktrees` in the script's
+output), how many sessions are in the pool, how many were selected, how many were skipped
+as near-empty, and the prose-token total. If `orphanStores` is non-empty, name each one and
+say plainly that it is not part of this pass and is not being merged. Then **continue
+without asking**. Everything the pass writes is additive and lands in a new directory, so
+there is nothing here to confirm.
 
 Stop and report only if the script exits non-zero — it found no session history for this
 project, which a pass cannot proceed without.
@@ -210,15 +224,20 @@ rm -rf <candidateStore> <report> <sessionDigest>
 ## Worked example
 
 A pass over a fabricated store belonging to `/home/dev/work/checkout-api`, whose project
-directory holds 41 transcripts and whose store holds four memories. Two of them —
-`retry-budget.md` and `retries-are-capped.md` — state the same lesson in different words,
-and a later session revised a figure that a third one records.
+directory holds 35 transcripts and whose store holds four memories. A branch was worked in
+a worktree at `/home/dev/work/checkout-api/.claude/worktrees/retry-budget-fix` and later
+deleted; its 6 transcripts survive under its own project directory, recovered from a
+`worktree-state` record in the parent's transcripts. Two memories — `retry-budget.md` and
+`retries-are-capped.md` — state the same lesson in different words, and a later session
+revised a figure that a third one records.
 
 The preflight, printed before any mining:
 
 ```text
 Store: ~/.claude/projects/-home-dev-work-checkout-api/memory (4 memories)
-Pool:  41 sessions — 8 selected, 6 skipped as near-empty, 27 beyond the session limit
+Worktrees: 1 found (worktree-state-parent) — no orphan stores
+Pool:  41 sessions (35 current project, 6 worktree) — 8 selected, 6 skipped as near-empty,
+       27 beyond the session limit
 Prose: 47,300 tokens across 214 messages
 Filtered out: 3,180 tool results, 2,460 tool calls, 1,905 reasoning blocks,
               6,120 system reminders, 240 skill bodies, 190 slash commands

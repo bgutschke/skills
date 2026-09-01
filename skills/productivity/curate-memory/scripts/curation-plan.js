@@ -19,21 +19,87 @@ const STORE_DIRECTORY_NAME = 'memory';
 const STORE_INDEX_NAME = 'MEMORY.md';
 const TRANSCRIPT_EXTENSION = '.jsonl';
 
-function resolvePool({ repoToplevel, projectsDirectory, projectDirectoryNames, memoryDirectory, transcriptFiles }) {
+function resolvePool({
+  repoToplevel,
+  projectsDirectory,
+  projectDirectoryNames,
+  memoryDirectory,
+  transcriptFiles,
+  liveWorktreePaths,
+  worktreeStateRecords = [],
+  worktreeTranscriptFiles = {},
+  worktreeMemoryFiles = {},
+}) {
   const directoryName = encodeProjectDirectoryName(repoToplevel);
   if (!projectDirectoryNames.includes(directoryName)) {
-    return { status: 'no-project-directory', projectDirectory: null, store: null, outputs: null, pool: [] };
+    return { status: 'no-project-directory', projectDirectory: null, store: null, outputs: null, worktrees: [], pool: [], orphanStores: [] };
   }
 
   const projectDirectory = `${projectsDirectory}/${directoryName}`;
   const store = resolveStore(projectDirectory, memoryDirectory);
+  const worktrees = resolveWorktreeDirectories({
+    repoToplevel,
+    directoryName,
+    projectDirectoryNames,
+    liveWorktreePaths,
+    worktreeStateRecords,
+  });
+
   return {
     status: 'resolved',
     projectDirectory,
     store,
     outputs: resolveOutputs(store),
-    pool: buildPool(projectDirectory, transcriptFiles),
+    worktrees,
+    pool: buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, worktrees, worktreeTranscriptFiles),
+    orphanStores: buildOrphanStores(projectsDirectory, worktrees, worktreeMemoryFiles),
   };
+}
+
+// The pool is the union of live worktrees, worktrees this project's own transcripts
+// record creating, and worktrees found by scanning every other project's transcripts for
+// a record pointing back at this repo. All three resolve forward only —
+// a candidate is a real absolute path before it is ever encoded, so a wrong decode can
+// never attach one project's transcripts to another project's pass. A candidate that
+// encodes to a directory absent from disk, or to the current project itself, is dropped.
+function resolveWorktreeDirectories({ repoToplevel, directoryName, projectDirectoryNames, liveWorktreePaths, worktreeStateRecords }) {
+  const candidates = new Map();
+  const addCandidate = (absolutePath, provenance) => {
+    if (!absolutePath || absolutePath === repoToplevel) return;
+    const encoded = encodeProjectDirectoryName(absolutePath);
+    if (encoded === directoryName || candidates.has(encoded)) return;
+    candidates.set(encoded, { directoryName: encoded, provenance });
+  };
+
+  for (const absolutePath of liveWorktreePaths ?? []) {
+    addCandidate(absolutePath, 'live-worktree');
+  }
+  for (const record of worktreeStateRecords) {
+    if (record.originalCwd === repoToplevel) addCandidate(record.worktreePath, record.provenance);
+  }
+
+  return [...candidates.values()].filter((entry) => projectDirectoryNames.includes(entry.directoryName));
+}
+
+function buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, worktrees, worktreeTranscriptFiles) {
+  const pools = [buildPool(projectDirectory, transcriptFiles, 'current-project')];
+  for (const { directoryName, provenance } of worktrees) {
+    pools.push(buildPool(`${projectsDirectory}/${directoryName}`, worktreeTranscriptFiles[directoryName] ?? [], provenance));
+  }
+  return pools.flat().sort(byNewestFirst);
+}
+
+// A worktree memory store is located, never merged: a memory written on a branch is as
+// likely to be a note about that branch's task as a durable fact, and promoting it is a
+// judgment the user should make once — never one the pass makes silently.
+function buildOrphanStores(projectsDirectory, worktrees, worktreeMemoryFiles) {
+  return worktrees
+    .filter(({ directoryName }) => (worktreeMemoryFiles[directoryName] ?? []).length > 0)
+    .map(({ directoryName, provenance }) => ({
+      directoryName,
+      path: `${projectsDirectory}/${directoryName}/${STORE_DIRECTORY_NAME}`,
+      provenance,
+    }));
 }
 
 // The harness maps both a path separator and a dot onto a hyphen, so decoding a directory
@@ -65,16 +131,15 @@ function resolveOutputs({ path }) {
   };
 }
 
-function buildPool(projectDirectory, transcriptFiles) {
+function buildPool(projectDirectory, transcriptFiles, provenance) {
   return transcriptFiles
     .filter((file) => file.name.endsWith(TRANSCRIPT_EXTENSION))
     .map((file) => ({
       sessionId: file.name.slice(0, -TRANSCRIPT_EXTENSION.length),
       transcriptPath: `${projectDirectory}/${file.name}`,
       modifiedAt: file.modifiedAt,
-      provenance: 'current-project',
-    }))
-    .sort(byNewestFirst);
+      provenance,
+    }));
 }
 
 function planDigest({ sessions, sessionLimit = DEFAULT_SESSION_LIMIT }) {
@@ -208,4 +273,4 @@ function byNewestFirst(left, right) {
   return right.modifiedAt.localeCompare(left.modifiedAt);
 }
 
-module.exports = { resolvePool, planDigest };
+module.exports = { resolvePool, planDigest, encodeProjectDirectoryName, STORE_DIRECTORY_NAME };

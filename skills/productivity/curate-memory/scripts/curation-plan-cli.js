@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
-const { resolvePool, planDigest } = require('./curation-plan');
+const { resolvePool, planDigest, encodeProjectDirectoryName, STORE_DIRECTORY_NAME } = require('./curation-plan');
 
 const USAGE = `Usage:
   curation-plan-cli.js [--memory-dir <path>]   plan a pass and write the session digest
@@ -20,18 +20,24 @@ function main(argv) {
   const environment = readEnvironment(options.memoryDir);
   if (!environment) return exitWith('Not inside a git repository; a pass is scoped to one project.', 1);
 
-  // Locating the project directory is what tells the wrapper where to read transcripts
-  // from, so the pool can only be filled on a second pass over the same inputs. Keeping
-  // that cost buys the module boundary the one thing it is for: exactly two pure
-  // functions, neither of which opens anything.
-  const located = resolvePool({ ...environment, transcriptFiles: [] });
+  // The worktree-state scan reads every project directory's transcripts, so its result is
+  // read once here and threaded through rather than repeated for the second resolvePool
+  // call below — unlike transcriptFiles, this one is too expensive to recompute for free.
+  const worktreeStateRecords = readWorktreeStateRecords(environment);
+
+  // Locating the project directory — and which worktree directories belong in the pool —
+  // is what tells the wrapper where to read transcripts from, so the pool can only be
+  // filled on a second pass over the same inputs. Keeping that cost buys the module
+  // boundary the one thing it is for: exactly two pure functions, neither of which opens
+  // anything.
+  const located = resolvePool({ ...environment, transcriptFiles: [], worktreeStateRecords });
   if (located.status !== 'resolved') {
     return exitWith(`No session history for ${environment.repoToplevel} under ${environment.projectsDirectory}.`, 1);
   }
 
   return options.verifyStore
     ? verifyStore(located.store, options.verifyStore)
-    : plan(environment, located.projectDirectory);
+    : plan(environment, located, worktreeStateRecords);
 }
 
 // A mistyped flag reports itself and fails, rather than printing usage and exiting zero:
@@ -57,6 +63,7 @@ function readEnvironment(memoryDirectory) {
     projectsDirectory,
     projectDirectoryNames: readDirectoryNames(projectsDirectory),
     memoryDirectory,
+    liveWorktreePaths: readLiveWorktreePaths(),
   };
 }
 
@@ -68,6 +75,22 @@ function readRepoToplevel() {
   }
 }
 
+// A missing `git` command, an unfamiliar output shape, or no output at all must degrade
+// this source to nothing rather than fail the pass — the pool unions two other sources
+// precisely so this one is allowed to go quiet.
+function readLiveWorktreePaths() {
+  let output;
+  try {
+    output = execFileSync('git', ['worktree', 'list', '--porcelain'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return null;
+  }
+  return output
+    .split('\n')
+    .filter((line) => line.startsWith('worktree '))
+    .map((line) => line.slice('worktree '.length).trim());
+}
+
 function claudeConfigDirectory() {
   return process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude');
 }
@@ -77,8 +100,74 @@ function readDirectoryNames(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
 
-function plan(environment, projectDirectory) {
-  const resolved = resolvePool({ ...environment, transcriptFiles: readTranscriptFiles(projectDirectory) });
+// Every project directory's transcripts are scanned for a worktree-state record, since a
+// worktree this project created is recorded in its own transcripts (the "parent" case),
+// while a worktree with no creation record there is only recoverable from a record the
+// worktree's own session wrote about itself (the "sibling" case). Both are cheap: the
+// record is rare, so lines are matched by substring before ever being parsed.
+// The current project's own directory is scanned first, and always as 'worktree-state-parent',
+// regardless of where the filesystem happens to list it among its siblings — so the same
+// record found on both sides of a worktree resolves to a stable provenance run over run.
+function readWorktreeStateRecords(environment) {
+  const currentDirectoryName = encodeProjectDirectoryName(environment.repoToplevel);
+  const orderedNames = [
+    currentDirectoryName,
+    ...environment.projectDirectoryNames.filter((name) => name !== currentDirectoryName),
+  ].filter((name) => environment.projectDirectoryNames.includes(name));
+
+  const records = [];
+  for (const name of orderedNames) {
+    const provenance = name === currentDirectoryName ? 'worktree-state-parent' : 'worktree-state-sibling';
+    records.push(...scanWorktreeStateRecords(path.join(environment.projectsDirectory, name), provenance));
+  }
+  return records;
+}
+
+function scanWorktreeStateRecords(projectDirectory, provenance) {
+  const records = [];
+  for (const name of readTranscriptFileNames(projectDirectory)) {
+    for (const line of fs.readFileSync(path.join(projectDirectory, name), 'utf8').split('\n')) {
+      if (!line.includes('"type":"worktree-state"')) continue;
+      const session = tryParseJson(line)?.worktreeSession;
+      if (session?.originalCwd && session?.worktreePath) {
+        records.push({ originalCwd: session.originalCwd, worktreePath: session.worktreePath, provenance });
+      }
+    }
+  }
+  return records;
+}
+
+function readTranscriptFileNames(projectDirectory) {
+  return fs
+    .readdirSync(projectDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
+    .map((entry) => entry.name);
+}
+
+function tryParseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function plan(environment, located, worktreeStateRecords) {
+  const worktreeTranscriptFiles = {};
+  const worktreeMemoryFiles = {};
+  for (const { directoryName } of located.worktrees) {
+    const directory = path.join(environment.projectsDirectory, directoryName);
+    worktreeTranscriptFiles[directoryName] = readTranscriptFiles(directory);
+    worktreeMemoryFiles[directoryName] = readMemoryFileNames(directory);
+  }
+
+  const resolved = resolvePool({
+    ...environment,
+    transcriptFiles: readTranscriptFiles(located.projectDirectory),
+    worktreeStateRecords,
+    worktreeTranscriptFiles,
+    worktreeMemoryFiles,
+  });
   const digest = planDigest({ sessions: resolved.pool.map(readSession) });
   writeJson(resolved.outputs.sessionDigest, { sessions: digest.selected });
 
@@ -87,6 +176,8 @@ function plan(environment, projectDirectory) {
     repoToplevel: environment.repoToplevel,
     projectDirectory: resolved.projectDirectory,
     store: describeStore(resolved.store),
+    worktrees: resolved.worktrees,
+    orphanStores: resolved.orphanStores,
     preflight: {
       sessionsInPool: resolved.pool.length,
       sessionsSelected: digest.totals.sessionsSelected,
@@ -94,7 +185,7 @@ function plan(environment, projectDirectory) {
       sessionsBeyondLimit: countReason(digest.skipped, 'beyond-session-limit'),
       proseTokens: digest.totals.proseTokens,
       recordsByClass: digest.classification,
-      selected: digest.selected.map(({ sessionId, modifiedAt, proseTokens }) => ({ sessionId, modifiedAt, proseTokens })),
+      selected: digest.selected.map(({ sessionId, modifiedAt, proseTokens, provenance }) => ({ sessionId, modifiedAt, proseTokens, provenance })),
     },
     paths: resolved.outputs,
   }, null, 2));
@@ -109,6 +200,12 @@ function readTranscriptFiles(projectDirectory) {
       name: entry.name,
       modifiedAt: fs.statSync(path.join(projectDirectory, entry.name)).mtime.toISOString(),
     }));
+}
+
+function readMemoryFileNames(projectDirectory) {
+  const memoryDirectory = path.join(projectDirectory, STORE_DIRECTORY_NAME);
+  if (!fs.existsSync(memoryDirectory)) return [];
+  return fs.readdirSync(memoryDirectory, { withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => entry.name);
 }
 
 function readSession({ sessionId, modifiedAt, transcriptPath }) {
