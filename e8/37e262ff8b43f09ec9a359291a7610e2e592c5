@@ -1,0 +1,49 @@
+skills/productivity/curate-memory/scripts/curation-plan-cli.js
+  s_af3c57e16f0e5b::t_3d4ba0d1418fd8 34-36
+  s_af3c57e16f0e5b::t_6ed9c332d86e06 7-16,19-25
+  s_af3c57e16f0e5b::t_d779a8579f1e49 57,64,68-69,76-82
+  s_af3c57e16f0e5b::t_257731b9ab4cc5 83,183,199-200,204,211-212,216-217,221-224,231-251
+  s_af3c57e16f0e5b::t_20c88c7dd83a9a 84
+  s_af3c57e16f0e5b::t_5f727bd2b84b97 252
+skills/productivity/curate-memory/SKILL.md
+  s_af3c57e16f0e5b::t_813c31e7929b04 89,92,99-112,120-127,132
+  s_af3c57e16f0e5b::t_a448621cb69395 138-145
+  s_af3c57e16f0e5b::t_1385156f33f2d7 278
+  s_af3c57e16f0e5b::t_cfefbfb67f9920 21-26
+  s_af3c57e16f0e5b::t_fb56567aa5fdcf 296-298,303-307
+  s_af3c57e16f0e5b::t_ac2e67ee386e38 166-182
+  s_af3c57e16f0e5b::t_78022c2a0f6890 44-53
+  s_af3c57e16f0e5b::t_9f543cf7f97d88 133
+skills/productivity/curate-memory/scripts/curation-plan.js
+  s_af3c57e16f0e5b::t_aa32bd857dfc71 148
+  s_af3c57e16f0e5b::t_0da13a43a6dbff 1-10,14-15,18-26,29
+  s_af3c57e16f0e5b::t_207eec1fdc1e25 27-28
+  s_af3c57e16f0e5b::t_1e2d94becd63d6 163-169,175-177,180,184-187,189-190,194-195,199,204-206,211-229
+  s_af3c57e16f0e5b::t_5521cd7f462d3d 333-342
+  s_af3c57e16f0e5b::t_1ba61041af0266 30
+  s_af3c57e16f0e5b::t_b0e485130b04eb 230-231
+skills/productivity/curate-memory/scripts/curation-plan.test.js
+  s_af3c57e16f0e5b::t_d7b09380d0358b 43-48
+  s_af3c57e16f0e5b::t_09e7b5ba665607 105,107
+  s_af3c57e16f0e5b::t_00aecf5def3496 637,639,641,647-648,650-652
+  s_af3c57e16f0e5b::t_869bd83874364b 1-8
+  s_af3c57e16f0e5b::t_5f8bc3b4c4eebe 510-512,514-515,517-518,522-524,526,528-541,544-548,552,554,577-578,580,583-585,592,594,598-636,638,640,642-646,649,653-654
+  s_af3c57e16f0e5b::t_f70d899307df63 94
+  s_af3c57e16f0e5b::t_e2cde42935bc11 655
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e837e262ff8b43f09ec9a359291a7610e2e592c5",
+  "prompts": {},
+  "sessions": {
+    "s_af3c57e16f0e5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ad74a299-cdb8-46ab-b9c8-3a864ee4151b",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
