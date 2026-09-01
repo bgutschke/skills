@@ -99,10 +99,11 @@ project, which a pass cannot proceed without.
 
 Read the input store in full: every memory file and the index.
 
-Then dispatch **one** subagent to read the digest file at `paths.sessionDigest` and return
-candidates. Give it the input store's contents in its prompt, since it needs to know what
-already exists to propose a relationship to it. Run it on this session's model rather than
-a cheaper tier: "is this memory stale?" is a nuanced call whose failure is silent.
+Then dispatch **one** miner — a subagent that reads the digest file at
+`paths.sessionDigest` and returns candidates. Give it the input store's contents in its
+prompt, since it needs to know what already exists to propose a relationship to it. Run it
+on this session's model rather than a cheaper tier: "is this memory stale?" is a nuanced
+call whose failure is silent.
 
 Each **candidate** carries:
 
