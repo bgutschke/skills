@@ -1,0 +1,21 @@
+CONTEXT.md
+  s_96ce69f9c888f3::t_1025b6e1886cd3 90-93
+  s_96ce69f9c888f3::t_94184917bca06f 72-75
+  s_96ce69f9c888f3::t_65855168d0dbb5 42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6085bb3943b32d535787b2b7f04506a92e0b155b",
+  "prompts": {},
+  "sessions": {
+    "s_96ce69f9c888f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca189797-893d-44f6-9fde-ae2d58c63d74",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
