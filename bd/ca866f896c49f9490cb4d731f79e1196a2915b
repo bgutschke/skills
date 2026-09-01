@@ -1,0 +1,19 @@
+skills/productivity/curate-memory/SKILL.md
+  s_2f22b27a20957c::t_ad563c95fadfd9 102-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "bdca866f896c49f9490cb4d731f79e1196a2915b",
+  "prompts": {},
+  "sessions": {
+    "s_2f22b27a20957c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2936681-71ef-48d3-bde1-018eb4226e10",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
