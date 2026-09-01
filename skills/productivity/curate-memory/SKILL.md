@@ -37,10 +37,15 @@ Two properties hold on every run, and everything below is arranged to keep them:
 
 ## What one pass reads
 
-Sessions recorded against the current project directory, newest first. Sessions run inside
-a git worktree are recorded against that worktree's own project directory and are outside
-this pass; a pass run from a worktree checkout reports that it found no history rather
-than silently returning an empty result.
+Sessions recorded against the current project directory, newest first — that directory
+being the one the working directory encodes to, so a pass reads one project's history and
+never mixes in another's.
+
+A git worktree is its own project directory: its sessions and its store are recorded
+separately from the parent checkout's, and neither pass sees the other's. Run the pass from
+the main checkout to curate the main store. A pass run from a worktree curates that
+worktree's own store from that worktree's own sessions, and reports finding no history at
+all when the worktree has not been worked in yet.
 
 Transcript records are filtered by class before anything reads them. Kept: real user prose
 and assistant prose. Dropped: tool results and tool calls, assistant reasoning, re-injected
@@ -96,9 +101,13 @@ Each **candidate** carries:
 | `body` | the proposed memory text, written out in full |
 | `evidence` | a session id plus a short verbatim quote from that session |
 
-Ask for at most 15 candidates, ranked, de-duplicated within the batch. The bound exists so
-that what reaches this conversation grows with the number of miners rather than with the
-size of the history, which is what lets a later pass read more sessions without redesign.
+Ask for at most 15 candidates, ranked, de-duplicated within the batch. A bound is what
+makes the volume reaching this conversation grow with the number of miners rather than with
+the size of the history, which is what lets a later pass read more sessions without
+redesign. 15 is set a little above the size of a store worth curating — the store this was
+designed against held 9 memories — so one miner can propose a change to every entry and
+still add a few, but cannot propose a wholesale rewrite that step 3 could not re-decide
+entry by entry in one sitting.
 
 ## Step 3: Decide
 
@@ -163,12 +172,13 @@ entry per decision — including the ones taken against a miner's proposal, sinc
 candidate is a decision the user may want to overturn:
 
 ```markdown
-### merge: rtk-false-negatives + verifying-skill-availability
+### merge: retry-budget + retries-are-capped
 
-**Result:** one memory, `trust-negative-results`.
-**Justification:** both state the same lesson — a filtered negative result is not evidence
-of absence. Keeping two costs context every session and asserts it twice.
-**Citation:** session 0ab76275 — "verify with plain find before reporting something missing"
+**Result:** one memory, `retry-budget`.
+**Justification:** both state the same lesson — the retry cap is per request, not per
+call. Keeping two costs context every session and asserts the same thing twice.
+**Citation:** session 7f2a9c14 — "the cap is per request; three calls inside one request
+still share three retries"
 ```
 
 Every entry states its intent, what the store now holds, why, and the session that supports
