@@ -67,7 +67,9 @@ describe('resolvePool', () => {
       projectDirectory: null,
       store: null,
       outputs: null,
+      worktrees: [],
       pool: [],
+      orphanStores: [],
     });
   });
 
@@ -142,6 +144,191 @@ describe('resolvePool', () => {
     const result = resolvePool(poolInput({ transcriptFiles: [] }));
     expect(result.status).toBe('resolved');
     expect(result.pool).toEqual([]);
+  });
+
+  describe('worktree-inclusive transcript discovery', () => {
+    const LIVE_WORKTREE = '/home/dev/work/my-app-fix-1';
+    const LIVE_WORKTREE_DIRECTORY = '-home-dev-work-my-app-fix-1';
+
+    function worktreeTranscripts(directoryName, files) {
+      return { worktreeTranscriptFiles: { [directoryName]: files } };
+    }
+
+    it('yields just the current project when there are no worktrees at all', () => {
+      const result = resolvePool(poolInput());
+      expect(result.worktrees).toEqual([]);
+      expect(result.pool.every((entry) => entry.provenance === 'current-project')).toBe(true);
+    });
+
+    it('finds a live worktree from git worktree list', () => {
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, LIVE_WORKTREE_DIRECTORY],
+          liveWorktreePaths: [REPO, LIVE_WORKTREE],
+          ...worktreeTranscripts(LIVE_WORKTREE_DIRECTORY, [{ name: 'a.jsonl', modifiedAt: '2026-01-01T00:00:00.000Z' }]),
+        }),
+      );
+      expect(result.worktrees).toEqual([{ directoryName: LIVE_WORKTREE_DIRECTORY, provenance: 'live-worktree' }]);
+      expect(result.pool).toContainEqual(
+        expect.objectContaining({ sessionId: 'a', provenance: 'live-worktree', transcriptPath: `${PROJECTS}/${LIVE_WORKTREE_DIRECTORY}/a.jsonl` }),
+      );
+    });
+
+    it('excludes the main worktree that git worktree list reports for the repo itself', () => {
+      const result = resolvePool(poolInput({ liveWorktreePaths: [REPO] }));
+      expect(result.worktrees).toEqual([]);
+    });
+
+    it('finds a deleted worktree from a worktree-state record found in the parent project\'s own transcripts', () => {
+      const deletedDirectory = '-home-dev-work-my-app--claude-worktrees-fix-2';
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, deletedDirectory],
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: '/home/dev/work/my-app/.claude/worktrees/fix-2', provenance: 'worktree-state-parent' },
+          ],
+        }),
+      );
+      expect(result.worktrees).toEqual([{ directoryName: deletedDirectory, provenance: 'worktree-state-parent' }]);
+    });
+
+    it('finds a worktree with no creation record by matching a recorded original working directory to the repo toplevel', () => {
+      const undocumentedDirectory = '-home-dev-work-my-app-worktrees-fix-3';
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, undocumentedDirectory],
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: '/home/dev/work/my-app-worktrees/fix-3', provenance: 'worktree-state-sibling' },
+          ],
+        }),
+      );
+      expect(result.worktrees).toEqual([{ directoryName: undocumentedDirectory, provenance: 'worktree-state-sibling' }]);
+    });
+
+    it('ignores a worktree-state record whose original working directory does not match this repo', () => {
+      const otherDirectory = '-home-dev-work-other-app-worktrees-fix';
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, otherDirectory],
+          worktreeStateRecords: [
+            { originalCwd: '/home/dev/work/other-app', worktreePath: '/home/dev/work/other-app-worktrees/fix', provenance: 'worktree-state-parent' },
+          ],
+        }),
+      );
+      expect(result.worktrees).toEqual([]);
+    });
+
+    it('dedupes the same worktree reported by more than one source into a single pool entry', () => {
+      const directory = LIVE_WORKTREE_DIRECTORY;
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, directory],
+          liveWorktreePaths: [LIVE_WORKTREE],
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: LIVE_WORKTREE, provenance: 'worktree-state-parent' },
+            { originalCwd: REPO, worktreePath: LIVE_WORKTREE, provenance: 'worktree-state-sibling' },
+          ],
+        }),
+      );
+      expect(result.worktrees).toHaveLength(1);
+      expect(result.worktrees[0]).toEqual({ directoryName: directory, provenance: 'live-worktree' });
+    });
+
+    it('excludes a candidate worktree path whose encoded directory does not exist on disk', () => {
+      const result = resolvePool(
+        poolInput({
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: '/home/dev/work/my-app/.claude/worktrees/never-read', provenance: 'worktree-state-parent' },
+          ],
+        }),
+      );
+      expect(result.worktrees).toEqual([]);
+    });
+
+    it('resolves nested, sibling, and flat worktree layouts together', () => {
+      const nested = { path: `${REPO}/.claude/worktrees/nested-fix`, directory: '-home-dev-work-my-app--claude-worktrees-nested-fix' };
+      const sibling = { path: '/home/dev/work/my-app-sibling-fix', directory: '-home-dev-work-my-app-sibling-fix' };
+      const flat = { path: '/home/dev/work/my-app.flat-fix', directory: '-home-dev-work-my-app-flat-fix' };
+
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, nested.directory, sibling.directory, flat.directory],
+          liveWorktreePaths: [nested.path],
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: sibling.path, provenance: 'worktree-state-parent' },
+            { originalCwd: REPO, worktreePath: flat.path, provenance: 'worktree-state-sibling' },
+          ],
+        }),
+      );
+
+      expect(result.worktrees.map((entry) => entry.directoryName).sort()).toEqual(
+        [nested.directory, sibling.directory, flat.directory].sort(),
+      );
+    });
+
+    it('encodes a worktree path containing a dot, a hyphen, and both to its project directory name', () => {
+      const dotted = { path: `${REPO}/.worktrees/fix.1`, directory: '-home-dev-work-my-app--worktrees-fix-1' };
+      const hyphenated = { path: `${REPO}/.worktrees/fix-2`, directory: '-home-dev-work-my-app--worktrees-fix-2' };
+      const both = { path: `${REPO}/.worktrees/fix-3.beta`, directory: '-home-dev-work-my-app--worktrees-fix-3-beta' };
+
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, dotted.directory, hyphenated.directory, both.directory],
+          liveWorktreePaths: [dotted.path, hyphenated.path, both.path],
+        }),
+      );
+
+      expect(result.worktrees.map((entry) => entry.directoryName).sort()).toEqual(
+        [dotted.directory, hyphenated.directory, both.directory].sort(),
+      );
+    });
+
+    it('degrades to the remaining two sources when git worktree list output is absent', () => {
+      const deletedDirectory = '-home-dev-work-my-app--claude-worktrees-fix-2';
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, deletedDirectory],
+          liveWorktreePaths: null,
+          worktreeStateRecords: [
+            { originalCwd: REPO, worktreePath: '/home/dev/work/my-app/.claude/worktrees/fix-2', provenance: 'worktree-state-parent' },
+          ],
+        }),
+      );
+      expect(result.status).toBe('resolved');
+      expect(result.worktrees).toEqual([{ directoryName: deletedDirectory, provenance: 'worktree-state-parent' }]);
+    });
+
+    it('degrades to the remaining two sources when git worktree list output does not parse to any paths', () => {
+      const result = resolvePool(poolInput({ liveWorktreePaths: [] }));
+      expect(result.status).toBe('resolved');
+      expect(result.worktrees).toEqual([]);
+    });
+
+    it('reports a non-empty worktree memory store as an orphan and excludes it from the pool\'s stores', () => {
+      const directory = LIVE_WORKTREE_DIRECTORY;
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, directory],
+          liveWorktreePaths: [LIVE_WORKTREE],
+          worktreeMemoryFiles: { [directory]: ['stray-note.md'] },
+        }),
+      );
+      expect(result.orphanStores).toEqual([
+        { directoryName: directory, path: `${PROJECTS}/${directory}/memory`, provenance: 'live-worktree' },
+      ]);
+      expect(result.store.path).toBe(`${PROJECTS}/${REPO_DIRECTORY}/memory`);
+    });
+
+    it('does not report an empty worktree memory store as an orphan', () => {
+      const result = resolvePool(
+        poolInput({
+          projectDirectoryNames: [REPO_DIRECTORY, LIVE_WORKTREE_DIRECTORY],
+          liveWorktreePaths: [LIVE_WORKTREE],
+          worktreeMemoryFiles: { [LIVE_WORKTREE_DIRECTORY]: [] },
+        }),
+      );
+      expect(result.orphanStores).toEqual([]);
+    });
   });
 });
 
