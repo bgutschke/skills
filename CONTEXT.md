@@ -20,7 +20,7 @@ A rule file the current user owns and can edit directly — `~/.claude/CLAUDE.md
 
 **Project rule file**:
 A rule file that lives in the project directory rather than the user's home directory — `./CLAUDE.md` and `./.claude/rules/*.md` (typically shared with a team via version control), plus a repo's `CLAUDE.local.md` (typically gitignored and personal to whoever's working in that checkout, but still project-scoped by location, not home-directory scoped). The rules auditor reads all of these for cross-referencing but never proposes edits to any of them, regardless of who authored the content.
-*Avoid*: treating as an edit target — including `CLAUDE.local.md`, since edit authority here is scoped by location (home vs. project directory), not by who wrote the content.
+*Avoid*: treating as an edit target for the rules auditor — including `CLAUDE.local.md`, since edit authority here is scoped by location (home vs. project directory), not by who wrote the content. `refactor-rule-tree` is a deliberate, narrower exception: it may edit a project rule file the user explicitly names as its root (see `ADR 0024`) — this does not reopen the rules auditor's own read-broad, write-narrow boundary.
 
 **Contradiction**:
 Two rule files, or two invocable units (see below), giving opposite guidance for the same trigger. The rules auditor's highest-severity finding.
@@ -33,6 +33,101 @@ Two invocable units that could both plausibly fire for the same request, with no
 **Invocable unit**:
 A skill or an agent — anything with a `description` the model matches against to decide whether to fire automatically. The rules auditor's semantic-distinction check only compares invocable units that can be auto-invoked; a unit with `disable-model-invocation: true` (or an agent that only runs when named explicitly) is exempt from that check.
 *Avoid*: "skill" alone when an agent is equally in scope.
+
+### Rule tree refactor
+
+**Rule tree**:
+A root *Rule file* plus every file reachable from it by import or mention edge, walked in
+one pass by `refactor-rule-tree`. Bounded by node class rather than a fixed depth — see
+*Restructurable*, *Verify-only*, and *Resolve-only* — and stops hard at the
+personal/project scope boundary rather than crossing it.
+*Avoid*: reading this as every rule file a machine happens to have — a tree is rooted at
+one file the pass was pointed at, not the union of every personal and project file that
+exists.
+
+**Ownerless rule**:
+A rule inside a *Restructurable* node that no skill or agent already owns, and for which
+no topic file or new skill is warranted either. Left in place rather than deleted — a pass
+that removed it would delete guidance that has nowhere else to live.
+*Avoid*: reading "ownerless" as a defect the pass must resolve — it is the safe default
+verdict for a rule that fails every extraction condition, not a finding demanding action.
+
+**Pointer**:
+A citation of a file path inside prose reached by a *Rule tree* walk — an `@`-import or a
+bare mention, either one. Every pointer resolves to exactly one of four verdicts: *Live*,
+*Dead*, *Unrouted*, or *Unverifiable*.
+*Avoid*: restricting this to `@`-imports — a plain mention of a path is a pointer too, just
+one whose target is already lazily loaded rather than always-on.
+
+**Live**:
+A pointer verdict: the cited path resolves to a real, current file. The base case — no
+finding is raised.
+*Avoid*: confusing with *Unrouted*, which runs the opposite direction — a target that
+resolves fine when checked from the outside, but that nothing in the tree actually points
+at.
+
+**Dead**:
+A pointer verdict: a well-formed, fully-qualified path that resolves nowhere once checked
+against the citing file's own directory, the repo root, and the home directory.
+*Avoid*: confusing with *Unverifiable* — a glob, an angle-bracket placeholder, a bare
+family filename, an extension-only mention, a partial path, or an unexpanded harness path
+variable is never *Dead*; it is ambiguous, not broken, and a hand-rolled resolver that
+collapsed this distinction produced seven false *Dead* verdicts against a real repository.
+
+**Unrouted**:
+A pointer verdict describing a target confirmed to exist inside the tree, but that nothing
+anywhere in the tree cites. A dead-pointer hunt alone never surfaces this — it requires
+knowing the full reachable set, not just checking one citation at a time.
+*Avoid*: confusing with *Dead* — a dead pointer is a citation with no target; an unrouted
+node is a target with no citation. They are inverses of each other, not two degrees of the
+same problem.
+
+**Unverifiable**:
+A pointer verdict for a reference that cannot be cleanly resolved either way: a glob, an
+angle-bracket placeholder, a bare family filename, an extension-only mention, a partial
+path, or an unexpanded harness path variable. Reported with the ordered list of roots
+tried, so a partial-path citation can be reported with its completion already computed.
+*Avoid*: treating this as a softer synonym for *Dead* — see that entry; the fourth verdict
+exists specifically so a confirmation gate is never asked to approve deleting a reference
+that was actually correct.
+
+**Precedence content**:
+Prose stating which of two invocable units, or two pieces of guidance, takes priority for
+a shared trigger — the kind of content `ROUTING.md`'s carving principle depends on. Never
+proposed for extraction, regardless of how the rest of its file scores against the
+placement decision.
+*Avoid*: conflating with the rationale behind a routing decision — rationale is offered as
+an optional extraction and dropped if declined; precedence content itself is never offered
+at all, because a router that is not already loaded cannot route.
+
+**Router exemption**:
+The rule that *Precedence content* is excluded from extraction unconditionally, applied
+without asking on every pass rather than re-proposed and re-declined every run.
+*Avoid*: confusing with the placement decision's ordinary "fires on nearly every task" stay
+condition — that one turns on observed firing frequency and can vary rule to rule; the
+router exemption is categorical, keyed to content type, and needs no frequency judgment at
+all.
+
+**Restructurable**:
+A *Rule tree* node the harness auto-loads — an eagerly-read *Rule file*. The placement
+decision (stay, move to a topic file, become a skill, or delete) applies here and only
+here.
+*Avoid*: assuming file extension decides this — a `.md` file is restructurable only if the
+harness actually auto-loads it; the same extension reached only by mention is *Verify-only*
+instead.
+
+**Verify-only**:
+A *Rule tree* node holding prose the harness does not auto-load. Its pointers are still
+checked, but its internal structure is left untouched — an already-lazy document has
+already made the saving the placement decision exists to offer.
+*Avoid*: confusing with *Restructurable* — the deciding fact is auto-load status, not
+whether the content is prose; both classes can hold prose.
+
+**Resolve-only**:
+A *Rule tree* node confirmed to exist and never opened for findings — code, structured
+configuration, model-written memory files, and another skill's own `SKILL.md`.
+*Avoid*: assuming this class is only for non-prose files — a `SKILL.md` is prose but still
+resolve-only, since auditing it is the skill auditor's job, not this pass's.
 
 ### Skill compliance audit
 
