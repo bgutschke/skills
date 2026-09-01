@@ -1,0 +1,46 @@
+skills/productivity/curate-memory/scripts/curation-plan.test.js
+  s_594a6145a21ea0::t_6c190eabd897f3 4-5
+  s_594a6145a21ea0::t_9fb4a09f439a7e 659-690,699-767,788
+  s_594a6145a21ea0::t_4ac164522972d5 768-787
+  s_594a6145a21ea0::t_2273aec45b8971 691-698
+skills/productivity/curate-memory/scripts/curation-plan.js
+  s_594a6145a21ea0::t_f6c954a534c917 333-339,344-365,367-378,387,402-408,412-413
+  s_594a6145a21ea0::t_4114dc37ec9e34 340-343
+  s_594a6145a21ea0::t_91bf2db5f20022 384-386
+  s_594a6145a21ea0::t_83a5d6f698d113 366,379-383,388-401
+skills/productivity/curate-memory/SKILL.md
+  s_594a6145a21ea0::t_c8396c1869cce1 11-13,15,21-22
+  s_594a6145a21ea0::t_0416c6f9c45733 370-384
+  s_594a6145a21ea0::t_903d2db7270541 4
+  s_594a6145a21ea0::t_f6db550d695448 242-262,268-269
+  s_594a6145a21ea0::t_102660f26a7754 265-267
+  s_594a6145a21ea0::t_d759705ec28c4c 289-291,294-297,302-308
+  s_594a6145a21ea0::t_c3b40ce7602628 292-293,298-301
+  s_594a6145a21ea0::t_39d7965b484353 27-28
+  s_594a6145a21ea0::t_a48d749d6fc843 263-264
+skills/productivity/curate-memory/scripts/curation-plan-cli.js
+  s_594a6145a21ea0::t_6897b86e4d6f86 380-382
+  s_594a6145a21ea0::t_65f360c3f23ed6 309-320,322-340,344-346,352,354-379,383-396
+  s_594a6145a21ea0::t_9e227a24385582 10-11,24-26,32-34
+  s_594a6145a21ea0::t_e59d5afbcb8206 43-44
+  s_594a6145a21ea0::t_ea5a83b4dbdbbe 75,79
+  s_594a6145a21ea0::t_ca75e5b2c275b6 321
+  s_594a6145a21ea0::t_47c7f3f0406b41 341-343,347-351,353
+  s_594a6145a21ea0::t_9823b0cbdb2513 35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2f0f962fb686f55dd5aed771d1fc86071a292fdf",
+  "prompts": {},
+  "sessions": {
+    "s_594a6145a21ea0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "374d67b0-a0f6-4804-86f8-f8387d936830",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
