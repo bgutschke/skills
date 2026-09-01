@@ -1,3 +1,15 @@
+# [1.13.0](https://github.com/bgutschke/skills/compare/v1.12.0...v1.13.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **curate-memory:** drop the ADR citation from a bundled script comment ([a7b56f5](https://github.com/bgutschke/skills/commit/a7b56f5fc2ed3016a040e94a1ca2c89789ba3504))
+
+
+### Features
+
+* **curate-memory:** select by token budget, batch, and fan out ([de5f6d6](https://github.com/bgutschke/skills/commit/de5f6d69c0653b56dda7e25d7437a3ed2a6168d7)), closes [#92](https://github.com/bgutschke/skills/issues/92)
+
 # [1.12.0](https://github.com/bgutschke/skills/compare/v1.11.0...v1.12.0) (2026-09-01)
 
 
