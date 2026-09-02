@@ -1,3 +1,5 @@
+// @ts-check
+
 // A token budget bounds the thing actually being spent, so a pass costs roughly the same
 // in a chatty project as in a quiet one. Measured over a 112-session store at design time,
 // the 20 newest sessions came to 134,000 prose tokens and the 30 newest to 177,000, so
@@ -37,6 +39,45 @@ const STORE_DIRECTORY_NAME = 'memory';
 const STORE_INDEX_NAME = 'MEMORY.md';
 const TRANSCRIPT_EXTENSION = '.jsonl';
 
+/** @typedef {{ name: string, modifiedAt: string }} TranscriptFileEntry */
+/** @typedef {{ originalCwd: string, worktreePath: string, provenance: string }} WorktreeStateRecord */
+/** @typedef {{ directoryName: string, provenance: string }} WorktreeEntry */
+/** @typedef {{ directoryName: string, path: string, provenance: string }} OrphanStore */
+/** @typedef {'absent' | 'empty' | 'present' | 'index-less'} StoreStatus */
+/** @typedef {{ path: string, indexPath: string, resolvedBy: 'session-context' | 'encoded-repo-path', status: StoreStatus }} Store */
+/** @typedef {{ candidateStore: string, report: string, sessionDigestDirectory: string }} StoreOutputs */
+/** @typedef {{ sessionId: string, transcriptPath: string, modifiedAt: string, provenance: string }} PoolEntry */
+/** @typedef {'resolved' | 'no-project-directory'} ResolvePoolStatus */
+/** @typedef {'curate' | 'cold-start' | 'noop'} PassMode */
+
+/**
+ * @typedef {{
+ *   status: ResolvePoolStatus,
+ *   projectDirectory: string | null,
+ *   store: Store | null,
+ *   outputs: StoreOutputs | null,
+ *   worktrees: WorktreeEntry[],
+ *   pool: PoolEntry[],
+ *   orphanStores: OrphanStore[],
+ *   mode: PassMode,
+ * }} ResolvePoolResult
+ */
+
+/**
+ * @param {{
+ *   repoToplevel: string,
+ *   projectsDirectory: string,
+ *   projectDirectoryNames: string[],
+ *   memoryDirectory?: string | null,
+ *   storeFiles?: string[] | null,
+ *   transcriptFiles: TranscriptFileEntry[],
+ *   liveWorktreePaths?: string[] | null,
+ *   worktreeStateRecords?: WorktreeStateRecord[],
+ *   worktreeTranscriptFiles?: Record<string, TranscriptFileEntry[]>,
+ *   worktreeMemoryFiles?: Record<string, string[]>,
+ * }} params
+ * @returns {ResolvePoolResult}
+ */
 function resolvePool({
   repoToplevel,
   projectsDirectory,
@@ -83,6 +124,11 @@ function resolvePool({
 // to build a store from, so every surviving candidate is necessarily an addition. Absent
 // both, there is nothing this pass could act on besides inventing an empty store, which is
 // worse than not running at all — that combination stops instead.
+/**
+ * @param {Store} store
+ * @param {PoolEntry[]} pool
+ * @returns {PassMode}
+ */
 function classifyPassMode(store, pool) {
   if (store.status === 'present') return 'curate';
   return pool.length > 0 ? 'cold-start' : 'noop';
@@ -94,8 +140,24 @@ function classifyPassMode(store, pool) {
 // a candidate is a real absolute path before it is ever encoded, so a wrong decode can
 // never attach one project's transcripts to another project's pass. A candidate that
 // encodes to a directory absent from disk, or to the current project itself, is dropped.
+/**
+ * @param {{
+ *   repoToplevel: string,
+ *   directoryName: string,
+ *   projectDirectoryNames: string[],
+ *   liveWorktreePaths?: string[] | null,
+ *   worktreeStateRecords: WorktreeStateRecord[],
+ * }} params
+ * @returns {WorktreeEntry[]}
+ */
 function resolveWorktreeDirectories({ repoToplevel, directoryName, projectDirectoryNames, liveWorktreePaths, worktreeStateRecords }) {
+  /** @type {Map<string, WorktreeEntry>} */
   const candidates = new Map();
+  /**
+   * @param {string} absolutePath
+   * @param {string} provenance
+   * @returns {void}
+   */
   const addCandidate = (absolutePath, provenance) => {
     if (!absolutePath || absolutePath === repoToplevel) return;
     const encoded = encodeProjectDirectoryName(absolutePath);
@@ -113,6 +175,14 @@ function resolveWorktreeDirectories({ repoToplevel, directoryName, projectDirect
   return [...candidates.values()].filter((entry) => projectDirectoryNames.includes(entry.directoryName));
 }
 
+/**
+ * @param {string} projectsDirectory
+ * @param {string} projectDirectory
+ * @param {TranscriptFileEntry[]} transcriptFiles
+ * @param {WorktreeEntry[]} worktrees
+ * @param {Record<string, TranscriptFileEntry[]>} worktreeTranscriptFiles
+ * @returns {PoolEntry[]}
+ */
 function buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, worktrees, worktreeTranscriptFiles) {
   const pools = [buildPool(projectDirectory, transcriptFiles, 'current-project')];
   for (const { directoryName, provenance } of worktrees) {
@@ -124,6 +194,12 @@ function buildFullPool(projectsDirectory, projectDirectory, transcriptFiles, wor
 // A worktree memory store is located, never merged: a memory written on a branch is as
 // likely to be a note about that branch's task as a durable fact, and promoting it is a
 // judgment the user should make once — never one the pass makes silently.
+/**
+ * @param {string} projectsDirectory
+ * @param {WorktreeEntry[]} worktrees
+ * @param {Record<string, string[]>} worktreeMemoryFiles
+ * @returns {OrphanStore[]}
+ */
 function buildOrphanStores(projectsDirectory, worktrees, worktreeMemoryFiles) {
   return worktrees
     .filter(({ directoryName }) => (worktreeMemoryFiles[directoryName] ?? []).length > 0)
@@ -138,10 +214,20 @@ function buildOrphanStores(projectsDirectory, worktrees, worktreeMemoryFiles) {
 // name back into a path is ambiguous and a wrong decode would silently attach another
 // project's transcripts to this pass. Resolution therefore only ever runs forward:
 // encode a path that is already known, then test whether that directory exists.
+/**
+ * @param {string} absolutePath
+ * @returns {string}
+ */
 function encodeProjectDirectoryName(absolutePath) {
   return absolutePath.replaceAll('/', '-').replaceAll('.', '-');
 }
 
+/**
+ * @param {string} projectDirectory
+ * @param {string | null | undefined} memoryDirectory
+ * @param {string[] | null | undefined} storeFiles
+ * @returns {Store}
+ */
 function resolveStore(projectDirectory, memoryDirectory, storeFiles) {
   const path = memoryDirectory ?? `${projectDirectory}/${STORE_DIRECTORY_NAME}`;
   return {
@@ -157,6 +243,10 @@ function resolveStore(projectDirectory, memoryDirectory, storeFiles) {
 // and holding memory files but no regenerated index are three different shapes on disk, but
 // a pass treats all three the same way: there is nothing here to diff a candidate against,
 // so every one of them runs as a cold start rather than an ordinary pass.
+/**
+ * @param {string[] | null | undefined} storeFiles
+ * @returns {StoreStatus}
+ */
 function classifyStoreStatus(storeFiles) {
   if (storeFiles == null) return 'absent';
   const memoryFiles = storeFiles.filter((name) => name !== STORE_INDEX_NAME);
@@ -168,6 +258,10 @@ function classifyStoreStatus(storeFiles) {
 // beside its input wherever that input turned out to be. Only the candidate store itself
 // carries the store's shape: the report and the digest are siblings of it rather than
 // contents, or adopting the candidate by a plain move would install them as memories.
+/**
+ * @param {{ path: string }} store
+ * @returns {StoreOutputs}
+ */
 function resolveOutputs({ path }) {
   return {
     candidateStore: `${path}-candidate`,
@@ -176,6 +270,12 @@ function resolveOutputs({ path }) {
   };
 }
 
+/**
+ * @param {string} projectDirectory
+ * @param {TranscriptFileEntry[]} transcriptFiles
+ * @param {string} provenance
+ * @returns {PoolEntry[]}
+ */
 function buildPool(projectDirectory, transcriptFiles, provenance) {
   return transcriptFiles
     .filter((file) => file.name.endsWith(TRANSCRIPT_EXTENSION))
@@ -187,6 +287,53 @@ function buildPool(projectDirectory, transcriptFiles, provenance) {
     }));
 }
 
+/** @typedef {{ type?: string, text?: string, [key: string]: any }} ContentBlock */
+
+/**
+ * @typedef {{
+ *   type?: string,
+ *   message?: { content?: string | ContentBlock[] },
+ *   attachment?: { type?: string },
+ *   subtype?: string,
+ *   isMeta?: boolean,
+ * }} TranscriptRecord
+ */
+
+/** @typedef {{ sessionId: string, modifiedAt: string, records: TranscriptRecord[] }} Session */
+/** @typedef {{ role: 'user' | 'assistant', text: string }} ProseEntry */
+/** @typedef {{ sessionId: string, modifiedAt: string, proseTokens: number, prose: ProseEntry[] }} DigestedSession */
+/** @typedef {{ sessionId: string, modifiedAt: string, proseTokens: number, reason: string }} SkippedSession */
+
+/**
+ * @typedef {{
+ *   sessions: Session[],
+ *   tokenBudget?: number,
+ *   sessionCap?: number,
+ *   batchWindowTokens?: number,
+ *   reduceThresholdMiners?: number,
+ * }} PlanDigestParams
+ */
+
+/**
+ * @typedef {{
+ *   selected: DigestedSession[],
+ *   skipped: SkippedSession[],
+ *   batches: DigestedSession[][],
+ *   classification: Record<string, number>,
+ *   totals: {
+ *     sessionsRead: number,
+ *     sessionsSelected: number,
+ *     proseTokens: number,
+ *     batchCount: number,
+ *     reduceEngaged: boolean,
+ *   },
+ * }} PlanDigestResult
+ */
+
+/**
+ * @param {PlanDigestParams} params
+ * @returns {PlanDigestResult}
+ */
 function planDigest({
   sessions,
   tokenBudget = DEFAULT_TOKEN_BUDGET,
@@ -194,6 +341,7 @@ function planDigest({
   batchWindowTokens = DEFAULT_BATCH_WINDOW_TOKENS,
   reduceThresholdMiners = DEFAULT_REDUCE_THRESHOLD_MINERS,
 }) {
+  /** @type {Record<string, number>} */
   const classification = {};
   const digested = sessions
     .map((session) => digestSession(session, classification))
@@ -202,7 +350,9 @@ function planDigest({
   // The cap is checked before the budget so it acts as the secondary guard it's meant to
   // be: once it's full, remaining sessions are capped out even if the budget has room,
   // which is exactly the tiny-sessions case it exists for.
+  /** @type {DigestedSession[]} */
   const selected = [];
+  /** @type {SkippedSession[]} */
   const skipped = [];
   let budgetSpent = 0;
   for (const session of digested) {
@@ -239,8 +389,15 @@ function planDigest({
 // so a correction and its follow-up always land with the same reader. A batch closes once
 // the next session would push it past the window, and a single session bigger than the
 // window becomes a batch of one rather than being split across two readers.
+/**
+ * @param {DigestedSession[]} selected
+ * @param {number} batchWindowTokens
+ * @returns {DigestedSession[][]}
+ */
 function batchSessions(selected, batchWindowTokens) {
+  /** @type {DigestedSession[][]} */
   const batches = [];
+  /** @type {DigestedSession[]} */
   let current = [];
   let currentTokens = 0;
   for (const session of selected) {
@@ -256,7 +413,13 @@ function batchSessions(selected, batchWindowTokens) {
   return batches;
 }
 
+/**
+ * @param {Session} session
+ * @param {Record<string, number>} classification
+ * @returns {DigestedSession}
+ */
 function digestSession({ sessionId, modifiedAt, records }, classification) {
+  /** @type {ProseEntry[]} */
   const prose = [];
   for (const record of records) {
     const recordClass = classifyRecord(record);
@@ -282,6 +445,16 @@ const RE_INJECTED_SKILL_BODY = /^\s*Base directory for this skill:/;
 // text, which belong with the other re-injected skill bodies.
 const SKILL_BEARING_ATTACHMENTS = new Set(['skill_listing', 'dynamic_skill']);
 
+/**
+ * @typedef {'user-prose' | 'assistant-prose' | 'tool-result' | 'slash-command'
+ *   | 'local-command-output' | 'skill-body' | 'system-reminder' | 'session-metadata'
+ *   | 'tool-call' | 'thinking'} RecordClass
+ */
+
+/**
+ * @param {TranscriptRecord} record
+ * @returns {RecordClass}
+ */
 function classifyRecord(record) {
   switch (record?.type) {
     case 'user':
@@ -289,7 +462,7 @@ function classifyRecord(record) {
     case 'assistant':
       return classifyAssistantRecord(record);
     case 'attachment':
-      return SKILL_BEARING_ATTACHMENTS.has(record.attachment?.type) ? 'skill-body' : 'system-reminder';
+      return SKILL_BEARING_ATTACHMENTS.has(/** @type {string} */ (record.attachment?.type)) ? 'skill-body' : 'system-reminder';
     case 'system':
       return record.subtype === 'local_command' ? 'local-command-output' : 'session-metadata';
     default:
@@ -297,6 +470,10 @@ function classifyRecord(record) {
   }
 }
 
+/**
+ * @param {TranscriptRecord} record
+ * @returns {RecordClass}
+ */
 function classifyUserRecord(record) {
   const content = record.message?.content;
   if (Array.isArray(content) && content.some((block) => block.type === 'tool_result')) {
@@ -319,6 +496,10 @@ function classifyUserRecord(record) {
 // A record carrying both reasoning and a reply is classified by the reply, since that is
 // the part addressed to the conversation. Reasoning alone is dropped: it is the model
 // talking to itself, and a memory should never cite it as evidence of anything.
+/**
+ * @param {TranscriptRecord} record
+ * @returns {RecordClass}
+ */
 function classifyAssistantRecord(record) {
   const content = record.message?.content;
   if (!Array.isArray(content)) return 'session-metadata';
@@ -328,11 +509,20 @@ function classifyAssistantRecord(record) {
   return 'session-metadata';
 }
 
+/**
+ * @param {TranscriptRecord} record
+ * @param {RecordClass} recordClass
+ * @returns {string}
+ */
 function readProse(record, recordClass) {
   if (recordClass !== 'user-prose' && recordClass !== 'assistant-prose') return '';
   return stripSystemReminders(readText(record.message?.content));
 }
 
+/**
+ * @param {string | ContentBlock[] | undefined} content
+ * @returns {string}
+ */
 function readText(content) {
   if (typeof content === 'string') return content;
   if (!Array.isArray(content)) return '';
@@ -344,15 +534,29 @@ function readText(content) {
 
 // A reminder can be appended to a message that also carries real prose, so it is removed
 // from the text rather than used to discard the whole record.
+/**
+ * @param {string} text
+ * @returns {string}
+ */
 function stripSystemReminders(text) {
   return text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim();
 }
 
+/**
+ * @param {DigestedSession} session
+ * @param {string} reason
+ * @returns {SkippedSession}
+ */
 function skip(session, reason) {
   const { prose, ...withoutProse } = session;
   return { ...withoutProse, reason };
 }
 
+/**
+ * @param {{ modifiedAt: string }} left
+ * @param {{ modifiedAt: string }} right
+ * @returns {number}
+ */
 function byNewestFirst(left, right) {
   return right.modifiedAt.localeCompare(left.modifiedAt);
 }
@@ -369,8 +573,17 @@ const FLAG_PATTERN = /^--?[a-zA-Z][\w-]*$/;
 // dot followed by digits the same shape a real extension has.
 const FILE_PATTERN = /[\\/]|\.[a-zA-Z][a-zA-Z0-9]{0,7}$/;
 
+/** @typedef {'flag' | 'file' | 'command'} TargetKind */
+/** @typedef {{ value: string, kind: TargetKind }} VerificationTarget */
+
+/**
+ * @param {string} body
+ * @returns {VerificationTarget[]}
+ */
 function extractVerificationTargets(body) {
+  /** @type {Set<string>} */
   const seen = new Set();
+  /** @type {VerificationTarget[]} */
   const targets = [];
   for (const match of body.matchAll(INLINE_CODE_SPAN)) {
     const value = match[1].trim();
@@ -381,23 +594,39 @@ function extractVerificationTargets(body) {
   return targets;
 }
 
+/**
+ * @param {string} value
+ * @returns {TargetKind}
+ */
 function classifyTargetKind(value) {
   if (FLAG_PATTERN.test(value)) return 'flag';
   if (FILE_PATTERN.test(value)) return 'file';
   return 'command';
 }
 
+/** @typedef {{ name: string, body: string }} Memory */
+/** @typedef {'verified' | 'unverifiable'} TargetStatus */
+/** @typedef {VerificationTarget & { status: TargetStatus }} VerifiedTarget */
+/** @typedef {'no-targets' | 'verified' | 'unverifiable'} VerificationSummary */
+/** @typedef {{ name: string, targets: VerifiedTarget[], status: VerificationSummary }} VerifiedMemory */
+/** @typedef {{ filePaths?: string[], mentionedValues?: Set<string> }} WorkingTree */
+
 // Every retained memory is checked, never just the changed ones — a memory carried
 // forward unchanged can still have gone stale because the repo moved on, with no session
 // ever contradicting it. A failed check never removes anything here: it only annotates,
 // because a search that finds nothing is not proof the thing is gone.
+/**
+ * @param {Memory[]} memories
+ * @param {WorkingTree} workingTree
+ * @returns {VerifiedMemory[]}
+ */
 function verifyRetainedMemories(memories, workingTree) {
   const filePaths = workingTree.filePaths ?? [];
   const mentionedValues = workingTree.mentionedValues ?? new Set();
   return memories.map((memory) => {
     const targets = extractVerificationTargets(memory.body).map((target) => ({
       ...target,
-      status: targetIsPresent(target, filePaths, mentionedValues) ? 'verified' : 'unverifiable',
+      status: /** @type {TargetStatus} */ (targetIsPresent(target, filePaths, mentionedValues) ? 'verified' : 'unverifiable'),
     }));
     return { name: memory.name, targets, status: summarizeVerificationStatus(targets) };
   });
@@ -411,6 +640,12 @@ function verifyRetainedMemories(memories, workingTree) {
 // report), and reporting that as "verified" would be the one wrong guess this check must
 // not make — a false "unverifiable" costs a glance the user dismisses; a false "verified"
 // costs the thing this whole check exists to catch.
+/**
+ * @param {VerificationTarget} target
+ * @param {string[]} filePaths
+ * @param {Set<string>} mentionedValues
+ * @returns {boolean}
+ */
 function targetIsPresent(target, filePaths, mentionedValues) {
   if (matchesFilePath(target.value, filePaths)) return true;
   return target.kind !== 'file' && mentionedValues.has(target.value);
@@ -421,6 +656,11 @@ function targetIsPresent(target, filePaths, mentionedValues) {
 // mean any of them. Suffix matching only counts when it resolves to exactly one file —
 // otherwise it is exactly the ambiguous case that must fall through to `unverifiable`
 // rather than default to "verified" on a coincidence of naming.
+/**
+ * @param {string} value
+ * @param {string[]} filePaths
+ * @returns {boolean}
+ */
 function matchesFilePath(value, filePaths) {
   const normalized = value.replace(/^\.\//, '');
   if (filePaths.includes(normalized)) return true;
@@ -428,6 +668,10 @@ function matchesFilePath(value, filePaths) {
   return suffixMatches.length === 1;
 }
 
+/**
+ * @param {VerifiedTarget[]} targets
+ * @returns {VerificationSummary}
+ */
 function summarizeVerificationStatus(targets) {
   if (targets.length === 0) return 'no-targets';
   return targets.every((target) => target.status === 'verified') ? 'verified' : 'unverifiable';

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -16,6 +17,22 @@ const {
   DEFAULT_BATCH_WINDOW_TOKENS,
   DEFAULT_REDUCE_THRESHOLD_MINERS,
 } = require('./curation-plan');
+
+/** @typedef {import('./curation-plan').Store} Store */
+/** @typedef {import('./curation-plan').StoreOutputs} StoreOutputs */
+/** @typedef {import('./curation-plan').PoolEntry} PoolEntry */
+/** @typedef {import('./curation-plan').TranscriptFileEntry} TranscriptFileEntry */
+/** @typedef {import('./curation-plan').WorktreeStateRecord} WorktreeStateRecord */
+/** @typedef {import('./curation-plan').Session} Session */
+/** @typedef {import('./curation-plan').TranscriptRecord} TranscriptRecord */
+/** @typedef {import('./curation-plan').Memory} Memory */
+/** @typedef {import('./curation-plan').ResolvePoolResult} ResolvePoolResult */
+/** @typedef {import('./curation-plan').DigestedSession} DigestedSession */
+/** @typedef {import('./curation-plan').SkippedSession} SkippedSession */
+
+/**
+ * @typedef {ResolvePoolResult & { store: Store, projectDirectory: string, outputs: StoreOutputs }} ResolvedPool
+ */
 
 const USAGE = `Usage:
   curation-plan-cli.js [--memory-dir <path>] [--token-budget <n>] [--dry-run]
@@ -35,6 +52,10 @@ const MAX_SCAN_BYTES = 2_000_000;
 
 const STORE_INDEX_NAME = 'MEMORY.md';
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const options = parseArgs(argv);
   if (options.help) return exitWith(USAGE, 0);
@@ -62,16 +83,34 @@ function main(argv) {
   if (located.status !== 'resolved') {
     return exitWith(`No session history for ${environment.repoToplevel} under ${environment.projectsDirectory}.`, 1);
   }
+  const resolvedLocated = /** @type {ResolvedPool} */ (located);
 
   return options.verifyStore
-    ? verifyStore(located.store, options.verifyStore)
-    : plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun: options.dryRun });
+    ? verifyStore(resolvedLocated.store, options.verifyStore)
+    : plan(environment, resolvedLocated, worktreeStateRecords, { tokenBudget, dryRun: options.dryRun });
 }
+
+/**
+ * @typedef {{
+ *   memoryDir: string | null,
+ *   verifyStore: string | null,
+ *   verifyMemories: string | null,
+ *   tokenBudget: string | null,
+ *   dryRun: boolean,
+ *   help: boolean,
+ *   unknown: string | null,
+ * }} CliOptions
+ */
 
 // A mistyped flag reports itself and fails, rather than printing usage and exiting zero:
 // the pass treats a zero exit as "carry on", so a silent success here would send it into
 // mining with no digest to mine.
+/**
+ * @param {string[]} argv
+ * @returns {CliOptions}
+ */
 function parseArgs(argv) {
+  /** @type {CliOptions} */
   const options = { memoryDir: null, verifyStore: null, verifyMemories: null, tokenBudget: null, dryRun: false, help: false, unknown: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--memory-dir') options.memoryDir = argv[i += 1] ?? null;
@@ -88,12 +127,30 @@ function parseArgs(argv) {
 // null means "not given" (fall back to the module default); NaN or non-positive means the
 // flag was given something that isn't a usable budget, which the caller reports and exits
 // on rather than silently falling back to the default.
+/**
+ * @param {string | null} raw
+ * @returns {number | null | undefined}
+ */
 function resolveTokenBudget(raw) {
   if (raw === null) return undefined;
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
+/**
+ * @typedef {{
+ *   repoToplevel: string,
+ *   projectsDirectory: string,
+ *   projectDirectoryNames: string[],
+ *   memoryDirectory: string | null,
+ *   liveWorktreePaths: string[] | null,
+ * }} Environment
+ */
+
+/**
+ * @param {string | null} memoryDirectory
+ * @returns {Environment | null}
+ */
 function readEnvironment(memoryDirectory) {
   const repoToplevel = readRepoToplevel();
   if (!repoToplevel) return null;
@@ -107,6 +164,9 @@ function readEnvironment(memoryDirectory) {
   };
 }
 
+/**
+ * @returns {string | null}
+ */
 function readRepoToplevel() {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -118,7 +178,11 @@ function readRepoToplevel() {
 // A missing `git` command, an unfamiliar output shape, or no output at all must degrade
 // this source to nothing rather than fail the pass — the pool unions two other sources
 // precisely so this one is allowed to go quiet.
+/**
+ * @returns {string[] | null}
+ */
 function readLiveWorktreePaths() {
+  /** @type {string} */
   let output;
   try {
     output = execFileSync('git', ['worktree', 'list', '--porcelain'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -131,10 +195,17 @@ function readLiveWorktreePaths() {
     .map((line) => line.slice('worktree '.length).trim());
 }
 
+/**
+ * @returns {string}
+ */
 function claudeConfigDirectory() {
   return process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude');
 }
 
+/**
+ * @param {string} directory
+ * @returns {string[]}
+ */
 function readDirectoryNames(directory) {
   if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
@@ -148,6 +219,10 @@ function readDirectoryNames(directory) {
 // The current project's own directory is scanned first, and always as 'worktree-state-parent',
 // regardless of where the filesystem happens to list it among its siblings — so the same
 // record found on both sides of a worktree resolves to a stable provenance run over run.
+/**
+ * @param {Environment} environment
+ * @returns {WorktreeStateRecord[]}
+ */
 function readWorktreeStateRecords(environment) {
   const currentDirectoryName = encodeProjectDirectoryName(environment.repoToplevel);
   const orderedNames = [
@@ -155,6 +230,7 @@ function readWorktreeStateRecords(environment) {
     ...environment.projectDirectoryNames.filter((name) => name !== currentDirectoryName),
   ].filter((name) => environment.projectDirectoryNames.includes(name));
 
+  /** @type {WorktreeStateRecord[]} */
   const records = [];
   for (const name of orderedNames) {
     const provenance = name === currentDirectoryName ? 'worktree-state-parent' : 'worktree-state-sibling';
@@ -163,7 +239,13 @@ function readWorktreeStateRecords(environment) {
   return records;
 }
 
+/**
+ * @param {string} projectDirectory
+ * @param {string} provenance
+ * @returns {WorktreeStateRecord[]}
+ */
 function scanWorktreeStateRecords(projectDirectory, provenance) {
+  /** @type {WorktreeStateRecord[]} */
   const records = [];
   for (const name of readTranscriptFileNames(projectDirectory)) {
     for (const line of fs.readFileSync(path.join(projectDirectory, name), 'utf8').split('\n')) {
@@ -177,6 +259,10 @@ function scanWorktreeStateRecords(projectDirectory, provenance) {
   return records;
 }
 
+/**
+ * @param {string} projectDirectory
+ * @returns {string[]}
+ */
 function readTranscriptFileNames(projectDirectory) {
   return fs
     .readdirSync(projectDirectory, { withFileTypes: true })
@@ -184,6 +270,10 @@ function readTranscriptFileNames(projectDirectory) {
     .map((entry) => entry.name);
 }
 
+/**
+ * @param {string} text
+ * @returns {any}
+ */
 function tryParseJson(text) {
   try {
     return JSON.parse(text);
@@ -192,8 +282,17 @@ function tryParseJson(text) {
   }
 }
 
+/**
+ * @param {Environment} environment
+ * @param {ResolvedPool} located
+ * @param {WorktreeStateRecord[]} worktreeStateRecords
+ * @param {{ tokenBudget: number | undefined, dryRun: boolean }} options
+ * @returns {number}
+ */
 function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun }) {
+  /** @type {Record<string, TranscriptFileEntry[]>} */
   const worktreeTranscriptFiles = {};
+  /** @type {Record<string, string[]>} */
   const worktreeMemoryFiles = {};
   for (const { directoryName } of located.worktrees) {
     const directory = path.join(environment.projectsDirectory, directoryName);
@@ -201,14 +300,14 @@ function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun 
     worktreeMemoryFiles[directoryName] = readMemoryFileNames(directory);
   }
 
-  const resolved = resolvePool({
+  const resolved = /** @type {ResolvedPool} */ (resolvePool({
     ...environment,
     storeFiles: readStoreFileNames(located.store.path),
     transcriptFiles: readTranscriptFiles(located.projectDirectory),
     worktreeStateRecords,
     worktreeTranscriptFiles,
     worktreeMemoryFiles,
-  });
+  }));
   const digest = planDigest({ sessions: resolved.pool.map(readSession), tokenBudget });
   // A noop pool is empty by construction, so this already writes zero batch files — but it
   // still has to run, since it's also what clears a stale digest directory left by an
@@ -234,7 +333,13 @@ function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun 
       sessionsBeyondCap: countReason(digest.skipped, 'beyond-session-cap'),
       proseTokens: digest.totals.proseTokens,
       recordsByClass: digest.classification,
-      selected: digest.selected.map(({ sessionId, modifiedAt, proseTokens, provenance }) => ({ sessionId, modifiedAt, proseTokens, provenance })),
+      // provenance is not part of DigestedSession's own shape (see curation-plan.js) — it is
+      // always undefined here today. Preserved as-is: fixing that is a behavior change out
+      // of scope for a type-checking pass.
+      selected: digest.selected.map((session) => {
+        const { sessionId, modifiedAt, proseTokens, provenance } = /** @type {DigestedSession & { provenance?: string }} */ (session);
+        return { sessionId, modifiedAt, proseTokens, provenance };
+      }),
       batchWindowTokens: DEFAULT_BATCH_WINDOW_TOKENS,
       batches,
       reduceThresholdMiners: DEFAULT_REDUCE_THRESHOLD_MINERS,
@@ -245,10 +350,17 @@ function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun 
   return 0;
 }
 
+/** @typedef {{ index: number, path: string, sessionIds: string[], proseTokens: number }} BatchDigestSummary */
+
 // One miner reads one batch file, so each file is self-contained: it never has to open the
 // shared digest directory or a neighbour's batch to know what it owns. A stale batch file
 // left over from a prior pass at a larger budget would otherwise sit here forever, since
 // nothing else in the pass ever deletes it — so the directory is cleared before every write.
+/**
+ * @param {string} directory
+ * @param {DigestedSession[][]} batches
+ * @returns {BatchDigestSummary[]}
+ */
 function writeBatchDigests(directory, batches) {
   fs.rmSync(directory, { recursive: true, force: true });
   return batches.map((sessions, index) => {
@@ -263,10 +375,19 @@ function writeBatchDigests(directory, batches) {
   });
 }
 
+/**
+ * @param {string} directory
+ * @param {number} index
+ * @returns {string}
+ */
 function batchFilePath(directory, index) {
   return path.join(directory, `batch-${String(index + 1).padStart(2, '0')}.json`);
 }
 
+/**
+ * @param {string} projectDirectory
+ * @returns {TranscriptFileEntry[]}
+ */
 function readTranscriptFiles(projectDirectory) {
   return fs
     .readdirSync(projectDirectory, { withFileTypes: true })
@@ -277,6 +398,10 @@ function readTranscriptFiles(projectDirectory) {
     }));
 }
 
+/**
+ * @param {string} projectDirectory
+ * @returns {string[]}
+ */
 function readMemoryFileNames(projectDirectory) {
   return readFileNamesIn(path.join(projectDirectory, STORE_DIRECTORY_NAME)) ?? [];
 }
@@ -285,22 +410,39 @@ function readMemoryFileNames(projectDirectory) {
 // nothing", so — unlike `readMemoryFileNames` above, where orphan detection folds an absent
 // worktree store into the same empty result as an existing-but-empty one — this keeps
 // `readFileNamesIn`'s `null` for a directory that isn't there rather than defaulting it away.
+/**
+ * @param {string} storePath
+ * @returns {string[] | null}
+ */
 function readStoreFileNames(storePath) {
   return readFileNamesIn(storePath);
 }
 
+/**
+ * @param {string} directory
+ * @returns {string[] | null}
+ */
 function readFileNamesIn(directory) {
   if (!fs.existsSync(directory)) return null;
   return fs.readdirSync(directory, { withFileTypes: true }).filter((entry) => entry.isFile()).map((entry) => entry.name);
 }
 
+/**
+ * @param {PoolEntry} entry
+ * @returns {Session}
+ */
 function readSession({ sessionId, modifiedAt, transcriptPath }) {
   return { sessionId, modifiedAt, records: readJsonLines(transcriptPath) };
 }
 
 // A truncated final line, or a record the harness wrote in a shape this version does not
 // know, must not abort a pass over a hundred other sessions.
+/**
+ * @param {string} filePath
+ * @returns {TranscriptRecord[]}
+ */
 function readJsonLines(filePath) {
+  /** @type {TranscriptRecord[]} */
   const records = [];
   for (const line of fs.readFileSync(filePath, 'utf8').split('\n')) {
     if (!line.trim()) continue;
@@ -313,11 +455,21 @@ function readJsonLines(filePath) {
   return records;
 }
 
+/**
+ * @param {string} filePath
+ * @param {unknown} value
+ * @returns {void}
+ */
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+/**
+ * @param {SkippedSession[]} skipped
+ * @param {string} reason
+ * @returns {number}
+ */
 function countReason(skipped, reason) {
   return skipped.filter((session) => session.reason === reason).length;
 }
@@ -327,6 +479,10 @@ function countReason(skipped, reason) {
 // directly rather than a shell, so a hook that rewrites `grep`, `find`, or `ls` for the Bash
 // tool has nothing to intercept: this runs inside the node process the skill already
 // launched, never as a separate shell command of its own.
+/**
+ * @param {string} candidateStorePath
+ * @returns {number}
+ */
 function verifyMemories(candidateStorePath) {
   if (!fs.existsSync(candidateStorePath)) return exitWith(`No candidate store at ${candidateStorePath}.`, 1);
 
@@ -345,6 +501,10 @@ function verifyMemories(candidateStorePath) {
   return 0;
 }
 
+/**
+ * @param {string} storePath
+ * @returns {Memory[]}
+ */
 function readCandidateMemories(storePath) {
   return fs
     .readdirSync(storePath, { withFileTypes: true })
@@ -354,6 +514,10 @@ function readCandidateMemories(storePath) {
 
 // Tracked files alone would miss a memory naming something added on this branch but not
 // yet committed, so an untracked-but-not-ignored listing is unioned in alongside it.
+/**
+ * @param {string} repoToplevel
+ * @returns {string[]}
+ */
 function readWorkingTreeFilePaths(repoToplevel) {
   const tracked = readGitFileList(['ls-files'], repoToplevel);
   const untracked = readGitFileList(['ls-files', '--others', '--exclude-standard'], repoToplevel);
@@ -364,6 +528,11 @@ function readWorkingTreeFilePaths(repoToplevel) {
 // without pinning `cwd` here, a verify-memories run from any directory but the toplevel
 // would list paths that don't match what `scanForMentions` joins against `repoToplevel`,
 // silently turning every file lookup into a miss.
+/**
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {string[] | null}
+ */
 function readGitFileList(args, cwd) {
   try {
     return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter(Boolean);
@@ -372,7 +541,12 @@ function readGitFileList(args, cwd) {
   }
 }
 
+/**
+ * @param {Memory[]} memories
+ * @returns {Set<string>}
+ */
 function collectNonFileTargetValues(memories) {
+  /** @type {Set<string>} */
   const values = new Set();
   for (const memory of memories) {
     for (const target of extractVerificationTargets(memory.body)) {
@@ -385,8 +559,15 @@ function collectNonFileTargetValues(memories) {
 // One pass over the working tree's files checks every outstanding command or flag target
 // at once, rather than one scan per target, so the cost of a check is bounded by the size
 // of the tree and not by how many things the store names.
+/**
+ * @param {string} repoToplevel
+ * @param {string[]} filePaths
+ * @param {Set<string>} targetValues
+ * @returns {Set<string>}
+ */
 function scanForMentions(repoToplevel, filePaths, targetValues) {
   const remaining = new Set(targetValues);
+  /** @type {Set<string>} */
   const found = new Set();
   for (const relativePath of filePaths) {
     if (remaining.size === 0) break;
@@ -401,6 +582,10 @@ function scanForMentions(repoToplevel, filePaths, targetValues) {
   return found;
 }
 
+/**
+ * @param {string} absolutePath
+ * @returns {string | null}
+ */
 function readIfScannable(absolutePath) {
   try {
     if (fs.statSync(absolutePath).size > MAX_SCAN_BYTES) return null;
@@ -410,6 +595,11 @@ function readIfScannable(absolutePath) {
   }
 }
 
+/**
+ * @param {Store} store
+ * @param {string} expected
+ * @returns {number}
+ */
 function verifyStore(store, expected) {
   const actual = hashStore(store.path);
   if (actual === expected) {
@@ -422,6 +612,10 @@ function verifyStore(store, expected) {
 
 // The index is derived from the memories rather than being one of them, so counting it
 // would overstate the store the preflight reports back to the user.
+/**
+ * @param {Store} store
+ * @returns {Store & { present: boolean, memoryCount: number, digest: string }}
+ */
 function describeStore(store) {
   const files = readStoreFiles(store.path);
   return {
@@ -435,6 +629,10 @@ function describeStore(store) {
 // Hashes the store's own relative paths alongside their bytes, so a rename with identical
 // contents is still a change. An absent store hashes to a stable sentinel rather than
 // throwing, since a cold-start pass has nothing to protect yet.
+/**
+ * @param {string} storePath
+ * @returns {string}
+ */
 function hashStore(storePath) {
   const files = readStoreFiles(storePath);
   if (files === null) return 'absent';
@@ -447,6 +645,10 @@ function hashStore(storePath) {
   return `sha256:${hash.digest('hex')}`;
 }
 
+/**
+ * @param {string} storePath
+ * @returns {string[] | null}
+ */
 function readStoreFiles(storePath) {
   if (!fs.existsSync(storePath)) return null;
   return fs
@@ -455,6 +657,11 @@ function readStoreFiles(storePath) {
     .map((entry) => path.relative(storePath, path.join(entry.parentPath, entry.name)));
 }
 
+/**
+ * @param {string} message
+ * @param {number} code
+ * @returns {number}
+ */
 function exitWith(message, code) {
   (code === 0 ? console.log : console.error)(message);
   return code;
