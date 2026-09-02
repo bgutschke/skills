@@ -72,9 +72,22 @@ Complete `AGENTS.md`'s "To add a skill" steps, then:
 `scripts/*.js` (plain CommonJS, one pure function per file, tested with Jest) and the
 tooling config that drives it (`commitlint.config.js`, `release.config.js`,
 `.github/workflows/`) have no dedicated style guide beyond what's idiomatic for plain
-Node.js/CommonJS — nothing here is complex enough yet to need one invented ahead of time.
-See [ADR 0006](docs/adr/0006-release-automation-via-semantic-release.md) for why this
-tooling exists and how it's wired together.
+Node.js/CommonJS. See [ADR 0006](docs/adr/0006-release-automation-via-semantic-release.md)
+for why this tooling exists and how it's wired together.
+
+Plain JS is type-checked via JSDoc annotations, never real `.ts` source and never a build
+step: a file opts in with a `// @ts-check` pragma at its top, and `npm run typecheck`
+(`tsc --noEmit` against the root `tsconfig.json`) checks every opted-in file at
+`strict: true` from the moment it opts in — there is no looser on-ramp tier. Opting in is
+mandatory the next time a file is touched for any reason (a bug fix, a small edit, not
+just a rewrite), scoped to that single file, not its containing skill directory or
+`scripts/` as a whole — touching one file never obligates opting in its neighbors. The
+rule applies identically to maintainer-only tooling (`scripts/*.js`, `.claude/skills/**`)
+and shipped skill scripts (`skills/**`) — neither is exempt. It does not apply
+retroactively: files already in progress when this convention was adopted keep their
+existing untyped state until they're next touched. See
+[ADR 0026](docs/adr/0026-jsdoc-over-ts-for-type-checking.md) for why `.ts` source was
+rejected and the rest of this convention's rationale.
 
 Markdown is linted with `markdownlint-cli2` (config in `.markdownlint-cli2.jsonc`),
 enforced locally by a Husky pre-commit hook (`lint-staged`, scoped to staged `.md` files)
