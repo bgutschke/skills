@@ -1,6 +1,6 @@
 # refactor-rule-tree worked example
 
-A four-rule personal `CLAUDE.md`. It's managed by a dotfiles setup, so
+A six-rule personal `CLAUDE.md`. It's managed by a dotfiles setup, so
 `~/.claude/CLAUDE.md` is actually a symlink to `~/.dotfiles/claude/CLAUDE.md` — Step 2's
 `init` canonicalizes it before seeding the walk state, so every later reference to either
 name resolves to the one node this pass already knows.
@@ -19,6 +19,12 @@ name resolves to the one node this pass already knows.
 4. "Use two-space indentation in YAML files." — no near-universal trigger, not
    irreversible on a miss, and there's no sibling rule to cluster it with. **stay**,
    condition 3 (small, no intent to grow).
+5. "When a new topic file's name might collide with a sibling, disambiguate with a folder
+   prefix rather than a longer name." — no near-universal trigger, not irreversible, and
+   pairs with rule 6 below into a real cluster, so condition 3 doesn't hold either.
+   Candidate for **move**, pending the inbound-citation check below.
+6. "Prefer one topic file per subject over several thin ones on the same subject." — same
+   shape as rule 5, same cluster (topic-file naming conventions), same pending candidacy.
 
 Rule 2's router exemption is checked and applied before rule 2 is ever measured against
 the four stay conditions — it would likely qualify for condition 1 anyway, but the
@@ -45,10 +51,14 @@ the scope-crossing findings, not the rule or pointer tables.
 
 `@ROUTING.md`'s `live` verdict is what Step 2 advances the walk on: an import edge out of
 the root, whose own `autoLoaded` is `true`, so `ROUTING.md` classifies **restructurable**.
-It holds one rule of its own — "when two skills could both fire for the same request,
-route by whichever trigger is more specific" — which is precedence content: router
-exemption, **stay**, never measured against the four conditions. `ROUTING.md` in turn
-mentions `` `docs/conventions-crossrefs.md` `` (a mention edge, `live`) and
+It holds three rules of its own. "When two skills could both fire for the same request,
+route by whichever trigger is more specific" is precedence content: router exemption,
+**stay**, never measured against the four conditions. "Split a topic file once it exceeds
+ten rules, by sub-topic" and "when two topic files could both hold a new rule, prefer the
+one already cited nearby" are a second pair — no near-universal trigger, not irreversible,
+clustered together (topic-file lifecycle) — candidates for **move**, pending the same
+inbound-citation check as rules 5 and 6. `ROUTING.md` in turn mentions
+`` `docs/conventions-crossrefs.md` `` (a mention edge, `live`) and
 `` `scripts/commit-lint.js` `` (also a mention edge, `live`). The first classifies
 **verify-only** — `ROUTING.md`'s own `autoLoaded: true` doesn't matter here, because the
 edge reaching it is a mention, not an import; its pointers get checked, but it holds no
@@ -79,9 +89,30 @@ being opened. The excluded worktree entry is kept separately, never counted as a
 list is what the rule, pointer, and scope-crossing findings below are built from, not
 memory of the individual `visit` calls it took to discover them.
 
-The plan's rule table has five rows — the root's four plus `ROUTING.md`'s one — all five
+Rules 5 and 6 (root) and 7 and 8 (`ROUTING.md`) are the four move candidates left standing
+after conditions 1–3, so each pair's inbound-citation search runs next — a Grep sweep of
+`$CLAUDE_CONFIG_DIR`, not a replay of the six nodes above. For rules 5 and 6, the search for
+the root's own filename and its dotfiles alias turns up exactly the citation Step 2 already
+walked past: `docs/legacy-notes.md`'s `` `~/.dotfiles/claude/CLAUDE.md` ``.
+`classify-citation-hit-cli.js classify personal docs/legacy-notes.md` reports it verify-only
+(not resolve-only) and sharing the root's personal scope, so `editable: true`; feeding that
+into `decide-citation-action-cli.js` returns `update`. Rules 5 and 6 keep verdict `move`
+into a new `docs/topic-file-naming.md`, and `docs/legacy-notes.md`'s citation is repointed
+at that new file in the same change.
+
+For rules 7 and 8, the search for `ROUTING.md` turns up a second hit the walk itself never
+reached by any edge: `~/.claude/skills/audit-rules/SKILL.md` mentions `` `ROUTING.md` ``
+in a line about precedence. `classify-citation-hit-cli.js classify personal
+~/.claude/skills/audit-rules/SKILL.md` reports it resolve-only on its basename alone, before
+scope is even considered — this pass has no standing to edit a skill's body regardless of
+where it sits — so `editable: false`; `decide-citation-action-cli.js` returns `blocked`,
+naming that one file in `blockingCitations`. Both rules 7 and 8 flip to verdict
+`stay`, condition 4, rather than moving into the `docs/topic-file-lifecycle.md` their
+cluster would otherwise have justified.
+
+The plan's rule table has nine rows — the root's six plus `ROUTING.md`'s three — all nine
 ids present exactly once, and `check-plan` against
-`{"ruleIds":["push-via-pr","squash-precedence","commit-msg-hook","yaml-indent","specific-trigger-wins"],"entries":[...five entries, one per id...]}`
+`{"ruleIds":["push-via-pr","squash-precedence","commit-msg-hook","yaml-indent","topic-file-name-collision","one-topic-file-per-subject","specific-trigger-wins","topic-file-split-size","topic-file-nearby-preference"],"entries":[...nine entries, one per id...]}`
 returns `{"ok": true, ...}` before anything is shown to the user as final. The pointer
 list carries every citation collected from every node the walk opened — the root's five
 plus `ROUTING.md`'s two plus `docs/conventions-crossrefs.md`'s two plus

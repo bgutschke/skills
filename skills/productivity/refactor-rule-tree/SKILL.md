@@ -2,7 +2,7 @@
 name: refactor-rule-tree
 disable-model-invocation: true
 argument-hint: "[path]"
-description: Runs one placement-and-pointer pass over a rule tree — the personal global rule file by default, or a given root path, plus every file the walk reaches by import or mention edge. A rule inside an auto-loaded node gets a verdict: stay inline, move to a topic file, become a model-invoked skill or hook, or delete. A node reached without being auto-loaded keeps its structure untouched; code, configuration, memory files, and another skill's SKILL.md are only confirmed to exist, never opened. Every pointer checked gets live, dead, or unverifiable; an uncited target is separately reported unrouted. Presents one complete plan before writing anything, and applies it only after confirmation and a mechanical check that every rule appears exactly once; a dead pointer is cut only then, an unverifiable one never. Never compares two files' guidance against each other. Use when the user asks to refactor, restructure, reorganize, or clean up a CLAUDE.md or rule file, or types /refactor-rule-tree.
+description: Runs one placement-and-pointer pass over a rule tree — the personal global rule file by default, or a given root path, plus every file the walk reaches by import or mention edge. A rule inside an auto-loaded node gets a verdict: stay inline, move to a topic file, become a model-invoked skill or hook, or delete. A node reached without being auto-loaded keeps its structure untouched; code, configuration, memory files, and another skill's SKILL.md are only confirmed to exist, never opened. Every pointer checked gets live, dead, or unverifiable; an uncited target is separately reported unrouted. Before a move, searches for every in-scope file that cites the rule's current location by path and either carries those citations along in the same change or blocks the move and names the citation it can't safely update. Presents one complete plan before writing anything, and applies it only after confirmation and a mechanical check that every rule appears exactly once; a dead pointer is cut only then, an unverifiable one never. Never compares two files' guidance against each other. Use when the user asks to refactor, restructure, reorganize, or clean up a CLAUDE.md or rule file, or types /refactor-rule-tree.
 ---
 
 # refactor-rule-tree
@@ -85,10 +85,16 @@ it extends no further than the root scope it was granted for.
 Requires `node` to run the bundled invariant checker (`scripts/plan-invariant-cli.js`),
 which every plan must pass before execution writes anything; the bundled pointer resolver
 (`scripts/verify-pointers-cli.js`), which every pointer collected while walking is checked
-through rather than a shell `find`/`grep`; and the bundled walk tracker
+through rather than a shell `find`/`grep`; the bundled walk tracker
 (`scripts/walk-tree-cli.js`), which canonicalizes every node the walk reaches, classifies
 each one's scope against the root's, excludes worktree and dependency directories, and
-keeps the visited set that bounds the walk and stops a cycle from being read twice.
+keeps the visited set that bounds the walk and stops a cycle from being read twice; the
+bundled citation-hit classifier (`scripts/classify-citation-hit-cli.js`), which classifies a
+scope and class for one inbound-citation hit found outside any walk edge, the same way
+`walk-tree-cli.js`'s own `visit` classifies a hit that arrived by one; and the bundled
+citation-action decider (`scripts/decide-citation-action-cli.js`), which turns a move
+candidate's discovered inbound citations, each already classified editable or not, into one
+move/update/blocked verdict for Step 4's fourth stay condition.
 
 ## When to use
 
@@ -119,12 +125,16 @@ keeps the visited set that bounds the walk and stops a cycle from being read twi
   prose placement logic doesn't apply to either).
 - **Firing on its own.** `disable-model-invocation: true` is deliberate — a skill that
   rewrites rule files must never decide by itself that now is a good time to run.
-- **Moving a rule whose citations live outside the tree this pass may edit.** The walk
-  itself refuses to cross between personal and project scope (see Scope and edit authority
-  above), but a move still never checks who else cites the rule it's relocating. Treat
-  every proposed move as unverified against inbound citations until that check exists;
-  catch a citation left pointing at a rule's old location by hand, not by assuming this
-  pass already checked for it.
+- **Updating a citation the inbound-citation search in Step 4 didn't find.** That search is
+  bounded by the same scope root as everything else this pass edits — a citation sitting in
+  a different repository entirely, or under a scope the search didn't cover, is
+  undiscoverable to it and stays unnoticed. What the search does cover — every file under
+  the pass's own scope root — is checked on every move candidate, not skipped.
+- **Checking inbound citations for a `skill` or `delete` verdict.** The search and the
+  move/update/blocked decision it feeds are scoped to a rule about to become verdict
+  `move` — a rule extracted into a skill, or removed outright, has no topic-file destination
+  a stale citation could be repointed at, so this pass doesn't yet extend the same guarantee
+  there. A citation left dangling by a `skill` or `delete` verdict is still a hand-check.
 
 ## Step 1: Resolve the root file
 
@@ -314,22 +324,85 @@ in the report; more than one may apply, but naming the first that does is enough
    with other rules, and there's no reason to expect siblings to accumulate around it. A
    topic file exists to be a citable destination worth the extra hop; a file holding one
    line someone will never add to is that hop with nothing behind it.
-4. **Cited by path elsewhere.** Something else in this setup — a skill, an agent, a
-   command, or another node the walk reached — names this rule's current file by path.
-   Moving it would silently break that citation; this pass does not yet check for or fix
-   up an inbound citation as part of a move (see When not to use). Leave the rule where
-   the citation still finds it.
+4. **Cited by path, with a citation a move can't safely update.** Decided only once a rule
+   has already cleared 1–3 and would otherwise become verdict `move` — see "Discover inbound
+   citations" under Move, below, for how this condition gets answered. A rule instead heading
+   toward `skill` or `delete` is never checked against this condition; the citation-safety
+   guarantee below covers a move to a topic file specifically (see When not to use).
 
-If none of the four holds, the rule is a candidate to leave the file. Which of the
-remaining three verdicts it gets depends on what kind of thing it actually is.
+If none of the four stay conditions holds, the rule is a candidate to leave the file. Which
+of the remaining three verdicts it gets depends on what kind of thing it actually is.
 
 ### Move — to a topic file
 
 A candidate becomes verdict `move` when it's a **reference**: something worth having
 around but not worth loading into every session, and not narrow enough in its own trigger
-to be worth a whole skill (see below). Group every rule getting this verdict by subject —
-the subject can be anything the rules are actually about, not just code style — and
-propose one topic file per group.
+to be worth a whole skill (see below).
+
+#### Discover inbound citations before finalizing the move
+
+Before a candidate's `move` verdict is finalized, search for every file that cites the
+rule's current node by path. This is a required read step, not an optional one: skipping it
+is exactly how a moved rule leaves a stale reference behind in some other file — the
+identical dead-pointer defect Step 3 exists to catch, except this time the pass would have
+caused it.
+
+Use the Grep tool — not a shell `find`/`grep`, for the same reason Step 3's resolution runs
+through a bundled script rather than one — to search the pass's own scope root (the config
+directory for a personal pass, the project root for a project pass) for the rule's current
+node's filename and every path form Step 3's resolver would treat as pointing at it,
+excluding the same worktree and dependency directories the walk itself excludes. This search
+is not bounded by which nodes Step 2's walk happened to open — a file the walk never reached
+by any edge (another skill's `SKILL.md`, an agent or command file, a topic file nothing
+mentions) can still turn up here, because it's a fresh search over the scope root's contents
+rather than a replay of the walk's own edges.
+
+Classify every hit with:
+
+```bash
+node scripts/classify-citation-hit-cli.js classify <rootScope> <hitPath>
+```
+
+`<rootScope>` is the scope Step 2's `init` already fixed for this pass — `personal` or
+`project` — not the hit's own location. This wraps the same two modules Step 2's `visit`
+classifies a walked node with (`classify-scope.js`, `classify-node.js`), for a hit that
+arrived by Grep rather than by a walk edge and so has no parent node in the walk state for
+`visit` itself to run against. It reports `editable: true` only when both hold: the hit's
+own scope matches `<rootScope>`, *and* its class isn't resolve-only. A scope mismatch is
+exactly the crossing Step 2 already refuses to open; a resolve-only hit — a skill's
+`SKILL.md`, an agent or command file, code, configuration — is one this pass has no standing
+to edit regardless of scope, for the same reason a resolve-only node is never opened for
+findings in Step 2. Either reason reports `editable: false`; the two are not distinguished
+any further than that in the result.
+
+Write the hits as `[{ "citingPath": ..., "editable": ... }, ...]` (one `editable` value per
+hit, from the command above) to a scratch file and run:
+
+```bash
+node scripts/decide-citation-action-cli.js decide <path-to-that-file>
+```
+
+- `move` — no citing file was found. The verdict stands as `move`, with nothing further to
+  carry alongside it.
+- `update` — every citing file is editable. The verdict still stands as `move`, but every
+  one of those citations is now carried alongside this rule into Step 5's plan and Step 7's
+  execution, to be updated in the same change as the move.
+- `blocked` — at least one citing file is not editable. The verdict flips to `stay`,
+  condition 4, instead — and the report names every blocking citation from
+  `blockingCitations`. Never just that one citing file's move deferred: the whole move.
+
+A move is never split: either the rule and every one of its citations move together in one
+change, or the verdict is `stay` and nothing about the rule or its citations changes at all.
+A citation left pointing at the rule's old location after the rule itself moved is strictly
+worse than never having proposed the move — the old file would point at nothing, the exact
+defect this pass exists to catch, except this time caused by the pass's own edit — and that
+is the entire reason one non-editable citation blocks the whole move rather than the move
+proceeding everywhere it safely could.
+
+#### Grouping and naming the destination
+
+Group every rule that survives with verdict `move` by subject — the subject can be anything
+the rules are actually about, not just code style — and propose one topic file per group.
 
 Only propose a *new* topic file once a group holds **two or more** rules. A file created
 to hold a single relocated line has the same lookup cost as the line had inline, minus the
@@ -395,9 +468,12 @@ unnoticed skip would otherwise slip through.
 Write the plan as one list, one row per rule enumerated across every restructurable node
 the walk reached in Step 2: its id, which node it currently lives in, its current text (or
 a short paraphrase), its verdict, and — for `stay`, the condition number from Step 4 that
-applied; for `move`, the destination file and the trigger-phrase pointer being left
-behind; for `skill`, the mechanism (model-invoked skill or hook) and, for a skill, the
-standing cost statement; for `delete`, the reason.
+applied (naming the blocking citations from `blockingCitations` when the condition is 4);
+for `move`, the destination file, the trigger-phrase pointer being left behind, and — when
+Step 4's citation search returned `update` — the list of citing files and their old-path
+references, each to be repointed at the rule's new location in the same change; for
+`skill`, the mechanism (model-invoked skill or hook) and, for a skill, the standing cost
+statement; for `delete`, the reason.
 
 Before showing this to the user, write `{ "ruleIds": [...], "entries": [{ "ruleId", "verdict" }, ...] }`
 to a scratch file and run:
@@ -445,10 +521,11 @@ before the invariant check on the current version of the plan has passed.
 
 - `stay` rules: no change.
 - `move` rules: remove from the node the rule currently lives in, add to the (new or
-  existing) topic file, and add the trigger-phrase pointer to that same node in the same
-  change. This does not yet update a citation to the rule's old location sitting in some
-  other node the walk reached (see When not to use) — condition 4 in Step 4 is what keeps
-  a rule with a known inbound citation from ever reaching this branch in the first place.
+  existing) topic file, add the trigger-phrase pointer to that same node, and — for every
+  citation Step 4's search returned `update` for — repoint that citation at the rule's new
+  location, all in the same change. A rule with a citation the search found `blocked` never
+  reaches this branch at all: condition 4 in Step 4 already turned it into `stay` before the
+  plan was ever assembled, so there is nothing here left half-updated.
 - `skill` rules proposing a model-invoked skill: draft the skill's trigger and body from
   the rule's own text and confirm its intended location with the user — this pass doesn't
   assume any particular packaging convention, since one project's layout for a new skill
@@ -466,10 +543,13 @@ before the invariant check on the current version of the plan has passed.
 
 ## Worked example
 
-See `WORKED-EXAMPLE.md` for a full walkthrough of every step above, against a four-rule
+See `WORKED-EXAMPLE.md` for a full walkthrough of every step above, against a six-rule
 personal `CLAUDE.md` reached through a dotfiles symlink: the restructurable / verify-only /
 resolve-only split, the router exemption, a dead pointer next to an unverifiable one, an
 excluded worktree checkout, a cycle and a diamond that each terminate the walk without a
-duplicate report, and — the case this pass's scope logic adds — a live, well-formed pointer
-to a real project rule file that still never gets opened, because its scope doesn't match
-the personal root's.
+duplicate report, a live, well-formed pointer to a real project rule file that still never
+gets opened because its scope doesn't match the personal root's, and — the two cases this
+issue's inbound-citation check adds — one move candidate whose only citation is editable and
+gets updated in the same change, and a second whose citation sits in another skill's
+`SKILL.md`, discovered by the same search despite the walk never reaching that file, and
+blocked because of it.
