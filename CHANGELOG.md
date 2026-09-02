@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/bgutschke/skills/compare/v1.16.1...v1.17.0) (2026-09-02)
+
+
+### Features
+
+* **refactor-rule-tree:** ship the single-file placement pass ([bcc6beb](https://github.com/bgutschke/skills/commit/bcc6beb1a55b1f5950081b9568a786172311cba0)), closes [#99](https://github.com/bgutschke/skills/issues/99)
+
 ## [1.16.1](https://github.com/bgutschke/skills/compare/v1.16.0...v1.16.1) (2026-09-02)
 
 
