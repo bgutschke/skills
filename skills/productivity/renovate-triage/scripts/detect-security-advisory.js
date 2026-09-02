@@ -1,3 +1,5 @@
+// @ts-check
+
 const CVE_PATTERN = /\bCVE-\d{4}-\d+\b/i;
 const GHSA_PATTERN = /\bGHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}\b/i;
 const SECURITY_HEADING_PATTERN = /^#{1,6}\s*security\b/im;
@@ -10,7 +12,12 @@ const URGENCY_LANGUAGE_PATTERNS = [
   /\bdenial of service\b/i,
 ];
 
+/**
+ * @param {string} changelogText
+ * @returns {{ found: boolean, signals: string[] }}
+ */
 function detectSecurityAdvisory(changelogText) {
+  /** @type {string[]} */
   const signals = [];
   if (CVE_PATTERN.test(changelogText)) signals.push('cve');
   if (GHSA_PATTERN.test(changelogText)) signals.push('ghsa');

@@ -1,3 +1,21 @@
+// @ts-check
+
+/**
+ * @typedef {'major' | 'minor' | 'patch' | 'indeterminate'} BumpSize
+ * @typedef {'passing' | 'pending' | 'failing'} CiStatus
+ * @typedef {'safe' | 'needs-review' | 'blocked'} Verdict
+ */
+
+/**
+ * @param {{
+ *   bumpSize: BumpSize,
+ *   changelogFound: boolean,
+ *   relevantBreakingChangeCallout: boolean,
+ *   ciStatus: CiStatus,
+ *   blastRadiusLarge: boolean,
+ * }} params
+ * @returns {{ verdict: Verdict, reason: string }}
+ */
 function computeVerdict({ bumpSize, changelogFound, relevantBreakingChangeCallout, ciStatus, blastRadiusLarge }) {
   if (relevantBreakingChangeCallout) {
     return { verdict: 'blocked', reason: 'hard-stop: relevant breaking-change callout' };
@@ -9,7 +27,9 @@ function computeVerdict({ bumpSize, changelogFound, relevantBreakingChangeCallou
     return { verdict: 'blocked', reason: 'hard-stop: major bump with no changelog or release notes found anywhere' };
   }
 
+  /** @type {Verdict} */
   let baseline;
+  /** @type {string} */
   let reason;
   if (bumpSize === 'indeterminate') {
     baseline = 'needs-review';
@@ -25,6 +45,7 @@ function computeVerdict({ bumpSize, changelogFound, relevantBreakingChangeCallou
     reason = 'baseline: patch/minor bump with no changelog found';
   }
 
+  /** @type {string[]} */
   const escalations = [];
   if (blastRadiusLarge) escalations.push('blast radius > 10 files');
   if (ciStatus === 'pending') escalations.push('CI pending');

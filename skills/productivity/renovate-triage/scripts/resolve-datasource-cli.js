@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const path = require('path');
 const { resolveDatasource } = require('./resolve-datasource');
@@ -6,7 +7,12 @@ const { resolveDatasource } = require('./resolve-datasource');
 const USAGE = 'Usage: resolve-datasource-cli.js --file <path> [--file <path> ...]';
 const CONFIG_LOCATIONS = ['renovate.json', path.join('.github', 'renovate.json')];
 
+/**
+ * @param {string[]} argv
+ * @returns {string[]}
+ */
 function parseArgs(argv) {
+  /** @type {string[]} */
   const files = [];
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--file') {
@@ -17,6 +23,9 @@ function parseArgs(argv) {
   return files;
 }
 
+/**
+ * @returns {string | null}
+ */
 function readRenovateConfig() {
   const location = CONFIG_LOCATIONS.find((candidate) => fs.existsSync(candidate));
   return location ? fs.readFileSync(location, 'utf8') : null;
