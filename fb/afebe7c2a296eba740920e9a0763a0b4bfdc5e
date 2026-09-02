@@ -1,0 +1,26 @@
+.github/copilot-instructions.md
+  s_2c0a212c1d1ed2::t_4ca6a5473b39a5 22
+skills/productivity/README.md
+  s_2c0a212c1d1ed2::t_ac943226e2d15a 5
+  s_2c0a212c1d1ed2::t_6c616b940be8b6 19
+skills/engineering/README.md
+  s_2c0a212c1d1ed2::t_30866ec2c5048f 5,9
+AGENTS.md
+  s_2c0a212c1d1ed2::t_592d9e86fd3a72 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "fbafebe7c2a296eba740920e9a0763a0b4bfdc5e",
+  "prompts": {},
+  "sessions": {
+    "s_2c0a212c1d1ed2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a93903e8-0560-409b-b6fa-a524045c2778",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
