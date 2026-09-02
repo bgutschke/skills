@@ -1,0 +1,29 @@
+CONTEXT.md
+  s_8ca3f90faa8de0::t_3c3f8c0bd1dcc5 30
+docs/commit-footer-issue-refs.md
+  s_8ca3f90faa8de0::t_aeda8364256013 1-7
+AGENTS.md
+  s_8ca3f90faa8de0::t_1d459f8328a106 31
+  s_8ca3f90faa8de0::t_46b81d0d615688 39,43
+  s_8ca3f90faa8de0::t_cfb05ca2e74ba3 1
+docs/adding-a-skill.md
+  s_8ca3f90faa8de0::t_943d22637f372b 1-17
+docs/commit-scope-vocabulary.md
+  s_8ca3f90faa8de0::t_d7765586ef6c9e 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1fff7f445d4074bcdcc6f914bdbcff26bbddc125",
+  "prompts": {},
+  "sessions": {
+    "s_8ca3f90faa8de0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f851229d-a3c8-4acb-b643-841285e13626",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
