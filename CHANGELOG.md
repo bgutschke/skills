@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/bgutschke/skills/compare/v1.22.0...v1.23.0) (2026-09-02)
+
+
+### Features
+
+* **refactor-rule-tree:** fill worked-example outcome gaps ([8853dc9](https://github.com/bgutschke/skills/commit/8853dc98c39c3c259162efbbfba29b457f776325)), closes [#104](https://github.com/bgutschke/skills/issues/104)
+
 # [1.22.0](https://github.com/bgutschke/skills/compare/v1.21.0...v1.22.0) (2026-09-02)
 
 
