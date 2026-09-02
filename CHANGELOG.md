@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/bgutschke/skills/compare/v1.16.0...v1.16.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **curate-memory:** unbreak frontmatter YAML and add argument-hint ([d10fe8c](https://github.com/bgutschke/skills/commit/d10fe8c0a58c084bcec0ce7180b1efaeb69addc6))
+
 # [1.16.0](https://github.com/bgutschke/skills/compare/v1.15.0...v1.16.0) (2026-09-01)
 
 
