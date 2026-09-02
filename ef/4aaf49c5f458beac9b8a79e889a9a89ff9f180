@@ -1,0 +1,21 @@
+scripts/sync-plugin-version-cli.js
+  s_e2a520a4629505::t_a5161aabb4c853 2
+scripts/sync-plugin-version.js
+  s_e2a520a4629505::t_fa5a81ace88df4 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ef4aaf49c5f458beac9b8a79e889a9a89ff9f180",
+  "prompts": {},
+  "sessions": {
+    "s_e2a520a4629505": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09af1ca0-b4f2-4ab0-bd3c-1fe2ee7240f4",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
