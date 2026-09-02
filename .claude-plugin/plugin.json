@@ -17,6 +17,7 @@
     "./skills/engineering/to-pr",
     "./skills/productivity/audit-rules",
     "./skills/productivity/curate-memory",
+    "./skills/productivity/refactor-rule-tree",
     "./skills/productivity/renovate-triage"
   ]
 }
