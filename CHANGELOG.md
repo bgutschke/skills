@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/bgutschke/skills/compare/v1.21.0...v1.22.0) (2026-09-02)
+
+
+### Features
+
+* **refactor-rule-tree:** guarantee inbound citations survive a move ([f7980ac](https://github.com/bgutschke/skills/commit/f7980aca6c9826b61c36b36691781df56d0dba68)), closes [#103](https://github.com/bgutschke/skills/issues/103)
+
 # [1.21.0](https://github.com/bgutschke/skills/compare/v1.20.0...v1.21.0) (2026-09-02)
 
 
