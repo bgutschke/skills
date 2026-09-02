@@ -82,8 +82,9 @@ step: a file opts in with a `// @ts-check` pragma at its top, and `npm run typec
 mandatory the next time a file is touched for any reason (a bug fix, a small edit, not
 just a rewrite), scoped to that single file, not its containing skill directory or
 `scripts/` as a whole — touching one file never obligates opting in its neighbors. The
-rule applies identically to maintainer-only tooling (`scripts/*.js`, `.claude/skills/**`)
-and shipped skill scripts (`skills/**`) — neither is exempt. It does not apply
+rule applies identically to maintainer-only tooling (`scripts/*.js`, and any script that
+ends up under `.claude/skills/**`, a maintainer-only tree with no `.js` files today) and
+shipped skill scripts (`skills/**/scripts/*.js`) — neither is exempt. It does not apply
 retroactively: files already in progress when this convention was adopted keep their
 existing untyped state until they're next touched. See
 [ADR 0026](docs/adr/0026-jsdoc-over-ts-for-type-checking.md) for why `.ts` source was
