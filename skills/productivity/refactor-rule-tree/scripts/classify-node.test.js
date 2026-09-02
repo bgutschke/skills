@@ -53,6 +53,13 @@ describe('classifyNode', () => {
     ).toEqual({ class: 'resolve-only', reason: 'memory-file' });
   });
 
+  it('reports reason "code", not "memory-file", for a real code file that happens to sit under a memory/ directory', () => {
+    expect(classifyNode({ path: 'src/memory/cache.ts', isAutoLoaded: true })).toEqual({
+      class: 'resolve-only',
+      reason: 'code',
+    });
+  });
+
   it('classifies another skill\'s SKILL.md as resolve-only', () => {
     expect(classifyNode({ path: 'skills/productivity/commit-msg/SKILL.md', isAutoLoaded: false })).toEqual({
       class: 'resolve-only',

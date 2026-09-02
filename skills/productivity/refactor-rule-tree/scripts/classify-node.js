@@ -12,9 +12,9 @@ const CODE_EXTENSIONS = new Set([
 
 const CONFIGURATION_EXTENSIONS = new Set(['.json', '.yaml', '.yml', '.toml']);
 
-// Matches the rules auditor's own exclusion (see CONTEXT.md's *Resolve-only* entry): the
-// model-written memory system's index file, and anything sitting under a `memory/`
-// directory wherever that directory is rooted.
+// A memory file is model-written and self-correcting through its own mechanism, not
+// hand-authored prose a placement decision applies to — so its index file, and anything
+// sitting under a `memory/` directory wherever that directory is rooted, resolve-only.
 const MEMORY_INDEX_FILENAME = 'MEMORY.md';
 const MEMORY_PATH_SEGMENT = /(^|\/)memory\//i;
 
@@ -35,11 +35,16 @@ function shouldWalkOnward(nodeClass) {
 function resolveOnlyReasonFor(nodePath) {
   const basename = String(nodePath).split('/').pop();
   if (basename === 'SKILL.md') return 'skill-manifest';
-  if (basename === MEMORY_INDEX_FILENAME || MEMORY_PATH_SEGMENT.test(nodePath)) return 'memory-file';
+  if (basename === MEMORY_INDEX_FILENAME) return 'memory-file';
 
+  // Extension is checked before the broader `memory/`-directory heuristic below: a real
+  // code or configuration file (e.g. `src/memory/cache.ts`, an app's own caching module)
+  // is a more specific, more certain signal than a bare path segment, and must win the
+  // reason it's reported with even though both land on the same resolve-only class.
   const extension = extensionOf(basename);
   if (CODE_EXTENSIONS.has(extension)) return 'code';
   if (CONFIGURATION_EXTENSIONS.has(extension)) return 'configuration';
+  if (MEMORY_PATH_SEGMENT.test(nodePath)) return 'memory-file';
   return null;
 }
 

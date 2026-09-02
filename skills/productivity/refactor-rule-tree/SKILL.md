@@ -16,7 +16,7 @@ pointers checked; a **resolve-only** node — code, configuration, a memory file
 skill's `SKILL.md` — is confirmed to exist and never opened at all. Nothing is written
 until the whole plan, across every restructurable node the walk reached, is agreed.
 
-Four properties hold on every run:
+Three properties hold on every run:
 
 - **One plan, not a stream of edits.** A rule that moves is deleted from the node it lives
   in and added to the node it's moving to. Applying that piecemeal can leave a rule
@@ -35,17 +35,14 @@ Four properties hold on every run:
   the plan against itself; Step 2 asks for a careful, complete read for exactly this
   reason.
 - **Bounded by node class, not by a depth limit.** A resolve-only node is a dead end —
-  confirmed to exist and never walked onward — so the queue of nodes still to open shrinks
-  every time the walk reaches one, rather than needing an arbitrary depth cutoff to stop
-  it. A visited set, keyed by real path, is the other half of the bound: a node already in
-  it is never opened twice, which is what makes a cycle between files terminate and a
-  diamond (two nodes both pointing at a third) get walked once rather than reported twice.
-- **Every node class is walked; only one is restructured.** Reaching a verify-only or
-  resolve-only node is not the same as restructuring it. Verifying a pointer and walking
-  into the file it names are two different jobs, and this pass does both for a
-  restructurable or verify-only node — it just applies the placement decision to the
-  first kind only. A resolve-only node gets neither: its existence is confirmed by the
-  walk itself, mechanically, without the Read tool ever opening it.
+  confirmed to exist, mechanically, without the Read tool ever opening it, and never
+  walked onward — so the queue of nodes still to open shrinks every time the walk reaches
+  one, rather than needing an arbitrary depth cutoff to stop it. A visited set, keyed by
+  real path, is the other half of the bound: a node already in it is never opened twice,
+  which is what makes a cycle between files terminate and a diamond (two nodes both
+  pointing at a third) get walked once rather than reported twice. A verify-only node is
+  still walked the same as a restructurable one — its pointers get checked either way —
+  but the placement decision applies only to the restructurable kind.
 
 ## Dependencies
 
@@ -136,25 +133,21 @@ While the queue isn't empty, pop one node and read it with the Read tool, then:
   files that both happen to state a rule named `yaml-indent`) by folding a path fragment
   into the id rather than leaving two different rules sharing one identity.
 
-  This enumeration is the one place the invariant check in Step 5 cannot help: the check
-  only confirms the plan is internally consistent with whatever list it was given, not
-  that the list itself covers everything in the node. Before moving on, re-scan the raw
-  text once against the enumerated list, line by line, and confirm nothing — including a
-  bullet inside a fenced block, or a rule folded into the middle of a longer sentence —
-  was skipped.
+  This is the one place the invariant check in Step 5 cannot help — it only confirms the
+  plan is internally consistent with the list it was given, not that the list covers
+  everything in the node — so re-scan the raw text once against the enumerated list before
+  moving on, confirming nothing was skipped.
 - If the node is **verify-only**, skip rule enumeration entirely — Step 4's placement
   decision has nothing to apply here, and the node's own structure is left exactly as
   found.
 
 Either way, also collect every **pointer** out of the node just read: every `@`-import,
-and every plain-text citation of a file path — inside backticks, inside a fenced block, or
-folded into running prose. An import edge (a harness `@`-import) means the target is
-loaded into context the same turn this node is, *if* this node's own content is itself
-loaded — an import edge out of a verify-only node does not make its target auto-loaded,
-because nothing loaded this node's own imports in the first place; a mention edge (anything
+and every plain-text citation of a file path, wherever it appears in the prose. An import
+edge (`@`-import) carries the target into context *if* this node's own content is itself
+loaded; an import edge out of a verify-only node does not make its target auto-loaded,
+since nothing loaded this node's own imports in the first place. A mention edge (anything
 else) means the target is only ever read when something goes and opens it. Keep the exact
-citation text for each pointer, backticks and all — Step 3's classification runs on the
-literal string, not a paraphrase of it.
+citation text, backticks and all — Step 3's classification runs on the literal string.
 
 Run Step 3 against this node's pointers next, then for every `live` verdict it returns,
 advance the walk:
@@ -183,10 +176,8 @@ real target and is never passed to this command. It reports one of three outcome
   performs on code, structured configuration, a memory file, or another skill's
   `SKILL.md` — it is never opened with the Read tool, and nothing about it is queued.
 
-The walk ends when the queue empties on its own. Nothing bounds it beyond that: the
-visited set stops any node from being opened twice, and a resolve-only node never adds
-anything further to open — together those are why a real tree terminates without a depth
-limit that would otherwise be a threshold with no justification behind it.
+The walk ends when the queue empties on its own — no depth limit needed, per the bound
+described above.
 
 ## Step 3: Verify every pointer
 
@@ -350,6 +341,16 @@ it already works, not to remove it.
 
 ## Step 5: Assemble the plan and check it
 
+```bash
+node scripts/walk-tree-cli.js report <statePath>
+```
+
+Run this first and cross-check its node list against what Step 2's own walk produced by
+hand — the state file, not memory carried across however many `visit` calls the walk took,
+is the definitive record of which node landed in which class. A tree with only a handful
+of nodes may never surface a mismatch this way, but a larger one is exactly where an
+unnoticed skip would otherwise slip through.
+
 Write the plan as one list, one row per rule enumerated across every restructurable node
 the walk reached in Step 2: its id, which node it currently lives in, its current text (or
 a short paraphrase), its verdict, and — for `stay`, the condition number from Step 4 that
@@ -416,7 +417,10 @@ before the invariant check on the current version of the plan has passed.
 
 ## Worked example
 
-A four-rule personal `CLAUDE.md`:
+A four-rule personal `CLAUDE.md`. It's managed by a dotfiles setup, so
+`~/.claude/CLAUDE.md` is actually a symlink to `~/.dotfiles/claude/CLAUDE.md` — Step 2's
+`init` canonicalizes it before seeding the walk state, so every later reference to either
+name resolves to the one node this pass already knows.
 
 1. "Never push directly to `main`; always open a PR." — fires on nearly every git-touching
    task. **stay**, condition 1.
@@ -472,12 +476,23 @@ forward when the node making it was itself auto-loaded, and nothing loaded
 mentions `@ROUTING.md` again — already in the walk state from two hops up, so `visit`
 reports `alreadyVisited: true` and adds nothing; this is what keeps the cycle between
 `ROUTING.md` and `docs/conventions-crossrefs.md` from being read, or reported, twice.
+`docs/legacy-notes.md` cites the root file too, but by its dotfiles path,
+`` `~/.dotfiles/claude/CLAUDE.md` `` — `visit` canonicalizes that to the exact same real
+path the root's own `~/.claude/CLAUDE.md` symlink already resolved to at `init`, so this
+also comes back `alreadyVisited: true` rather than a second root node under a second name.
+
+Step 5's `report` reads back five nodes total: the root and `ROUTING.md`, both
+restructurable; `docs/conventions-crossrefs.md` and `docs/legacy-notes.md`, both
+verify-only — a verify-only node is still walked, only not restructured; and
+`scripts/commit-lint.js`, resolve-only. The excluded worktree entry is kept separately,
+never counted as a node. That list is what the rule and pointer tables below are built
+from, not memory of the individual `visit` calls it took to discover them.
 
 The plan's rule table has five rows — the root's four plus `ROUTING.md`'s one — all five
 ids present exactly once, and `check-plan` against
 `{"ruleIds":["push-via-pr","squash-precedence","commit-msg-hook","yaml-indent","specific-trigger-wins"],"entries":[...five entries, one per id...]}`
 returns `{"ok": true, ...}` before anything is shown to the user as final. The pointer
 list carries every citation collected from every node the walk opened — the root's four
-plus `ROUTING.md`'s two plus `docs/conventions-crossrefs.md`'s two — reviewed by
-hand alongside the rule table, per Step 5, since `check-plan`'s invariant covers only
-rules.
+plus `ROUTING.md`'s two plus `docs/conventions-crossrefs.md`'s two plus
+`docs/legacy-notes.md`'s one — reviewed by hand alongside the rule table, per Step 5,
+since `check-plan`'s invariant covers only rules.
