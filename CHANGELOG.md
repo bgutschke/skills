@@ -1,3 +1,15 @@
+# [1.19.0](https://github.com/bgutschke/skills/compare/v1.18.0...v1.19.0) (2026-09-02)
+
+
+### Bug Fixes
+
+* **refactor-rule-tree:** address code-review findings on the tree walk ([bad2397](https://github.com/bgutschke/skills/commit/bad23974e131d4e1e14527ed5893fe2625e308e5))
+
+
+### Features
+
+* **refactor-rule-tree:** walk the tree and classify nodes ([35e46c5](https://github.com/bgutschke/skills/commit/35e46c534eb91f42dd39074dc773d5e212d584f8)), closes [#101](https://github.com/bgutschke/skills/issues/101)
+
 # [1.18.0](https://github.com/bgutschke/skills/compare/v1.17.0...v1.18.0) (2026-09-02)
 
 
