@@ -19,7 +19,7 @@ type it ships today — there is no application code to review here.
   these.
 - **Model-invoked vs. user-invoked** — check that `disable-model-invocation: true` is set
   correctly for the skill's intended invocation mode, and that the README lists it under
-  the matching section (**User-invoked** or **Model-invoked**).
+  the matching section (**Manual-only** or **Also auto-invocable**).
 
 These summarize `CODING_STANDARDS.md` and `AGENTS.md`; where this file and either of those
 disagree, the other file is right.

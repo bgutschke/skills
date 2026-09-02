@@ -2,11 +2,11 @@
 
 Daily code work.
 
-**User-invoked**
+**Manual-only**
 
 _None yet._
 
-**Model-invoked**
+**Also auto-invocable**
 
 - [to-pr](./to-pr/SKILL.md) — open a new PR (draft by default) from the current branch,
   or fill in an already-open PR's description from its own
