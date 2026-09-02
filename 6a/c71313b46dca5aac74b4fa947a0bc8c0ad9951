@@ -1,0 +1,34 @@
+skills/productivity/refactor-rule-tree/scripts/classify-node.test.js
+  s_369bec6a70ff6d::t_5cdc49dfd73b10 56-62
+skills/productivity/refactor-rule-tree/scripts/classify-node.js
+  s_369bec6a70ff6d::t_e2843c4785d5d8 38,40-43,47
+  s_369bec6a70ff6d::t_ed85c787d702b3 15-17
+skills/productivity/refactor-rule-tree/SKILL.md
+  s_369bec6a70ff6d::t_b9b4cecf1f9c95 179-180
+  s_369bec6a70ff6d::t_d070800d438de4 136-139
+  s_369bec6a70ff6d::t_f7b3c4d1677868 496-498
+  s_369bec6a70ff6d::t_547bec9593de50 484-489
+  s_369bec6a70ff6d::t_fe3dd9f9c04b03 344-353
+  s_369bec6a70ff6d::t_a1f42b17615cbd 19
+  s_369bec6a70ff6d::t_baef3fd2195f6d 420-423
+  s_369bec6a70ff6d::t_c3522c0f9c0ad2 38-45
+  s_369bec6a70ff6d::t_d473a48d47592b 145-148,150
+  s_369bec6a70ff6d::t_7af92e7f9d88ba 479-482
+  s_369bec6a70ff6d::t_27e24b3fbce89e 483
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6ac71313b46dca5aac74b4fa947a0bc8c0ad9951",
+  "prompts": {},
+  "sessions": {
+    "s_369bec6a70ff6d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d83aeb3d-c934-4348-bed2-0cbbf35830ac",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
