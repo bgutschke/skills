@@ -1,0 +1,41 @@
+skills/productivity/refactor-rule-tree/scripts/classify-citation-hit-cli.js
+  s_e2a520a4629505::t_dddbe3d84e92f4 2,13-14,26-29,37-41,64-67,79-82
+skills/productivity/refactor-rule-tree/scripts/decide-citation-action-cli.js
+  s_e2a520a4629505::t_a937745f0e0119 2,16-19,27-30,36,41
+skills/productivity/refactor-rule-tree/scripts/find-partial-path-completion.js
+  s_e2a520a4629505::t_4909657405508c 1-2,9-13
+skills/productivity/refactor-rule-tree/scripts/plan-invariant.js
+  s_e2a520a4629505::t_9b83c25497f424 1-2,11-16,18,20
+skills/productivity/refactor-rule-tree/scripts/plan-invariant-cli.js
+  s_e2a520a4629505::t_4b8676b8cea18e 2,22-25,37-40,58-60,69-73,82-85,91,96
+skills/productivity/refactor-rule-tree/scripts/verify-pointers-cli.js
+  s_e2a520a4629505::t_5b2055ab230431 2,10-26,42-45,53-57,70,75,102-106,137-142,145-147,159-162,173-176,178,183-186
+skills/productivity/refactor-rule-tree/scripts/walk-tree-cli.js
+  s_e2a520a4629505::t_62daaa127ebc13 2,15-43,75-78,88-92,109,131-137,147,183,196,204,209,225-228,249-252,259-262,271-274,284-288,293-296,298,303-307,317-320,328-334,340-343
+skills/productivity/refactor-rule-tree/scripts/generate-candidate-paths.js
+  s_e2a520a4629505::t_01db4528c1d84f 1-2,5-13,18-22,30,32,48-52,56,59-61
+skills/productivity/refactor-rule-tree/scripts/classify-scope.js
+  s_e2a520a4629505::t_fd941108b0c066 1-2,10-11,21-24,34-37,42-46
+skills/productivity/refactor-rule-tree/scripts/classify-node.js
+  s_e2a520a4629505::t_b767842c2a2074 1-2,23-28,39-42,47-50,52,67-70
+skills/productivity/refactor-rule-tree/scripts/classify-pointer.js
+  s_e2a520a4629505::t_b3e20bdab5241b 1-2,24-34,71-76
+skills/productivity/refactor-rule-tree/scripts/decide-citation-action.js
+  s_e2a520a4629505::t_65079f6f7e672a 1-5,11-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a2c8eaa76b072a48ae992c9e30334d5231b95a4f",
+  "prompts": {},
+  "sessions": {
+    "s_e2a520a4629505": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09af1ca0-b4f2-4ab0-bd3c-1fe2ee7240f4",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
