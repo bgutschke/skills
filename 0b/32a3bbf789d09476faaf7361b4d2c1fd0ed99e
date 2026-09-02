@@ -1,0 +1,26 @@
+package.json
+  s_8b00b823142258::t_d449eca4b53ce2 28,33-34
+  s_8b00b823142258::t_fdcc72e66df97d 12
+.github/workflows/validate.yml
+  s_8b00b823142258::t_ee990657c1f2a1 31-33
+tsconfig.json
+  s_8b00b823142258::t_18c5a05d48ea71 1-15
+package-lock.json
+  s_8b00b823142258::t_caa86866cda384 22,27-28,3411-3413
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0b32a3bbf789d09476faaf7361b4d2c1fd0ed99e",
+  "prompts": {},
+  "sessions": {
+    "s_8b00b823142258": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "18a80f96-16e8-4db2-825b-e12e3b5a8ebd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
