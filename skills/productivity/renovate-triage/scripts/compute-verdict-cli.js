@@ -1,11 +1,19 @@
 #!/usr/bin/env node
+// @ts-check
 const { classifyBumpSize } = require('./classify-bump-size');
 const { computeVerdict } = require('./compute-verdict');
+
+/** @typedef {import('./compute-verdict').CiStatus} CiStatus */
 
 const CI_STATUSES = ['passing', 'pending', 'failing'];
 const USAGE = 'Usage: compute-verdict-cli.js --old-version <v> --new-version <v> --changelog-found <true|false> --breaking-callout <true|false> --ci-status <passing|pending|failing> --blast-radius-large <true|false>';
 
+/**
+ * @param {string[]} argv
+ * @returns {Record<string, string>}
+ */
 function parseArgs(argv) {
+  /** @type {Record<string, string>} */
   const args = {};
   for (let i = 0; i < argv.length; i += 2) {
     args[argv[i].replace(/^--/, '')] = argv[i + 1];
@@ -32,7 +40,7 @@ const result = computeVerdict({
   bumpSize,
   changelogFound: args['changelog-found'] === 'true',
   relevantBreakingChangeCallout: args['breaking-callout'] === 'true',
-  ciStatus: args['ci-status'],
+  ciStatus: /** @type {CiStatus} */ (args['ci-status']),
   blastRadiusLarge: args['blast-radius-large'] === 'true',
 });
 

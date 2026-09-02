@@ -1,8 +1,17 @@
+// @ts-check
+
 const GITHUB_REPO_URL_PATTERN = /github\.com\/([\w.-]+)\/([\w.-]+)\/(?:releases|archive|tags)\b/g;
 
+/**
+ * @param {string} packagingRepo
+ * @param {string} content
+ * @returns {{ status: 'none' } | { status: 'found', repo: string } | { status: 'ambiguous', candidates: string[] }}
+ */
 function extractUpstreamRepo(packagingRepo, content) {
+  /** @type {Map<string, string>} */
   const candidates = new Map();
   GITHUB_REPO_URL_PATTERN.lastIndex = 0;
+  /** @type {RegExpExecArray | null} */
   let match;
   while ((match = GITHUB_REPO_URL_PATTERN.exec(content)) !== null) {
     const repo = `${match[1]}/${match[2]}`;

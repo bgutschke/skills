@@ -1,20 +1,34 @@
+// @ts-check
+
 const MARKER = '<!-- renovate-triage:verdict -->';
 const VALID_VERDICTS = ['safe', 'needs-review', 'blocked'];
 const AGENT_BRIEF_HEADING = 'Agent brief';
 const OPPORTUNITIES_HEADING = 'Opportunities';
 const HEADING_LINE_PATTERN = /^#{1,6}\s+.*$/gm;
 const BANNED_EMPTY_OPPORTUNITY_PHRASES = ['no opportunities found', 'none found', 'no opportunities', 'nothing found'];
+/** @type {Record<string, string>} */
 const TIER_LABEL = { safe: 'SAFE', 'needs-review': 'NEEDS-REVIEW', blocked: 'BLOCKED' };
 const TIER_LINE_PATTERN = new RegExp(`^(${Object.values(TIER_LABEL).join('|')})\\s+—`, 'm');
 const AGENT_BRIEF_FENCE_PATTERN = /^```text\n[\s\S]*\n```$/;
 
+/**
+ * @param {string} haystack
+ * @param {string} needle
+ * @returns {number}
+ */
 function countOccurrences(haystack, needle) {
   return haystack.split(needle).length - 1;
 }
 
+/**
+ * @param {string} body
+ * @returns {{ index: number, text: string }[]}
+ */
 function findHeadingLines(body) {
+  /** @type {{ index: number, text: string }[]} */
   const headings = [];
   HEADING_LINE_PATTERN.lastIndex = 0;
+  /** @type {RegExpExecArray | null} */
   let match;
   while ((match = HEADING_LINE_PATTERN.exec(body)) !== null) {
     headings.push({ index: match.index, text: match[0] });
@@ -22,10 +36,21 @@ function findHeadingLines(body) {
   return headings;
 }
 
+/**
+ * @param {string} headingText
+ * @returns {number}
+ */
 function headingLevel(headingText) {
-  return headingText.match(/^#+/)[0].length;
+  const match = headingText.match(/^#+/);
+  return /** @type {RegExpMatchArray} */ (match)[0].length;
 }
 
+/**
+ * @param {string} body
+ * @param {{ index: number, text: string }[]} headings
+ * @param {number} i
+ * @returns {number}
+ */
 function findSectionEnd(body, headings, i) {
   const level = headingLevel(headings[i].text);
   for (let j = i + 1; j < headings.length; j += 1) {
@@ -34,6 +59,10 @@ function findSectionEnd(body, headings, i) {
   return body.length;
 }
 
+/**
+ * @param {string} text
+ * @returns {string}
+ */
 function normalizeForBannedPhraseMatch(text) {
   return text
     .toLowerCase()
@@ -42,7 +71,12 @@ function normalizeForBannedPhraseMatch(text) {
     .trim();
 }
 
+/**
+ * @param {string} body
+ * @returns {string[]}
+ */
 function validateOpportunitiesSections(body) {
+  /** @type {string[]} */
   const errors = [];
   const headings = findHeadingLines(body);
 
@@ -66,6 +100,11 @@ function validateOpportunitiesSections(body) {
   return errors;
 }
 
+/**
+ * @param {string} body
+ * @param {string} verdict
+ * @returns {string[]}
+ */
 function validateTierLineLabel(body, verdict) {
   const match = body.match(TIER_LINE_PATTERN);
   if (!match) return [];
@@ -77,7 +116,12 @@ function validateTierLineLabel(body, verdict) {
   return [];
 }
 
+/**
+ * @param {string} body
+ * @returns {string[]}
+ */
 function validateAgentBriefFence(body) {
+  /** @type {string[]} */
   const errors = [];
   const headings = findHeadingLines(body);
 
@@ -95,7 +139,13 @@ function validateAgentBriefFence(body) {
   return errors;
 }
 
+/**
+ * @param {string} body
+ * @param {string} verdict
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
 function validateCommentBody(body, verdict) {
+  /** @type {string[]} */
   const errors = [];
 
   if (!VALID_VERDICTS.includes(verdict)) {

@@ -1,3 +1,9 @@
+// @ts-check
+
+/**
+ * @param {Record<string, string> | null | undefined} labels
+ * @returns {{ status: 'none' } | { status: 'found', repo: string }}
+ */
 function extractOciSourceLabel(labels) {
   const url = labels?.['org.opencontainers.image.source'] ?? labels?.['org.opencontainers.image.url'];
   const match = url ? /^https?:\/\/github\.com\/([\w.-]+)\/([\w.-]+)/i.exec(url) : null;

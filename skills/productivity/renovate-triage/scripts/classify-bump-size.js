@@ -1,5 +1,11 @@
+// @ts-check
+
 const VERSION_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)/;
 
+/**
+ * @param {string} version
+ * @returns {{ major: number, minor: number } | null}
+ */
 function parseVersion(version) {
   const match = version.match(VERSION_PATTERN);
   if (!match) {
@@ -9,6 +15,11 @@ function parseVersion(version) {
   return { major: Number(major), minor: Number(minor) };
 }
 
+/**
+ * @param {string} oldVersion
+ * @param {string} newVersion
+ * @returns {'major' | 'minor' | 'patch' | 'indeterminate'}
+ */
 function classifyBumpSize(oldVersion, newVersion) {
   const previous = parseVersion(oldVersion);
   const next = parseVersion(newVersion);

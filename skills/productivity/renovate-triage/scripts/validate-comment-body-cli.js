@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const { validateCommentBody } = require('./validate-comment-body');
 
@@ -8,11 +9,12 @@ if (!verdict || !bodyFile) {
   process.exit(1);
 }
 
+/** @type {string} */
 let body;
 try {
   body = fs.readFileSync(bodyFile, 'utf8');
 } catch (error) {
-  console.error(`Could not read body file "${bodyFile}": ${error.message}`);
+  console.error(`Could not read body file "${bodyFile}": ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }
 

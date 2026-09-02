@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const { detectSecurityAdvisory } = require('./detect-security-advisory');
 
@@ -8,11 +9,12 @@ if (!changelogFile) {
   process.exit(1);
 }
 
+/** @type {string} */
 let changelogText;
 try {
   changelogText = fs.readFileSync(changelogFile, 'utf8');
 } catch (error) {
-  console.error(`Could not read changelog file "${changelogFile}": ${error.message}`);
+  console.error(`Could not read changelog file "${changelogFile}": ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 }
 
