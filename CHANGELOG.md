@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/bgutschke/skills/compare/v1.17.0...v1.18.0) (2026-09-02)
+
+
+### Features
+
+* **refactor-rule-tree:** verify pointers and report the four verdicts ([b47cdca](https://github.com/bgutschke/skills/commit/b47cdca3a39b3e318bab7b88c06ac1ff8e55e48f)), closes [#100](https://github.com/bgutschke/skills/issues/100)
+
 # [1.17.0](https://github.com/bgutschke/skills/compare/v1.16.1...v1.17.0) (2026-09-02)
 
 
