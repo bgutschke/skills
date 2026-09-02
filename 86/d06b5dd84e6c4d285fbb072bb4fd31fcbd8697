@@ -1,0 +1,19 @@
+CODING_STANDARDS.md
+  s_99a804aa5e1a54::t_8cf4e515a92802 85-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "86d06b5dd84e6c4d285fbb072bb4fd31fcbd8697",
+  "prompts": {},
+  "sessions": {
+    "s_99a804aa5e1a54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2dbca263-be19-4af3-a02f-55073d8c239f",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
