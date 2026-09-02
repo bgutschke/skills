@@ -2,7 +2,7 @@
 
 Daily non-code workflow tools.
 
-**User-invoked**
+**Manual-only**
 
 - [audit-rules](./audit-rules/SKILL.md) — read every active rule file and installed
   skill/agent description and report contradictions or unresolved overlaps between them.
@@ -16,6 +16,6 @@ Daily non-code workflow tools.
   given by number/URL, for its changelog, release notes, and CI status, and post a risk
   verdict comment per PR.
 
-**Model-invoked**
+**Also auto-invocable**
 
 _None yet._
