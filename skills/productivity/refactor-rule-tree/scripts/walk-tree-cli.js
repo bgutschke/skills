@@ -5,9 +5,11 @@
 // example instead (see SKILL.md), the same split this skill already uses for pointer
 // resolution in verify-pointers-cli.js.
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { classifyNode, shouldWalkOnward } = require('./classify-node');
+const { classifyScope, decideEditAuthority } = require('./classify-scope');
 
 // Matches verify-pointers-cli.js's own exclusion set: a nested `.git` (including its
 // `worktrees/` checkouts) and a dependency tree never hold a citation's genuine target, so
@@ -18,7 +20,8 @@ const USAGE = `Usage:
   walk-tree-cli.js init <statePath> <rootPath>
       Start a walk: canonicalize <rootPath> and seed <statePath> with it as the walk's one
       root node — always restructurable, since Step 1 already resolved it as the file this
-      pass was pointed at.
+      pass was pointed at. Also classifies and records the root's own scope (personal or
+      project), which every later node's edit authority is decided against.
 
   walk-tree-cli.js visit <statePath> <parentRealPath> <resolvedPath> <import|mention>
       Advance the walk by one edge. <resolvedPath> is a pointer's already-resolved target —
@@ -31,8 +34,10 @@ const USAGE = `Usage:
         - a new node: classified by classify-node.js from the edge kind and the parent's
           own auto-loaded status (an import edge only carries auto-load through when the
           parent was itself auto-loaded — a file merely mentioned doesn't get its own
-          imports auto-loaded just because something opened it). A resolve-only result
-          carries shouldWalkOnward: false; every other class carries true.
+          imports auto-loaded just because something opened it), and by classify-scope.js
+          from where the target sits relative to the walk's root scope. A resolve-only
+          result, or one whose scope differs from the root's (scopeCrossing: true,
+          editable: false), carries shouldWalkOnward: false; every other node carries true.
 
   walk-tree-cli.js report <statePath>
       Print every node and every excluded path the walk has recorded so far.`;
@@ -57,6 +62,10 @@ function init(statePathArg, rootPathArg) {
     return 1;
   }
 
+  // Scope is classified against `rootPath`, before it's canonicalized below — the same
+  // pre-symlink path `scopeOf` uses for every later node, so the root and a node reached
+  // two hops later are judged by the same rule (see classify-scope.js's own comment).
+  const rootScope = scopeOf(rootPath);
   const canonicalRoot = fs.realpathSync(rootPath);
   const rootNode = {
     path: canonicalRoot,
@@ -64,9 +73,17 @@ function init(statePathArg, rootPathArg) {
     reason: null,
     edgeFromParent: null,
     autoLoaded: true,
+    scope: rootScope,
+    editable: true,
+    scopeCrossing: false,
     shouldWalkOnward: true,
   };
-  writeState(path.resolve(statePathArg), { root: canonicalRoot, nodes: { [canonicalRoot]: rootNode }, excluded: [] });
+  writeState(path.resolve(statePathArg), {
+    root: canonicalRoot,
+    rootScope,
+    nodes: { [canonicalRoot]: rootNode },
+    excluded: [],
+  });
   console.log(JSON.stringify({ root: canonicalRoot, node: rootNode }, null, 2));
   return 0;
 }
@@ -105,11 +122,14 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
     return 1;
   }
 
-  // Anchored at the walk's own root, never at the target being visited: a target that
-  // happens to sit inside another worktree has its own `.git` file (worktrees keep one,
-  // pointing back at the main checkout), so searching upward from the target would find
-  // that worktree's checkout and mistake it for the main one — silently exempting the very
-  // directory this check exists to exclude.
+  // Anchored at the walk's own root, never at the target being visited — the opposite of
+  // scopeOf's own per-target lookup below, and deliberately so: a target that happens to
+  // sit inside another worktree has its own `.git` file (worktrees keep one, pointing back
+  // at the main checkout), so searching upward from the target would find that worktree's
+  // checkout and mistake it for the main one — silently exempting the very directory this
+  // check exists to exclude. scopeOf needs the opposite anchor because it's asking a
+  // different question (what project does *this* file belong to, not which checkout of
+  // *the walk's own* repository is it in).
   const repoRoot = findRepoRoot(path.dirname(state.root)) ?? path.dirname(state.root);
   if (isExcludedPath(canonicalTarget, listWorktreePaths(repoRoot))) {
     state.excluded = dedupeByPath([...state.excluded, { path: canonicalTarget, edgeFromParent: edgeKindArg }]);
@@ -127,13 +147,25 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
 
   const autoLoaded = edgeKindArg === 'import' && parentNode.autoLoaded;
   const classification = classifyNode({ path: canonicalTarget, isAutoLoaded: autoLoaded });
+  // Scope, like at the root, is classified against `resolvedPathArg` — the pointer's
+  // pre-realpath target — not `canonicalTarget`: a target reached through a symlink must
+  // be judged by where it was cited as living, the same reasoning `init` above applies to
+  // the root itself.
+  const candidateScope = scopeOf(resolvedPathArg);
+  const { editable, scopeCrossing } = decideEditAuthority({ rootScope: state.rootScope, candidateScope });
   const node = {
     path: canonicalTarget,
     class: classification.class,
     reason: classification.reason,
     edgeFromParent: edgeKindArg,
     autoLoaded,
-    shouldWalkOnward: shouldWalkOnward(classification.class),
+    scope: candidateScope,
+    editable,
+    scopeCrossing,
+    // A scope crossing is a dead end regardless of content class: reported once, here, and
+    // never walked past — the pass stops hard at the personal/project boundary rather than
+    // reading what lies on the other side of it.
+    shouldWalkOnward: !scopeCrossing && shouldWalkOnward(classification.class),
   };
   state.nodes[canonicalTarget] = node;
   writeState(statePath, state);
@@ -154,6 +186,17 @@ function report(statePathArg) {
   }
   console.log(JSON.stringify({ root: state.root, nodes: Object.values(state.nodes), excluded: state.excluded }, null, 2));
   return 0;
+}
+
+// The personal config directory is fixed and global; the project root is recomputed per
+// candidate path (from that candidate's own directory upward) rather than once for the
+// whole walk, matching verify-pointers-cli.js's own per-node repoRoot lookup — a node
+// reached far from the root's own directory still gets judged against *its* project, not
+// the root's.
+function scopeOf(candidatePath) {
+  const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+  const projectRoot = findRepoRoot(path.dirname(path.resolve(candidatePath)));
+  return classifyScope({ path: candidatePath, configDir, projectRoot });
 }
 
 function tryRealpath(candidatePath) {

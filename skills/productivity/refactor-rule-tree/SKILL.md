@@ -44,15 +44,51 @@ Three properties hold on every run:
   still walked the same as a restructurable one — its pointers get checked either way —
   but the placement decision applies only to the restructurable kind.
 
+## Scope and edit authority
+
+Step 2's `init` fixes the whole pass's **scope** — personal or project — once, from the
+root Step 1 resolved, before the walk starts. Every other node's own scope is then compared
+against that one fixed value, never against the root's location or how many hops separate
+the two.
+**Authorization follows scope, not reachability**: a node many hops from the root is
+exactly as editable as one sitting right beside it, provided the two share a scope, and a
+node one hop away is not editable at all if it doesn't. Restricting edit authority to the
+root alone — the tightest rule that would still keep the pass out of the wrong scope —
+would make it useless at the size a project tree actually reaches: a rule worth moving
+almost always lives in a topic file the root only mentions, not in the root itself, so a
+pass that could read a 37-file tree but write to only one file in it would report findings
+everywhere and act on almost none of them.
+
+A candidate node whose scope differs from the root's is a **scope crossing**: confirmed to
+exist and reported as a finding, but never opened, never enumerated for rules, and never
+walked onward — the pass stops hard at the boundary rather than reading what's on the
+other side of it. A default run resolves its root to the personal file in Step 1, which
+fixes the whole pass's scope to personal the moment Step 2's `init` runs; a project file it
+happens to reach through some pointer is a scope crossing under that fixed value, so it is
+never opened or edited, regardless of how the pointer was worded or how deliberately it was
+written.
+
+This diverges from the rules auditor's own posture, which refuses to propose an edit
+against any project-scoped file, full stop — a tool that read a shared file only
+*incidentally*, while auditing something unrelated to that file, has no standing to rewrite
+it without a person deciding to point a tool at it. This pass differs in exactly the case
+that posture doesn't cover: its root is never discovered incidentally, it's the one file
+the user named directly as this command's own argument, and every edit the pass produces
+against it lands through the same pull-request review any other change to that file
+already goes through. That review is what replaces the missing per-run judgment call the
+auditor's stricter rule exists to avoid — an explicitly named root plus the repo's own PR
+review stands in for the auditor's blanket refusal; it is not a quiet exception to it, and
+it extends no further than the root scope it was granted for.
+
 ## Dependencies
 
 Requires `node` to run the bundled invariant checker (`scripts/plan-invariant-cli.js`),
 which every plan must pass before execution writes anything; the bundled pointer resolver
 (`scripts/verify-pointers-cli.js`), which every pointer collected while walking is checked
 through rather than a shell `find`/`grep`; and the bundled walk tracker
-(`scripts/walk-tree-cli.js`), which canonicalizes every node the walk reaches, excludes
-worktree and dependency directories, and keeps the visited set that bounds the walk and
-stops a cycle from being read twice.
+(`scripts/walk-tree-cli.js`), which canonicalizes every node the walk reaches, classifies
+each one's scope against the root's, excludes worktree and dependency directories, and
+keeps the visited set that bounds the walk and stops a cycle from being read twice.
 
 ## When to use
 
@@ -83,13 +119,12 @@ stops a cycle from being read twice.
   prose placement logic doesn't apply to either).
 - **Firing on its own.** `disable-model-invocation: true` is deliberate — a skill that
   rewrites rule files must never decide by itself that now is a good time to run.
-- **Crossing between personal and project scope, or moving a rule whose citations live
-  outside the tree this pass may edit.** Neither boundary is enforced by this pass yet —
-  the walk itself has no notion of scope, and a move never checks who else cites the rule
-  it's relocating. Treat every plan this pass produces as scoped to the root it was
-  pointed at until that enforcement exists; a plan that reaches across a scope boundary or
-  proposes a move without checking inbound citations should be caught by hand, not
-  assumed safe.
+- **Moving a rule whose citations live outside the tree this pass may edit.** The walk
+  itself refuses to cross between personal and project scope (see Scope and edit authority
+  above), but a move still never checks who else cites the rule it's relocating. Treat
+  every proposed move as unverified against inbound citations until that check exists;
+  catch a citation left pointing at a rule's old location by hand, not by assuming this
+  pass already checked for it.
 
 ## Step 1: Resolve the root file
 
@@ -171,10 +206,16 @@ real target and is never passed to this command. It reports one of three outcome
   weighing the edge just walked against the parent node's own auto-loaded status (an
   import edge only carries auto-load forward when the parent was itself auto-loaded — a
   file merely mentioned doesn't get its own imports auto-loaded just because something
-  opened it). Queue it only if `shouldWalkOnward` comes back `true`. A **resolve-only**
-  result is a dead end: canonicalizing its real path *is* the existence check this pass
-  performs on code, structured configuration, a memory file, or another skill's
-  `SKILL.md` — it is never opened with the Read tool, and nothing about it is queued.
+  opened it), and separately carrying its own `scope`, compared against the root's own
+  scope — fixed once, by `init`, at the start of this step. Queue it only if
+  `shouldWalkOnward` comes back `true`. A
+  **resolve-only** result is a dead end: canonicalizing its real path *is* the existence
+  check this pass performs on code, structured configuration, a memory file, or another
+  skill's `SKILL.md` — it is never opened with the Read tool, and nothing about it is
+  queued. A `scopeCrossing: true` result is a dead end for the same reason regardless of
+  its content class — `editable` comes back `false` and `shouldWalkOnward` comes back
+  `false` even for a node that would otherwise classify restructurable or verify-only; note
+  it as a scope-crossing finding for Step 5 and do not open it with the Read tool.
 
 The walk ends when the queue empties on its own — no depth limit needed, per the bound
 described above.
@@ -384,6 +425,12 @@ the citing node, not an action this pass takes. The invariant check above covers
 rule table — the pointer list has no mechanical equivalent, so review it by hand with the
 same care Step 2 asked for the rules.
 
+Report a third, shorter list alongside the first two whenever Step 2 recorded a node with
+`scopeCrossing: true`: its path, the node that reached it, and its own scope next to the
+root's. This is a finding, not an action — nothing about it was opened, so nothing about it
+is proposed for a change; it exists in the plan only so the user learns the two trees are
+connected without the pass having read across into the other one to find out.
+
 ## Step 6: Amend and discuss
 
 Discussion and amendment are unlimited at this point — nothing has been written yet, so
@@ -414,85 +461,15 @@ before the invariant check on the current version of the plan has passed.
 - `outdated` pointers and `unrouted` names: no edit — both are reported for awareness, and
   rewriting a stale claim is outside what this pass's placement-and-pointer decision
   covers.
+- scope-crossing findings: no edit, ever — the node was never opened in Step 2, so there is
+  nothing about it for this step to act on beyond having already reported it.
 
 ## Worked example
 
-A four-rule personal `CLAUDE.md`. It's managed by a dotfiles setup, so
-`~/.claude/CLAUDE.md` is actually a symlink to `~/.dotfiles/claude/CLAUDE.md` — Step 2's
-`init` canonicalizes it before seeding the walk state, so every later reference to either
-name resolves to the one node this pass already knows.
-
-1. "Never push directly to `main`; always open a PR." — fires on nearly every git-touching
-   task. **stay**, condition 1.
-2. "Before merging, squash unless the project's own convention says otherwise." — states
-   which convention wins when the project has its own opinion. Router exemption:
-   precedence content, extracted from consideration entirely. **stay** (never a move
-   candidate).
-3. "When writing a commit message, use Conventional Commits — see `commit-msg` skill for
-   the exact types." — a specific, nameable trigger ("writing a commit message"), and the
-   check ("does the subject match `type(scope): description`") is the same every time with
-   no judgment involved. **skill**, mechanism: hook, checking the commit message against
-   the Conventional Commits pattern before the commit is created.
-4. "Use two-space indentation in YAML files." — no near-universal trigger, not
-   irreversible on a miss, and there's no sibling rule to cluster it with. **stay**,
-   condition 3 (small, no intent to grow).
-
-Rule 2's router exemption is checked and applied before rule 2 is ever measured against
-the four stay conditions — it would likely qualify for condition 1 anyway, but the
-exemption is what guarantees it regardless of how often it's actually observed to fire.
-
-The same file cites four paths. `@ROUTING.md`, sitting beside it, resolves against the
-file's own directory and comes back **live**. `` see `docs/old-conventions.md` `` resolves
-against none of the three roots and doesn't complete against anything the repository
-actually contains, so it comes back **dead** — proposed for cutting, gated by the same
-Step 7 confirmation as the four rules above, never applied on its own. `` `rules/*.md` ``
-is a glob and comes back **unverifiable** with reason `glob`, never offered as a cut
-candidate regardless of how the plan is amended. A fourth, `` `../proj-wt/CLAUDE.md` ``,
-resolves **live** — a colleague's git-worktree checkout of the very same repository really
-does have a file there — but Step 2's `visit` reports it `excluded: true` rather than a
-new node: `git worktree list` names `../proj-wt` as a checkout of this repository, so
-walking into it would re-report every finding in the whole tree a second time under a
-different path.
-
-`@ROUTING.md`'s `live` verdict is what Step 2 advances the walk on: an import edge out of
-the root, whose own `autoLoaded` is `true`, so `ROUTING.md` classifies **restructurable**.
-It holds one rule of its own — "when two skills could both fire for the same request,
-route by whichever trigger is more specific" — which is precedence content: router
-exemption, **stay**, never measured against the four conditions. `ROUTING.md` in turn
-mentions `` `docs/conventions-crossrefs.md` `` (a mention edge, `live`) and
-`` `scripts/commit-lint.js` `` (also a mention edge, `live`). The first classifies
-**verify-only** — `ROUTING.md`'s own `autoLoaded: true` doesn't matter here, because the
-edge reaching it is a mention, not an import; its pointers get checked, but it holds no
-rule table of its own in this plan. The second classifies **resolve-only**, reason `code`
-— `visit` confirms it exists by canonicalizing its real path and reports
-`shouldWalkOnward: false`; it is never opened with the Read tool and nothing further is
-walked from it.
-
-`docs/conventions-crossrefs.md` itself `@`-imports `` `docs/legacy-notes.md` `` — an
-import edge, but out of a parent whose own `autoLoaded` is `false`, so the target still
-classifies **verify-only**, not restructurable: an import edge only carries auto-load
-forward when the node making it was itself auto-loaded, and nothing loaded
-`docs/conventions-crossrefs.md`'s own imports in the first place. That same file also
-mentions `@ROUTING.md` again — already in the walk state from two hops up, so `visit`
-reports `alreadyVisited: true` and adds nothing; this is what keeps the cycle between
-`ROUTING.md` and `docs/conventions-crossrefs.md` from being read, or reported, twice.
-`docs/legacy-notes.md` cites the root file too, but by its dotfiles path,
-`` `~/.dotfiles/claude/CLAUDE.md` `` — `visit` canonicalizes that to the exact same real
-path the root's own `~/.claude/CLAUDE.md` symlink already resolved to at `init`, so this
-also comes back `alreadyVisited: true` rather than a second root node under a second name.
-
-Step 5's `report` reads back five nodes total: the root and `ROUTING.md`, both
-restructurable; `docs/conventions-crossrefs.md` and `docs/legacy-notes.md`, both
-verify-only — a verify-only node is still walked, only not restructured; and
-`scripts/commit-lint.js`, resolve-only. The excluded worktree entry is kept separately,
-never counted as a node. That list is what the rule and pointer tables below are built
-from, not memory of the individual `visit` calls it took to discover them.
-
-The plan's rule table has five rows — the root's four plus `ROUTING.md`'s one — all five
-ids present exactly once, and `check-plan` against
-`{"ruleIds":["push-via-pr","squash-precedence","commit-msg-hook","yaml-indent","specific-trigger-wins"],"entries":[...five entries, one per id...]}`
-returns `{"ok": true, ...}` before anything is shown to the user as final. The pointer
-list carries every citation collected from every node the walk opened — the root's four
-plus `ROUTING.md`'s two plus `docs/conventions-crossrefs.md`'s two plus
-`docs/legacy-notes.md`'s one — reviewed by hand alongside the rule table, per Step 5,
-since `check-plan`'s invariant covers only rules.
+See `WORKED-EXAMPLE.md` for a full walkthrough of every step above, against a four-rule
+personal `CLAUDE.md` reached through a dotfiles symlink: the restructurable / verify-only /
+resolve-only split, the router exemption, a dead pointer next to an unverifiable one, an
+excluded worktree checkout, a cycle and a diamond that each terminate the walk without a
+duplicate report, and — the case this pass's scope logic adds — a live, well-formed pointer
+to a real project rule file that still never gets opened, because its scope doesn't match
+the personal root's.
