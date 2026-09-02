@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const path = require('path');
 const { syncPluginVersion } = require('./sync-plugin-version');
