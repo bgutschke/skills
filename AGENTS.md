@@ -1,18 +1,4 @@
-Skills are organized into bucket folders under `skills/`:
-
-- `engineering/`: daily code work
-- `productivity/`: daily non-code workflow tools
-
-Every skill must have a reference in its bucket's `README.md` and the top-level `README.md`, and an entry in `.claude-plugin/plugin.json`'s `skills` array (the plugin ships exactly what's listed there). `plugin.json`'s `version` field is owned by the release pipeline (`release.config.js`) — never hand-edit it when adding a skill.
-
-To add a skill:
-
-1. Create `skills/<bucket>/<skill-name>/SKILL.md`.
-2. Add `./skills/<bucket>/<skill-name>` to `.claude-plugin/plugin.json`'s `skills` array.
-3. List it, name linked to its `SKILL.md`, in the bucket's `README.md` (under **Manual-only** or **Also auto-invocable**) and in the top-level `README.md`.
-4. Run `claude plugin validate . --strict`.
-
-A **user-invoked** skill only responds to an explicit command (`disable-model-invocation: true` in its frontmatter). A **model-invoked** skill can also be reached automatically when the task fits. Decide which a new skill is before writing it.
+When adding a new skill to this repo, see `docs/adding-a-skill.md` for the required structure, references, and invocation-mode decision.
 
 See `CODING_STANDARDS.md` for the quality bar a skill must meet — required `SKILL.md` structure, style rules, and the full pre-merge checklist.
 
@@ -42,13 +28,7 @@ One of:
 
 ### Scope
 
-Optional, and drawn from one of three independent vocabularies — a commit uses at most one value from any of them, never combining two, and picks the most specific one that applies (same carving principle as `ROUTING.md`):
-
-- **Skill scope** — a skill's own directory name (`to-pr`, `audit-rules`, `skill-writing-standards`, `audit-skills`, …), when a commit touches exactly one skill. Maintainer-only skills under `.claude/skills/**` use their own name the same way — there is no separate marker distinguishing them from shipped skills.
-- **Bucket scope** — `engineering` or `productivity`, the fallback when a commit spans multiple skills within one bucket, or touches a bucket-level file (e.g. a bucket `README.md`). Omit the scope entirely for repo-wide changes (plugin manifest, marketplace config, top-level docs).
-- **Maintenance scope** — `deps` or `config`, for automated dependency-tooling changes (Renovate). Renovate's own config-migration PR hardcodes scope `config` and isn't configurable otherwise, so this vocabulary is accepted as-is rather than mapped onto the other two.
-
-`commitlint.config.js`'s `scope-enum` rule enforces this by reading `skills/**` and `.claude/skills/**` directory names off disk at lint time (via `scripts/commit-scope-enum.js`), unioned with the fixed `deps`/`config` vocabulary — a hand-maintained list would need a manual edit every time a skill is added, renamed, or removed, and would drift.
+Optional, and drawn from one of three independent vocabularies — a commit uses at most one value from any of them, never combining two, and picks the most specific one that applies. See `docs/commit-scope-vocabulary.md` for the full per-vocabulary definitions and how the enum is enforced.
 
 ### Subject
 
@@ -56,13 +36,11 @@ Lowercase, imperative mood, no trailing period — `fix(engineering): correct br
 
 ### Body
 
-Separated from the subject by a blank line, for any non-trivial change. Explains WHAT changed and WHY — never HOW; the diff already shows how. Keep issue references (`#N`) out of the body entirely — put them only in the Footer below. commitlint's parser treats the *first* `#N` it finds anywhere in the body as the start of the footer; if that first mention lands on a hard-wrapped continuation line rather than one already preceded by a blank line, everything after it — including the real `Refs #10`/`Closes #10` line — gets swallowed into an unspaced "footer" and trips a `footer-leading-blank` warning.
+Separated from the subject by a blank line, for any non-trivial change. Explains WHAT changed and WHY — never HOW; the diff already shows how.
 
 ### Footer
 
-`Closes #<n>` or `Refs #<n>` when the commit closes or relates to a tracked GitHub issue (see `docs/agents/issue-tracker.md`). Omit when there's no related issue — most commits won't have one.
-
-Use `Closes #<n>`, never `Refs #<n>`, for the commit that ships an issue's last remaining acceptance-criteria item — GitHub then closes the issue automatically on push instead of needing a manual follow-up. Where the issue body has an explicit checklist, the test is mechanical: does this diff check off everything still unchecked? Where there's no checklist: would you want this push to auto-close the issue? Yes means `Closes`. A manual `gh issue close` stays valid only for issues that resolve without any shipping commit (`wontfix`, duplicates, pure decisions where the comment *is* the resolution).
+When a commit closes or relates to a tracked GitHub issue, see `docs/commit-footer-issue-refs.md` for the footer syntax, the body/footer split, and the Closes-vs-Refs test.
 
 Breaking changes use a `!` after the type/scope (`feat(engineering)!: ...`) and/or a `BREAKING CHANGE:` footer, per the spec. `semantic-release` reads this as a major version bump.
 

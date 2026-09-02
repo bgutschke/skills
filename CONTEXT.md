@@ -27,7 +27,7 @@ Two rule files, or two invocable units (see below), giving opposite guidance for
 *Avoid*: using loosely for any overlap — see *Unresolved overlap*.
 
 **Unresolved overlap**:
-Two invocable units that could both plausibly fire for the same request, with no stated precedence between them — a carving defect (per `ROUTING.md`'s carving principle) even when neither one's guidance is individually wrong.
+Two invocable units that could both plausibly fire for the same request, with no stated precedence between them — a carving defect even when neither one's guidance is individually wrong.
 *Avoid*: conflating with *Contradiction*, which requires actual disagreement, not just untie-broken competition.
 
 **Invocable unit**:
