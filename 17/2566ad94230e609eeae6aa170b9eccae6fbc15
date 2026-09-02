@@ -1,0 +1,28 @@
+docs/adr/0025-to-pr-gains-scoped-agent-invocation.md
+  s_2c0a212c1d1ed2::t_5c074391c63ef0 1-18,26-44
+  s_2c0a212c1d1ed2::t_51f149799601e9 19-25
+skills/engineering/to-pr/SKILL.md
+  s_2c0a212c1d1ed2::t_93330af65675ed 4
+  s_2c0a212c1d1ed2::t_000e387eb086e7 34-39
+  s_2c0a212c1d1ed2::t_df8bce6212e8ba 14-16
+  s_2c0a212c1d1ed2::t_8b74610e096fe7 55-87
+  s_2c0a212c1d1ed2::t_01238abb5a05fb 12-13
+skills/engineering/README.md
+  s_2c0a212c1d1ed2::t_cbd87122cf31e9 7,11-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "172566ad94230e609eeae6aa170b9eccae6fbc15",
+  "prompts": {},
+  "sessions": {
+    "s_2c0a212c1d1ed2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a93903e8-0560-409b-b6fa-a524045c2778",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
