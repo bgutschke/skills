@@ -1,3 +1,10 @@
+// @ts-check
+
+/**
+ * @param {string} pluginJsonContent
+ * @param {string} newVersion
+ * @returns {string}
+ */
 function syncPluginVersion(pluginJsonContent, newVersion) {
   const plugin = JSON.parse(pluginJsonContent);
 
