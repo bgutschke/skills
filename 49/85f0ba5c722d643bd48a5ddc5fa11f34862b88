@@ -1,0 +1,47 @@
+skills/productivity/renovate-triage/scripts/compute-verdict.js
+  s_e2a520a4629505::t_f4301a7cad9a7c 1-18,30,32,48
+skills/productivity/renovate-triage/scripts/extract-oci-source-label.js
+  s_e2a520a4629505::t_442c6672546318 1-6
+skills/productivity/renovate-triage/scripts/resolve-datasource-cli.js
+  s_e2a520a4629505::t_b5c9d75d5bf928 2,10-13,15,26-28
+skills/productivity/renovate-triage/scripts/classify-bump-size.js
+  s_e2a520a4629505::t_ea6025415e3b63 1-2,5-8,18-22
+skills/productivity/renovate-triage/scripts/detect-security-advisory-cli.js
+  s_e2a520a4629505::t_1f6dbea7409e3a 2,12,17
+skills/productivity/renovate-triage/scripts/extract-upstream-repo-cli.js
+  s_e2a520a4629505::t_b53b843d4f38cd 2,8-11,13,15,35,40
+skills/productivity/renovate-triage/scripts/validate-comment-body.js
+  s_e2a520a4629505::t_a06112abc3b52f 1-2,9,14-18,23-26,28,31,39-42,44-45,48-53,62-65,74-77,79,103-107,119-122,124,142-146,148
+skills/productivity/renovate-triage/scripts/validate-comment-body-cli.js
+  s_e2a520a4629505::t_70ef5c09606e9d 2,12,17
+skills/productivity/renovate-triage/scripts/compute-verdict-cli.js
+  s_e2a520a4629505::t_ae677189f50dbb 2,6-7,11-14,16,43
+skills/productivity/renovate-triage/scripts/extract-oci-source-label-cli.js
+  s_e2a520a4629505::t_5bd2f9fa3bba73 2,8-11,13,30,35
+skills/productivity/renovate-triage/scripts/extract-release-notes-from-pr-body-cli.js
+  s_e2a520a4629505::t_df737202f40ea2 2,8-11,13,15,35,40
+skills/productivity/renovate-triage/scripts/resolve-datasource.js
+  s_e2a520a4629505::t_a47a8e132df008 1-5,15-18,24-27,40-43,59-63,68,76-80,86,94
+skills/productivity/renovate-triage/scripts/extract-release-notes-from-pr-body.js
+  s_e2a520a4629505::t_275d053d9422e4 1-2,8-12,19-23,26
+skills/productivity/renovate-triage/scripts/extract-upstream-repo.js
+  s_e2a520a4629505::t_3cc0a1fa91bb2e 1-2,5-9,11,14
+skills/productivity/renovate-triage/scripts/detect-security-advisory.js
+  s_e2a520a4629505::t_a1c3fcac05e295 1-2,15-18,20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4985f0ba5c722d643bd48a5ddc5fa11f34862b88",
+  "prompts": {},
+  "sessions": {
+    "s_e2a520a4629505": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09af1ca0-b4f2-4ab0-bd3c-1fe2ee7240f4",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
