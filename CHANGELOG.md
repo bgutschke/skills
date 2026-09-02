@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/bgutschke/skills/compare/v1.19.0...v1.20.0) (2026-09-02)
+
+
+### Features
+
+* **to-pr:** allow scoped agent invocation ([1329129](https://github.com/bgutschke/skills/commit/13291296a249f77d398e8d16c3af477fd1900d32)), closes [#121](https://github.com/bgutschke/skills/issues/121)
+
 # [1.19.0](https://github.com/bgutschke/skills/compare/v1.18.0...v1.19.0) (2026-09-02)
 
 
