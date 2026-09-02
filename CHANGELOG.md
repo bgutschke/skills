@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/bgutschke/skills/compare/v1.20.0...v1.21.0) (2026-09-02)
+
+
+### Features
+
+* **refactor-rule-tree:** enforce scope boundary and edit authorization ([58a4a44](https://github.com/bgutschke/skills/commit/58a4a44b869d1fc523926e7dbd83f4cdbc04e792)), closes [#102](https://github.com/bgutschke/skills/issues/102)
+
 # [1.20.0](https://github.com/bgutschke/skills/compare/v1.19.0...v1.20.0) (2026-09-02)
 
 
