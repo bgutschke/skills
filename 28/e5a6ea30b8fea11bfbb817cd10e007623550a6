@@ -1,0 +1,19 @@
+CODING_STANDARDS.md
+  s_99a804aa5e1a54::t_b0174ef31800a7 85-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "28e5a6ea30b8fea11bfbb817cd10e007623550a6",
+  "prompts": {},
+  "sessions": {
+    "s_99a804aa5e1a54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2dbca263-be19-4af3-a02f-55073d8c239f",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
