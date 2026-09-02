@@ -1,0 +1,43 @@
+skills/productivity/refactor-rule-tree/scripts/classify-citation-hit-cli.js
+  s_c873ef9644617b::t_474c503397aee4 1-74
+skills/productivity/refactor-rule-tree/SKILL.md
+  s_c873ef9644617b::t_4ee3b8ce4707a2 360,362-379
+  s_c873ef9644617b::t_a9a2e3c3853b9b 340-359,361,380-405
+  s_c873ef9644617b::t_e5886da9e139b6 546,550-555
+  s_c873ef9644617b::t_3458922aa97c44 128-132
+  s_c873ef9644617b::t_85c8a41fe3c2c7 327-331
+  s_c873ef9644617b::t_b854080e2f5c51 91-97
+  s_c873ef9644617b::t_4246ba3831ecdc 88
+  s_c873ef9644617b::t_c48676e9b07117 333-334
+  s_c873ef9644617b::t_ddd1c84ec392eb 471-476
+  s_c873ef9644617b::t_5d1fe00226d102 524-528
+  s_c873ef9644617b::t_bf28869e3662fa 5
+  s_c873ef9644617b::t_c61d9309a4c3ce 133-137
+skills/productivity/refactor-rule-tree/WORKED-EXAMPLE.md
+  s_c873ef9644617b::t_e2a790111188df 92-95,100-104,110-113,115
+  s_c873ef9644617b::t_a1dd385094c564 54-61
+  s_c873ef9644617b::t_129cf1ad66ef84 96-99,105-109
+  s_c873ef9644617b::t_20e8ebb4f3ec56 3,22-27
+skills/productivity/refactor-rule-tree/scripts/decide-citation-action.test.js
+  s_c873ef9644617b::t_b94dec4d169dd8 1-70
+skills/productivity/refactor-rule-tree/scripts/decide-citation-action.js
+  s_c873ef9644617b::t_5c2a0555712c21 1-19
+skills/productivity/refactor-rule-tree/scripts/decide-citation-action-cli.js
+  s_c873ef9644617b::t_1b6937456b61e8 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "8564ed3f20906acad282bc2b51dc73271a361c9c",
+  "prompts": {},
+  "sessions": {
+    "s_c873ef9644617b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d007a4ed-213f-437b-8090-d693c6577b51",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
