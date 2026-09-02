@@ -1,8 +1,7 @@
 ---
 name: to-pr
-disable-model-invocation: true
 argument-hint: "[<PR number or URL>] [--ready|--draft] [--base <branch>]"
-description: User-invoked via /to-pr only, never auto-fired. Open a new PR from the current branch (draft by default, title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch.
+description: Invoked by a human typing /to-pr, or by an in-session subagent whose own given task already implies landing its work as a PR. Open a new PR from the current branch (draft by default for a human, always draft when subagent-invoked; title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch — see "Agent-invocation guardrails" for how a subagent's use of these two paths narrows.
 ---
 
 # to-pr
@@ -10,8 +9,11 @@ description: User-invoked via /to-pr only, never auto-fired. Open a new PR from 
 Open a PR if the target branch doesn't have one yet; otherwise fill in the one that's
 already open. Both paths compose the same way: ground every section in the actual diff
 and commit history, respect the target repo's own PR template structure, and never
-invent content. Neither path prompts for confirmation beyond the invocation itself —
-running `/to-pr` is the only authorization step, since it has exactly one user.
+invent content. Neither path prompts for confirmation beyond the invocation itself: a
+human typing `/to-pr` is its own authorization, and so is a subagent invoking this skill
+directly — narrowed by the guardrails below rather than by an interactive prompt. Those
+guardrails restrict this path to an in-session subagent only, so a human is already
+watching its work unfold and sees the required report regardless of any prompt.
 
 ## Dependencies
 
@@ -29,6 +31,12 @@ ambient on any machine capable of running Claude Code, so they aren't listed her
   fill stale.
 - Flipping an existing PR's ready-for-review state or base branch via `--ready`,
   `--draft`, or `--base`, with no other change intended.
+- A subagent's own given task already implies landing its work as a PR — for example a
+  subagent finishing worktree-based implementation work it was asked to land. The
+  subagent invokes this skill directly (via the Skill tool) instead of hand-rolling `gh
+  pr create`/`gh pr edit`, so the result still follows this skill's own grounding,
+  template-fidelity, and title-derivation rules. See "Agent-invocation guardrails" below
+  for the narrower scope this path is held to.
 
 ## When not to use
 
@@ -44,6 +52,39 @@ ambient on any machine capable of running Claude Code, so they aren't listed her
 - Closed or merged PRs, and GitHub's multi-template chooser folder
   (`.github/PULL_REQUEST_TEMPLATE/*.md`) — only the single-file
   `.github/PULL_REQUEST_TEMPLATE.md` is ever read.
+- A subagent invoking this skill spontaneously because opening a PR "seems like a good
+  idea," rather than because the task it was actually given already implied landing the
+  work as a PR. A read-only or advisory task — a code review, an investigation, a status
+  report — never invokes this skill as a side effect.
+- A subagent running unattended, with no session actively being watched — a scheduled
+  cron agent, or a background loop with no one there to see its output. This path is for
+  an in-session subagent only.
+
+## Agent-invocation guardrails
+
+When a subagent invokes this skill directly, rather than a human typing `/to-pr`, the
+scope narrows on top of everything above:
+
+- Only two actions are available: opening a new PR (create path) or filling in the
+  description of a PR that the *same task* already opened (update path's
+  description-fill only). A subagent never targets a PR some other task or person
+  opened.
+- The create path always produces a draft — never pass `--ready`. A subagent never marks
+  its own PR ready for review; that stays a deliberate, later human decision.
+- Never retarget an existing PR's base branch (`--base`) and never toggle its
+  ready/draft state (`--ready`/`--draft`) on an already-open PR. Both stay reserved for a
+  human typing `/to-pr` directly — an agent mutating a PR's public state could collide
+  with review already underway.
+- Whatever PR results, its link must be surfaced prominently — near the top, not buried
+  in a longer narrative — in whatever report of the subagent's work reaches the human,
+  so a PR opened without their being asked in the moment is never lost track of.
+
+This restriction has no mechanical enforcement — Claude Code's invocation model offers no
+lever meaning "a subagent may invoke this deliberately, but never spontaneously, and
+never unattended." It is documented guidance the calling context is trusted to follow,
+the same soft-governance basis this skill already relies on elsewhere (for instance, its
+"confirm with the user before touching it" rule above for content written outside the
+target template's own structure).
 
 ## Argument grammar
 
