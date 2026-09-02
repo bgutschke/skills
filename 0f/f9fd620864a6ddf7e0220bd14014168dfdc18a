@@ -1,0 +1,19 @@
+scripts/commit-scope-enum.js
+  s_1a1ca934ca1daa::t_b24dceef48ca8d 1-3,5,8-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0ff9fd620864a6ddf7e0220bd14014168dfdc18a",
+  "prompts": {},
+  "sessions": {
+    "s_1a1ca934ca1daa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8105dfa6-55a3-4b3f-89ab-f59ede4615e0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
