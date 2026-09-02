@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 // A citation hit from Step 4's Grep sweep never arrives via a walk edge — that's the whole
 // point of searching for it — so walk-tree-cli.js's `visit`, which needs a parent node
 // already in the walk state, can't classify it. This wraps the same two pure modules `visit`
@@ -8,6 +9,8 @@ const os = require('os');
 const path = require('path');
 const { classifyScope, decideEditAuthority } = require('./classify-scope');
 const { classifyNode } = require('./classify-node');
+
+/** @typedef {import('./classify-scope').Scope} Scope */
 
 const USAGE = `Usage:
   classify-citation-hit-cli.js classify <rootScope> <hitPath>
@@ -20,6 +23,10 @@ const USAGE = `Usage:
       regardless of scope, and a scope mismatch is the same crossing Step 2 already refuses
       to open.`;
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const [command, ...rest] = argv;
   if (command === 'classify') return classify(rest[0], rest[1]);
@@ -27,6 +34,11 @@ function main(argv) {
   return 1;
 }
 
+/**
+ * @param {string} rootScopeArg
+ * @param {string} hitPathArg
+ * @returns {number}
+ */
 function classify(rootScopeArg, hitPathArg) {
   if (!rootScopeArg || !hitPathArg) {
     console.error(USAGE);
@@ -49,7 +61,10 @@ function classify(rootScopeArg, hitPathArg) {
   // verify-only, a split classifyNode resolves after the resolve-only check this command
   // actually cares about, so a fixed `false` never changes the class this reports.
   const classification = classifyNode({ path: hitPath, isAutoLoaded: false });
-  const { editable: scopeEditable } = decideEditAuthority({ rootScope: rootScopeArg, candidateScope: scope });
+  const { editable: scopeEditable } = decideEditAuthority({
+    rootScope: /** @type {Scope} */ (rootScopeArg),
+    candidateScope: scope,
+  });
 
   console.log(JSON.stringify({
     path: hitPath,
@@ -61,6 +76,10 @@ function classify(rootScopeArg, hitPathArg) {
   return 0;
 }
 
+/**
+ * @param {string} startDir
+ * @returns {string | null}
+ */
 function findRepoRoot(startDir) {
   let current = startDir;
   while (true) {

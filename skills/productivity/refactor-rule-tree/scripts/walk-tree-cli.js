@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 // Everything here is filesystem-touching by nature — canonicalizing a path, listing git
 // worktrees, persisting visited state between separate `node` invocations — so none of it
 // sits behind classify-node.js's pure, tested boundary. It is exercised by the worked
@@ -10,6 +11,35 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { classifyNode, shouldWalkOnward } = require('./classify-node');
 const { classifyScope, decideEditAuthority } = require('./classify-scope');
+
+/** @typedef {import('./classify-node').NodeClass} NodeClass */
+/** @typedef {import('./classify-scope').Scope} Scope */
+/** @typedef {'import' | 'mention'} EdgeKind */
+
+/**
+ * @typedef {{
+ *   path: string,
+ *   class: NodeClass,
+ *   reason: string | null,
+ *   edgeFromParent: EdgeKind | null,
+ *   autoLoaded: boolean,
+ *   scope: Scope,
+ *   editable: boolean,
+ *   scopeCrossing: boolean,
+ *   shouldWalkOnward: boolean,
+ * }} WalkNode
+ */
+
+/** @typedef {{ path: string, edgeFromParent: EdgeKind }} ExcludedEntry */
+
+/**
+ * @typedef {{
+ *   root: string,
+ *   rootScope: Scope,
+ *   nodes: Record<string, WalkNode>,
+ *   excluded: ExcludedEntry[],
+ * }} WalkState
+ */
 
 // Matches verify-pointers-cli.js's own exclusion set: a nested `.git` (including its
 // `worktrees/` checkouts) and a dependency tree never hold a citation's genuine target, so
@@ -42,6 +72,10 @@ const USAGE = `Usage:
   walk-tree-cli.js report <statePath>
       Print every node and every excluded path the walk has recorded so far.`;
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const [command, ...rest] = argv;
   if (command === 'init') return init(rest[0], rest[1]);
@@ -51,6 +85,11 @@ function main(argv) {
   return 1;
 }
 
+/**
+ * @param {string} statePathArg
+ * @param {string} rootPathArg
+ * @returns {number}
+ */
 function init(statePathArg, rootPathArg) {
   if (!statePathArg || !rootPathArg) {
     console.error(USAGE);
@@ -67,6 +106,7 @@ function init(statePathArg, rootPathArg) {
   // two hops later are judged by the same rule (see classify-scope.js's own comment).
   const rootScope = scopeOf(rootPath);
   const canonicalRoot = fs.realpathSync(rootPath);
+  /** @type {WalkNode} */
   const rootNode = {
     path: canonicalRoot,
     class: 'restructurable',
@@ -88,6 +128,13 @@ function init(statePathArg, rootPathArg) {
   return 0;
 }
 
+/**
+ * @param {string} statePathArg
+ * @param {string} parentPathArg
+ * @param {string} resolvedPathArg
+ * @param {string} edgeKindArg
+ * @returns {number}
+ */
 function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
   if (!statePathArg || !parentPathArg || !resolvedPathArg || !edgeKindArg) {
     console.error(USAGE);
@@ -97,6 +144,7 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
     console.error(`Edge kind must be "import" or "mention", got "${edgeKindArg}".`);
     return 1;
   }
+  const edgeKind = /** @type {EdgeKind} */ (edgeKindArg);
 
   const statePath = path.resolve(statePathArg);
   const state = readState(statePath);
@@ -132,7 +180,7 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
   // *the walk's own* repository is it in).
   const repoRoot = findRepoRoot(path.dirname(state.root)) ?? path.dirname(state.root);
   if (isExcludedPath(canonicalTarget, listWorktreePaths(repoRoot))) {
-    state.excluded = dedupeByPath([...state.excluded, { path: canonicalTarget, edgeFromParent: edgeKindArg }]);
+    state.excluded = dedupeByPath([...state.excluded, { path: canonicalTarget, edgeFromParent: edgeKind }]);
     writeState(statePath, state);
     console.log(JSON.stringify({ path: canonicalTarget, excluded: true, alreadyVisited: false, node: null }, null, 2));
     return 0;
@@ -145,7 +193,7 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
     return 0;
   }
 
-  const autoLoaded = edgeKindArg === 'import' && parentNode.autoLoaded;
+  const autoLoaded = edgeKind === 'import' && parentNode.autoLoaded;
   const classification = classifyNode({ path: canonicalTarget, isAutoLoaded: autoLoaded });
   // Scope, like at the root, is classified against `resolvedPathArg` — the pointer's
   // pre-realpath target — not `canonicalTarget`: a target reached through a symlink must
@@ -153,11 +201,12 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
   // the root itself.
   const candidateScope = scopeOf(resolvedPathArg);
   const { editable, scopeCrossing } = decideEditAuthority({ rootScope: state.rootScope, candidateScope });
+  /** @type {WalkNode} */
   const node = {
     path: canonicalTarget,
     class: classification.class,
     reason: classification.reason,
-    edgeFromParent: edgeKindArg,
+    edgeFromParent: edgeKind,
     autoLoaded,
     scope: candidateScope,
     editable,
@@ -173,6 +222,10 @@ function visit(statePathArg, parentPathArg, resolvedPathArg, edgeKindArg) {
   return 0;
 }
 
+/**
+ * @param {string} statePathArg
+ * @returns {number}
+ */
 function report(statePathArg) {
   if (!statePathArg) {
     console.error(USAGE);
@@ -193,12 +246,20 @@ function report(statePathArg) {
 // whole walk, matching verify-pointers-cli.js's own per-node repoRoot lookup — a node
 // reached far from the root's own directory still gets judged against *its* project, not
 // the root's.
+/**
+ * @param {string} candidatePath
+ * @returns {Scope}
+ */
 function scopeOf(candidatePath) {
   const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
   const projectRoot = findRepoRoot(path.dirname(path.resolve(candidatePath)));
   return classifyScope({ path: candidatePath, configDir, projectRoot });
 }
 
+/**
+ * @param {string} candidatePath
+ * @returns {string | null}
+ */
 function tryRealpath(candidatePath) {
   try {
     return fs.realpathSync(path.resolve(candidatePath));
@@ -207,6 +268,10 @@ function tryRealpath(candidatePath) {
   }
 }
 
+/**
+ * @param {string} statePath
+ * @returns {WalkState | null}
+ */
 function readState(statePath) {
   if (!fs.existsSync(statePath)) return null;
   try {
@@ -216,15 +281,30 @@ function readState(statePath) {
   }
 }
 
+/**
+ * @param {string} statePath
+ * @param {WalkState} state
+ * @returns {void}
+ */
 function writeState(statePath, state) {
   fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 }
 
+/**
+ * @param {ExcludedEntry[]} entries
+ * @returns {ExcludedEntry[]}
+ */
 function dedupeByPath(entries) {
+  /** @type {Set<string>} */
   const seen = new Set();
   return entries.filter((entry) => (seen.has(entry.path) ? false : seen.add(entry.path)));
 }
 
+/**
+ * @param {string} canonicalPath
+ * @param {string[]} worktreePaths
+ * @returns {boolean}
+ */
 function isExcludedPath(canonicalPath, worktreePaths) {
   if (canonicalPath.split(path.sep).some((segment) => EXCLUDED_DIRECTORY_NAMES.has(segment))) return true;
   return worktreePaths.some((worktreePath) => canonicalPath === worktreePath || canonicalPath.startsWith(worktreePath + path.sep));
@@ -234,6 +314,10 @@ function isExcludedPath(canonicalPath, worktreePaths) {
 // checkouts a walk could wander into are. `git worktree list` is the source of truth for
 // where those live; a name-based guess (like the `.git`/`node_modules` set above) can't
 // cover an arbitrary sibling directory a tool such as `git worktree add` may have created.
+/**
+ * @param {string} repoRoot
+ * @returns {string[]}
+ */
 function listWorktreePaths(repoRoot) {
   try {
     const output = execFileSync('git', ['-C', repoRoot, 'worktree', 'list', '--porcelain'], {
@@ -241,16 +325,22 @@ function listWorktreePaths(repoRoot) {
       stdio: ['ignore', 'pipe', 'ignore'],
     });
     const mainWorktree = tryRealpath(repoRoot);
-    return output
-      .split('\n')
-      .filter((line) => line.startsWith('worktree '))
-      .map((line) => tryRealpath(line.slice('worktree '.length).trim()))
-      .filter((worktreePath) => worktreePath && worktreePath !== mainWorktree);
+    return /** @type {string[]} */ (
+      output
+        .split('\n')
+        .filter((line) => line.startsWith('worktree '))
+        .map((line) => tryRealpath(line.slice('worktree '.length).trim()))
+        .filter((worktreePath) => worktreePath && worktreePath !== mainWorktree)
+    );
   } catch {
     return [];
   }
 }
 
+/**
+ * @param {string} startDir
+ * @returns {string | null}
+ */
 function findRepoRoot(startDir) {
   let current = startDir;
   while (true) {

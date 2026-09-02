@@ -1,10 +1,28 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { classifyPointer } = require('./classify-pointer');
 const { generateCandidatePaths } = require('./generate-candidate-paths');
 const { findPartialPathCompletion } = require('./find-partial-path-completion');
+
+/** @typedef {import('./classify-pointer').PointerKind} PointerKind */
+/** @typedef {import('./classify-pointer').Formedness} Formedness */
+
+/**
+ * @typedef {{
+ *   raw: string,
+ *   kind: PointerKind,
+ *   path: string,
+ *   formedness: Formedness,
+ *   reason: string | null,
+ *   verdict: 'live' | 'dead' | 'unverifiable',
+ *   candidatePaths?: string[],
+ *   resolvedTo?: string,
+ *   completedPath?: string,
+ * }} ResolvedPointer
+ */
 
 // Directories that would otherwise flood a repo-wide walk with duplicates of files already
 // reachable through their real location — a nested `.git` (including its `worktrees/`
@@ -21,6 +39,10 @@ const USAGE = `Usage:
       through Node's \`fs\`, never a shell \`find\`/\`grep\`, so a hook that rewrites search
       commands can't cause a real file to be reported missing.`;
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const [command, ...rest] = argv;
   if (command === 'verify') return verify(rest[0], rest[1]);
@@ -28,6 +50,11 @@ function main(argv) {
   return 1;
 }
 
+/**
+ * @param {string} rootFilePathArg
+ * @param {string} pointersPathArg
+ * @returns {number}
+ */
 function verify(rootFilePathArg, pointersPathArg) {
   if (!rootFilePathArg || !pointersPathArg) {
     console.error(USAGE);
@@ -40,11 +67,12 @@ function verify(rootFilePathArg, pointersPathArg) {
     return 1;
   }
 
+  /** @type {string[]} */
   let rawPointers;
   try {
     rawPointers = JSON.parse(fs.readFileSync(path.resolve(pointersPathArg), 'utf8'));
   } catch (error) {
-    console.error(`Could not read or parse ${pointersPathArg} as JSON: ${error.message}`);
+    console.error(`Could not read or parse ${pointersPathArg} as JSON: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
 
@@ -71,6 +99,11 @@ function verify(rootFilePathArg, pointersPathArg) {
   return 0;
 }
 
+/**
+ * @param {string} raw
+ * @param {{ citingFileDir: string, repoRoot: string, homeDir: string, env: Record<string, string>, knownPaths: string[] }} context
+ * @returns {ResolvedPointer}
+ */
 function resolvePointer(raw, { citingFileDir, repoRoot, homeDir, env, knownPaths }) {
   const classification = classifyPointer(raw);
   if (classification.formedness === 'unverifiable') {
@@ -101,9 +134,17 @@ function resolvePointer(raw, { citingFileDir, repoRoot, homeDir, env, knownPaths
 // "Unrouted" is scoped to the root file's own directory, matching this pass's single-file
 // bound (see SKILL.md) — a pass that doesn't traverse can't know about a target that exists
 // only two directories over, but it can know about one sitting right beside the file it read.
+/**
+ * @param {string} citingFileDir
+ * @param {string} rootFilePath
+ * @param {ResolvedPointer[]} pointers
+ * @returns {string[]}
+ */
 function findUnrouted(citingFileDir, rootFilePath, pointers) {
   const liveTargets = new Set(
-    pointers.filter((pointer) => pointer.verdict === 'live').map((pointer) => fs.realpathSync(pointer.resolvedTo)),
+    pointers
+      .filter((pointer) => pointer.verdict === 'live')
+      .map((pointer) => fs.realpathSync(/** @type {string} */ (pointer.resolvedTo))),
   );
   const canonicalRoot = fs.realpathSync(rootFilePath);
 
@@ -115,6 +156,10 @@ function findUnrouted(citingFileDir, rootFilePath, pointers) {
     .map(({ name }) => name);
 }
 
+/**
+ * @param {string} startDir
+ * @returns {string | null}
+ */
 function findRepoRoot(startDir) {
   let current = startDir;
   while (true) {
@@ -125,11 +170,20 @@ function findRepoRoot(startDir) {
   }
 }
 
+/**
+ * @param {string} repoRoot
+ * @returns {string[]}
+ */
 function listRepoFiles(repoRoot) {
+  /** @type {string[]} */
   const results = [];
   walk(repoRoot);
   return results;
 
+  /**
+   * @param {string} directory
+   * @returns {void}
+   */
   function walk(directory) {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       if (entry.isDirectory()) {

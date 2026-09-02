@@ -1,8 +1,17 @@
+// @ts-check
+
+/** @typedef {{ citingPath: string, editable: boolean }} Citation */
+/** @typedef {'move' | 'update' | 'blocked'} CitationVerdict */
+
 // A move that leaves one citation still pointing at the rule's old location is strictly
 // worse than never proposing the move at all — the old file now points at nothing, the
 // exact dead-pointer defect this whole pass exists to catch, except this time the pass
 // itself caused it. So the decision is deliberately all-or-nothing: a single citation this
 // pass may not edit blocks the entire move, never just that one citation.
+/**
+ * @param {{ citations?: Citation[] }} [params]
+ * @returns {{ verdict: CitationVerdict, citations: Citation[], blockingCitations: Citation[] }}
+ */
 function decideCitationAction({ citations = [] } = {}) {
   if (citations.length === 0) {
     return { verdict: 'move', citations, blockingCitations: [] };

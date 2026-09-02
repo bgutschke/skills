@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -18,6 +19,10 @@ const USAGE = `Usage:
       Exits non-zero the moment the invariant fails — that exit code is what blocks
       execution; a failing check must never be treated as advisory.`;
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const [command, ...rest] = argv;
   // A given path is distinguished from "no argument" by strict absence (`undefined`),
@@ -29,6 +34,10 @@ function main(argv) {
   return 1;
 }
 
+/**
+ * @param {string | null} givenPath
+ * @returns {number}
+ */
 function resolveRoot(givenPath) {
   const root = givenPath !== null ? path.resolve(givenPath) : defaultRoot();
   const exists = fs.existsSync(root) && fs.statSync(root).isFile();
@@ -46,6 +55,9 @@ function resolveRoot(givenPath) {
 // personal rule file, rather than one hardcoded to the caller's home directory. `||`
 // rather than `??` is deliberate: an exported-but-blank CLAUDE_CONFIG_DIR is not a real
 // override either, so it must fall through to the default the same as an unset one.
+/**
+ * @returns {string}
+ */
 function defaultRoot() {
   const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
   return path.join(configDir, 'CLAUDE.md');
@@ -54,6 +66,11 @@ function defaultRoot() {
 // Sibling entries are compared by realpath rather than by the joined string, so the root
 // still excludes itself on a case-insensitive filesystem (the macOS/APFS default) even when
 // the resolved root's case doesn't exactly match the name `readdirSync` reports back.
+/**
+ * @param {string} directory
+ * @param {string} root
+ * @returns {string[]}
+ */
 function readSiblingNames(directory, root) {
   const canonicalRoot = fs.realpathSync(root);
   return fs
@@ -62,16 +79,21 @@ function readSiblingNames(directory, root) {
     .map((entry) => entry.name);
 }
 
+/**
+ * @param {string | null} planPath
+ * @returns {number}
+ */
 function checkPlan(planPath) {
   if (!planPath) {
     console.error(USAGE);
     return 1;
   }
+  /** @type {any} */
   let plan;
   try {
     plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
   } catch (error) {
-    console.error(`Could not read or parse ${planPath} as JSON: ${error.message}`);
+    console.error(`Could not read or parse ${planPath} as JSON: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
   const result = checkPlanInvariant(plan);

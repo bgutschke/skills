@@ -1,3 +1,5 @@
+// @ts-check
+
 // A hand-rolled resolver that treated every ambiguous shape as a candidate for live/dead
 // resolution produced seven false "dead" verdicts against zero true ones on a real
 // repository — so anything not a well-formed, fully-qualified path is classified here,
@@ -19,6 +21,17 @@ const KNOWN_HARNESS_VARIABLES = new Set(['CLAUDE_CONFIG_DIR', 'CLAUDE_PROJECT_DI
 // directory to anchor it.
 const FAMILY_FILENAMES = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'SKILL.md', 'README.md', 'AGENTS.md']);
 
+/** @typedef {'import' | 'mention'} PointerKind */
+/** @typedef {'well-formed' | 'unverifiable'} Formedness */
+/**
+ * @typedef {{ kind: PointerKind, path: string, formedness: 'well-formed', reason: null }
+ *   | { kind: PointerKind, path: string, formedness: 'unverifiable', reason: string }} PointerClassification
+ */
+
+/**
+ * @param {string} raw
+ * @returns {PointerClassification}
+ */
 function classifyPointer(raw) {
   const trimmed = String(raw).trim().replace(/^`+|`+$/g, '');
   const kind = trimmed.startsWith('@') ? 'import' : 'mention';
@@ -55,6 +68,12 @@ function classifyPointer(raw) {
   return { kind, path: pointerPath, formedness: 'well-formed', reason: null };
 }
 
+/**
+ * @param {PointerKind} kind
+ * @param {string} pointerPath
+ * @param {string} reason
+ * @returns {{ kind: PointerKind, path: string, formedness: 'unverifiable', reason: string }}
+ */
 function unverifiable(kind, pointerPath, reason) {
   return { kind, path: pointerPath, formedness: 'unverifiable', reason };
 }
