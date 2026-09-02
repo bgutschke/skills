@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 const fs = require('fs');
 const path = require('path');
 const { decideCitationAction } = require('./decide-citation-action');
@@ -12,6 +13,10 @@ const USAGE = `Usage:
       edit, each one to be updated in the same change as the move), or "blocked" (at least
       one citation sits in a file this pass may not edit, naming every one that does).`;
 
+/**
+ * @param {string[]} argv
+ * @returns {number}
+ */
 function main(argv) {
   const [command, ...rest] = argv;
   if (command === 'decide') return decide(rest[0] ?? null);
@@ -19,16 +24,21 @@ function main(argv) {
   return 1;
 }
 
+/**
+ * @param {string | null} citationsPath
+ * @returns {number}
+ */
 function decide(citationsPath) {
   if (!citationsPath) {
     console.error(USAGE);
     return 1;
   }
+  /** @type {any} */
   let citations;
   try {
     citations = JSON.parse(fs.readFileSync(path.resolve(citationsPath), 'utf8'));
   } catch (error) {
-    console.error(`Could not read or parse ${citationsPath} as JSON: ${error.message}`);
+    console.error(`Could not read or parse ${citationsPath} as JSON: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
   const result = decideCitationAction({ citations });

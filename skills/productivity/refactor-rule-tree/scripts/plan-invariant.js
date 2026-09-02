@@ -1,3 +1,5 @@
+// @ts-check
+
 // Every rule read out of the source file must appear in the plan exactly once, carrying
 // one of the four placement verdicts. A partial run of a restructuring — unlike a partial
 // run of an ordinary edit — can delete a rule from the file it used to live in before it is
@@ -6,8 +8,16 @@
 // either one reaches disk.
 const VALID_VERDICTS = new Set(['stay', 'move', 'skill', 'delete']);
 
+/** @typedef {{ ruleId: string, verdict: string }} PlanEntry */
+
+/**
+ * @param {{ ruleIds?: string[], entries?: PlanEntry[] }} [params]
+ * @returns {{ ok: boolean, duplicates: string[], missing: string[], unknown: string[], invalidVerdict: string[] }}
+ */
 function checkPlanInvariant({ ruleIds = [], entries = [] } = {}) {
+  /** @type {Map<string, number>} */
   const countByRuleId = new Map();
+  /** @type {string[]} */
   const invalidVerdict = [];
   for (const entry of entries) {
     countByRuleId.set(entry.ruleId, (countByRuleId.get(entry.ruleId) ?? 0) + 1);

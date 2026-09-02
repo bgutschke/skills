@@ -1,3 +1,5 @@
+// @ts-check
+
 // A rule-tree node's class follows from what kind of thing it is, not its extension: a
 // `.md` file reached only by mention is exactly as much prose as one reached by import —
 // only the imported one is auto-loaded, and auto-load status alone decides restructurable
@@ -18,6 +20,12 @@ const CONFIGURATION_EXTENSIONS = new Set(['.json', '.yaml', '.yml', '.toml']);
 const MEMORY_INDEX_FILENAME = 'MEMORY.md';
 const MEMORY_PATH_SEGMENT = /(^|\/)memory\//i;
 
+/** @typedef {'resolve-only' | 'restructurable' | 'verify-only'} NodeClass */
+
+/**
+ * @param {{ path: string, isAutoLoaded: boolean }} params
+ * @returns {{ class: NodeClass, reason: string | null }}
+ */
 function classifyNode({ path: nodePath, isAutoLoaded }) {
   const reason = resolveOnlyReasonFor(nodePath);
   if (reason) {
@@ -28,12 +36,20 @@ function classifyNode({ path: nodePath, isAutoLoaded }) {
 
 // Resolve-only nodes are the walk's dead end: confirmed to exist and never opened for
 // findings, so nothing reached only through one is itself walked onward.
+/**
+ * @param {NodeClass} nodeClass
+ * @returns {boolean}
+ */
 function shouldWalkOnward(nodeClass) {
   return nodeClass !== 'resolve-only';
 }
 
+/**
+ * @param {string} nodePath
+ * @returns {string | null}
+ */
 function resolveOnlyReasonFor(nodePath) {
-  const basename = String(nodePath).split('/').pop();
+  const basename = String(nodePath).split('/').pop() ?? '';
   if (basename === 'SKILL.md') return 'skill-manifest';
   if (basename === MEMORY_INDEX_FILENAME) return 'memory-file';
 
@@ -48,6 +64,10 @@ function resolveOnlyReasonFor(nodePath) {
   return null;
 }
 
+/**
+ * @param {string} basename
+ * @returns {string}
+ */
 function extensionOf(basename) {
   const dotIndex = basename.lastIndexOf('.');
   return dotIndex <= 0 ? '' : basename.slice(dotIndex).toLowerCase();
