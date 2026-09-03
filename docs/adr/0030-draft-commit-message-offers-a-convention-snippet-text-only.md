@@ -7,7 +7,7 @@ own house style.
 
 We decided to append a one-line note when the *Fallback convention* was used ("no commit
 convention found in this repo — used Conventional Commits defaults (Angular's type list,
-subject line under 72 characters)") plus an offer to draft a short prose paragraph for
+header line under 72 characters)") plus an offer to draft a short prose paragraph for
 `CLAUDE.md`/`CONTRIBUTING.md`, written only on explicit confirmation. The note names
 "Conventional Commits" rather than "Angular convention" and drops the internal "aim for
 50" detail from ADR 0027's own type-enum/length reasoning — that precision matters for
