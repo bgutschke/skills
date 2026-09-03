@@ -1,0 +1,21 @@
+skills/engineering/draft-commit-message/SKILL.md
+  s_9130316a74077e::t_c3d0196edac026 208-209,217
+  s_9130316a74077e::t_9c77b9bf8faf50 210-216
+  s_9130316a74077e::t_1a7e289705113e 150-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3804f925059b31b2107e3adf46f7c4f0fc095c21",
+  "prompts": {},
+  "sessions": {
+    "s_9130316a74077e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "055034da-106f-418a-81db-7c035ff61462",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
