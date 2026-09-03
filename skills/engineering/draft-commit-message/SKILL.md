@@ -147,6 +147,39 @@ Return only the commit message, or the literal string "nothing staged" if step 2
   anything.
 - Otherwise, present the returned message to the user for review. Do not stage or commit
   it yourself, even if asked to "commit this" in the same turn — see "When not to use".
+- If the resolved convention's `fallback` field (Convention discovery step 5) is `true`,
+  follow "Convention snippet offer" below. If it's `false`, stop here — a repo with a
+  discovered convention gets neither the note nor the offer.
+
+## Convention snippet offer
+
+Fires only on a fallback resolution, immediately after presenting the drafted message:
+
+1. Append this note as-is: "no commit convention found in this repo — used Conventional
+   Commits defaults (Angular's type list, subject line under 72 characters)."
+2. Offer to draft a short prose paragraph describing this convention, to add to whichever
+   of `CLAUDE.md`/`CONTRIBUTING.md` already exists in the repo — `CLAUDE.md` if neither
+   does (the same file-preference order as Convention discovery step 2).
+3. Write the paragraph only if the user explicitly confirms in reply. If they decline or
+   say nothing, write nothing and don't re-offer later in the same turn.
+
+The paragraph names the resolved fallback rules plainly, e.g.:
+
+```text
+Commit messages follow Conventional Commits: `type(scope): description`, where type is
+one of build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test. Subject is
+lowercase, imperative mood, no trailing period, at or under 72 characters. Scope is
+optional and omitted unless the change obviously names one area.
+```
+
+The offer is text only. Never propose a commitlint config, a git hook, or a
+`package.json` dependency change in its place — that's tooling setup, a separate and much
+larger task outside this skill's Generation-only boundary. If the user asks for that
+instead, say it's out of scope for this skill rather than drafting it anyway.
+
+Once written, the paragraph becomes the repo's own written convention doc — the next
+run's Convention discovery step (step 2) finds and uses it, so the offer stops appearing
+on its own. No extra bookkeeping is needed to make that happen.
 
 ## Worked example
 
@@ -171,6 +204,16 @@ under 100 characters and a scope from that exact list rather than an unconstrain
 so the subagent might return `fix(api): guard against a missing email field` instead of
 the unscoped, 72-character-limited form above — same underlying change, formatted to the
 repo's own rules instead of the generic fallback.
+
+A brand-new repo with no commitlint config, no `CLAUDE.md`/`CONTRIBUTING.md`, and no git
+history yields a fallback resolution at step 4. After presenting the drafted message, the
+skill appends the note verbatim — "no commit convention found in this repo — used
+Conventional Commits defaults (Angular's type list, subject line under 72 characters)." —
+then offers: "Want me to add a short paragraph describing this to `CLAUDE.md` so future
+runs pick it up?" If the user says yes, the skill writes the paragraph from "Convention
+snippet offer" above to `CLAUDE.md` (no `CONTRIBUTING.md` existed either, so `CLAUDE.md`
+is the target); if they say no or don't respond, nothing is written and the skill moves
+on.
 
 ## Nothing staged
 
