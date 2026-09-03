@@ -1,0 +1,25 @@
+skills/engineering/draft-commit-message/SKILL.md
+  s_ea01a4c17b870b::t_cbe7a6a2398190 176-179
+  s_ea01a4c17b870b::t_fc3b2fa666c976 165
+  s_ea01a4c17b870b::t_621d9f5f193ac8 218
+  s_ea01a4c17b870b::t_13baba93917842 128,130
+  s_ea01a4c17b870b::t_490acbe43d7ac9 72-75
+docs/adr/0030-draft-commit-message-offers-a-convention-snippet-text-only.md
+  s_ea01a4c17b870b::t_81def4edf0af03 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "bead0af2a85eed567c22f1f0041596b9864d9b62",
+  "prompts": {},
+  "sessions": {
+    "s_ea01a4c17b870b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff59f39c-e916-4a7b-9759-b5d1d25def22",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
