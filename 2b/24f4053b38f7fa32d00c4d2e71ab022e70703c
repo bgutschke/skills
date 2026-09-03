@@ -1,0 +1,19 @@
+CONTEXT.md
+  s_76dd0d41cdc4ba::t_82acf4721e635a 314-326
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2b24f4053b38f7fa32d00c4d2e71ab022e70703c",
+  "prompts": {},
+  "sessions": {
+    "s_76dd0d41cdc4ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7a6d6a3-c755-4246-9780-5b8f2da63485",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
