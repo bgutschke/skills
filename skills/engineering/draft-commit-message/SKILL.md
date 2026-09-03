@@ -69,8 +69,10 @@ itself.
 2. **Written-doc signal**: read `CLAUDE.md` at the repo root if it exists; otherwise
    `CONTRIBUTING.md` if that exists. Skip this signal if neither file exists.
 3. **Git-log signal**: run `git log -n 30 --pretty=format:%s` to sample recent subject
-   lines. An empty or very short repo naturally yields a thin sample — no special-casing
-   needed, since the module below degrades gracefully on its own.
+   lines — enough commits for a genuine pattern to repeat rather than appear once by
+   chance, without reading a long-lived repo's entire history. An empty or very short repo
+   naturally yields a thin sample — no special-casing needed, since the module below
+   degrades gracefully on its own.
 4. Run `node ${CLAUDE_SKILL_DIR}/scripts/resolve-commit-convention-cli.js`, passing
    whichever flags apply from steps 1–3: `--commitlint-config-file <path>`,
    `--doc-file <path>`, and one `--subject "<line>"` per sampled git-log line. **Execute
@@ -123,9 +125,9 @@ FORMAT:
   area or component; omit it rather than force one.>
 - description: <if subjectCase is "lower-case": lowercase,> imperative mood ("add", "fix",
   "update" — not "added" or "adds"), no trailing period.
-- Subject line (the whole "type(scope): description") at or under <resolved convention's
+- Header (the whole "type(scope): description" line) at or under <resolved convention's
   headerMaxLength> characters.
-- Body separated from the subject by a blank line, for any non-trivial change.
+- Body separated from the header by a blank line, for any non-trivial change.
 - Body explains WHAT changed and WHY, never HOW — the diff already shows how.
 
 NEVER include: a co-author trailer, a URL, or a company/product name.
@@ -160,7 +162,7 @@ Return only the commit message, or the literal string "nothing staged" if step 2
 Fires only on a fallback resolution, immediately after presenting the drafted message:
 
 1. Append this note as-is: "no commit convention found in this repo — used Conventional
-   Commits defaults (Angular's type list, subject line under 72 characters)."
+   Commits defaults (Angular's type list, header line under 72 characters)."
 2. Offer to draft a short prose paragraph describing this convention, to add to whichever
    of `CLAUDE.md`/`CONTRIBUTING.md` already exists in the repo — `CLAUDE.md` if neither
    does (the same file-preference order as Convention discovery step 2).
@@ -171,9 +173,10 @@ The paragraph names the resolved fallback rules plainly, e.g.:
 
 ```text
 Commit messages follow Conventional Commits: `type(scope): description`, where type is
-one of build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test. Subject is
-lowercase, imperative mood, no trailing period, at or under 72 characters. Scope is
-optional and omitted unless the change obviously names one area.
+one of build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test. The
+description is lowercase, imperative mood, no trailing period. The header line is at or
+under 72 characters. Scope is optional and omitted unless the change obviously names one
+area.
 ```
 
 The offer is text only. Never propose a commitlint config, a git hook, or a
@@ -212,7 +215,7 @@ repo's own rules instead of the generic fallback.
 A brand-new repo with no commitlint config, no `CLAUDE.md`/`CONTRIBUTING.md`, and no git
 history yields a fallback resolution at step 4. After presenting the drafted message, the
 skill appends the note verbatim — "no commit convention found in this repo — used
-Conventional Commits defaults (Angular's type list, subject line under 72 characters)." —
+Conventional Commits defaults (Angular's type list, header line under 72 characters)." —
 then offers: "Want me to add a short paragraph describing this to `CLAUDE.md` so future
 runs pick it up?" If the user says yes, the skill writes the paragraph from "Convention
 snippet offer" above to `CLAUDE.md` (no `CONTRIBUTING.md` existed either, so `CLAUDE.md`
