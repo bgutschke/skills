@@ -1,0 +1,37 @@
+CONTEXT.md
+  s_9f34ba2c74bb55::t_0955cb1b661895 367-374,379-386,388-389,392-394
+  s_9f34ba2c74bb55::t_9e7b1bd101b3d9 363-366,375-378,387,390-391,395-396
+  s_9f34ba2c74bb55::t_8ab3ea77a3cb14 397-407
+docs/adr/0028-draft-commit-message-auto-invoke-scope-and-generation-only-boundary.md
+  s_9f34ba2c74bb55::t_f40e0c04f8554e 1-9
+  s_9f34ba2c74bb55::t_271064d97438b1 22
+  s_9f34ba2c74bb55::t_5311519fe35a88 10-12,19-21
+  s_9f34ba2c74bb55::t_e14863cd8afd9e 23-25
+  s_9f34ba2c74bb55::t_7f76dcc4f0ac64 13-18,26-32
+docs/adr/0027-draft-commit-message-discovers-conventions-instead-of-one-fixed-style.md
+  s_9f34ba2c74bb55::t_1411fed0fb81a0 44-47
+  s_9f34ba2c74bb55::t_ada3014c8a2c3a 1-29
+  s_9f34ba2c74bb55::t_a7ec8ff258be2c 30-32,41-43
+  s_9f34ba2c74bb55::t_42fbdc08f02c8d 33-40
+docs/adr/0030-draft-commit-message-offers-a-convention-snippet-text-only.md
+  s_9f34ba2c74bb55::t_cc61ac70b76b4a 9-16
+  s_9f34ba2c74bb55::t_d5fedcdcb13879 1-8,17-42
+docs/adr/0029-draft-commit-message-skill-named-imperative-not-gerund.md
+  s_9f34ba2c74bb55::t_73e0bbe0d9876e 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ab9af7f01aac39429dfbab347eae4756f6d56825",
+  "prompts": {},
+  "sessions": {
+    "s_9f34ba2c74bb55": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c57b9dc6-e771-459c-9b58-8a879411fadc",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
