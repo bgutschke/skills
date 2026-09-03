@@ -333,13 +333,7 @@ function plan(environment, located, worktreeStateRecords, { tokenBudget, dryRun 
       sessionsBeyondCap: countReason(digest.skipped, 'beyond-session-cap'),
       proseTokens: digest.totals.proseTokens,
       recordsByClass: digest.classification,
-      // provenance is not part of DigestedSession's own shape (see curation-plan.js) — it is
-      // always undefined here today. Preserved as-is: fixing that is a behavior change out
-      // of scope for a type-checking pass.
-      selected: digest.selected.map((session) => {
-        const { sessionId, modifiedAt, proseTokens, provenance } = /** @type {DigestedSession & { provenance?: string }} */ (session);
-        return { sessionId, modifiedAt, proseTokens, provenance };
-      }),
+      selected: digest.selected.map(({ sessionId, modifiedAt, proseTokens }) => ({ sessionId, modifiedAt, proseTokens })),
       batchWindowTokens: DEFAULT_BATCH_WINDOW_TOKENS,
       batches,
       reduceThresholdMiners: DEFAULT_REDUCE_THRESHOLD_MINERS,
