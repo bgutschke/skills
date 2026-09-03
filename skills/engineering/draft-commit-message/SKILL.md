@@ -1,7 +1,6 @@
 ---
 name: draft-commit-message
-disable-model-invocation: true
-description: Drafts a Conventional Commits message for the currently staged changes, matched to the target repo's own discovered commit-message convention (commitlint config, written doc, or git-log pattern) where one exists, falling back to a generic standards-based convention otherwise. Reads the diff and branch inside a Haiku subagent so the raw diff never enters the main session. Never runs git add or git commit — it only returns message text for review. Use when the user types /draft-commit-message or explicitly asks to draft, write, or generate a commit message.
+description: Drafts a Conventional Commits message for the currently staged changes, matched to the target repo's own discovered commit-message convention (commitlint config, written doc, or git-log pattern) where one exists, falling back to a generic standards-based convention otherwise. Reads the diff and branch inside a Haiku subagent so the raw diff never enters the main session. Never runs git add or git commit, even when the request is to commit changes outright — it only returns message text for review. Use when the user types /draft-commit-message, explicitly asks to draft, write, or generate a commit message, or asks to commit changes outright ("commit this", "commit these changes") — in the last case this skill supplies just the message-drafting step, leaving staging and committing to the harness's own default flow or a separate explicit request.
 ---
 
 # draft-commit-message
@@ -34,12 +33,16 @@ Two properties hold on every run:
 - The user types `/draft-commit-message`.
 - The user explicitly asks to draft, write, or generate a commit message for staged
   changes.
+- The user asks to commit changes outright ("commit this", "commit these changes"). This
+  skill supplies just the message-drafting step of that request — see "Generation only"
+  above for why staging and committing stay a separate action either way.
 
 ## When not to use
 
-- The user asks to commit changes outright ("commit this"). This skill only drafts
-  message text; if the user also wants the commit made, that's a separate, explicit step
-  after reviewing the draft.
+- The user wants to amend or reword an *existing* commit's message. This skill only
+  drafts a message for what's currently staged, not for a commit that already exists.
+- The user wants a PR title or description instead. That's a different artifact with its
+  own conventions, not a commit message.
 - Nothing is staged. See "Nothing staged" below — the skill still runs, but stops short of
   producing a message.
 
@@ -146,7 +149,8 @@ Return only the commit message, or the literal string "nothing staged" if step 2
 - If it reported "nothing staged", relay that to the user and stop — do not draft
   anything.
 - Otherwise, present the returned message to the user for review. Do not stage or commit
-  it yourself, even if asked to "commit this" in the same turn — see "When not to use".
+  it yourself, even if asked to "commit this" in the same turn — see "Generation only"
+  above.
 - If the resolved convention's `fallback` field (Convention discovery step 5) is `true`,
   follow "Convention snippet offer" below. If it's `false`, stop here — a repo with a
   discovered convention gets neither the note nor the offer.
