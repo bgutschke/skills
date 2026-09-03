@@ -360,3 +360,48 @@ never the same directory.
 One proposed change within a *Candidate store*, carried together with the evidence that
 justifies it.
 *Avoid*: reading a candidate as a decision — it is a proposal.
+
+### Commit message generation
+
+**Discovered convention**:
+The commit-message rules the `draft-commit-message` skill infers for the repo it's
+running in, before generating anything: commitlint's resolved config (read via
+`--print-config`, since an enum like *Commit scope* may be computed rather than a static
+list), a written commit-convention doc (`CLAUDE.md`/`CONTRIBUTING.md`), or a pattern
+sampled from recent `git log` subjects — checked in that priority order, and merged
+rather than strictly overriding: a linter's structured rules govern what it can
+mechanically check, prose rules govern what it can't (body content, footer syntax,
+breaking-change notation).
+*Avoid*: assuming only one source can apply at once — most repos supply more than one,
+and the skill combines them rather than picking a single winner.
+
+**Fallback convention**:
+Used only when the skill finds no *Discovered convention*, drawn from two different
+lineages rather than one coherent source: the Angular convention's type enum (`build`,
+`chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test` — the
+bare Conventional Commits spec itself only formally defines `feat`/`fix`; the fuller list
+comes from Angular's convention, which `@commitlint/config-conventional` and
+semantic-release's `angular` preset both implement), plus git's classic 50/72 header-length
+rule rather than Angular's own looser 100-character guidance. Subject is lowercase
+imperative, scope is never forced.
+*Avoid*: treating this as a lesser or partial *Discovered convention* — it's what runs in
+one's total absence, never a blend of the two. Also avoid calling it "the Conventional
+Commits spec" unqualified — the spec alone doesn't supply this type enum or a length rule.
+
+**Generation-only boundary**:
+The fixed rule that `draft-commit-message` only ever produces message text — it never
+runs `git add` or `git commit`, regardless of whether it fired on an explicit request or
+on the drafting step of a plain "commit this" ask.
+*Avoid*: reading auto-invocation as license to also perform the commit — widening when
+the skill drafts a message never changes whether it acts beyond that.
+
+**Convention snippet offer**:
+The follow-up `draft-commit-message` appends only when it used the *Fallback
+convention*: a one-line note that no convention was found, plus an offer to draft a
+short prose paragraph for `CLAUDE.md`/`CONTRIBUTING.md`, written only on explicit
+confirmation. Self-terminating — once adopted, the next run's discovery step finds it as
+a *Discovered convention* and the offer stops appearing.
+*Avoid*: extending it to tooling (a commitlint config, a git hook) — it stays text only,
+per the *Generation-only boundary*. Also avoid treating the drafted snippet itself as a
+*Discovered convention* before it's written and found again — until then it's just
+proposed text.
