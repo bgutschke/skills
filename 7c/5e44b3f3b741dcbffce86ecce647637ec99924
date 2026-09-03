@@ -1,0 +1,33 @@
+skills/engineering/draft-commit-message/SKILL.md
+  s_bb93d25353ffaa::t_e779ca7a081ae9 46-54
+  s_bb93d25353ffaa::t_0f3bd81d404e72 167-174
+  s_bb93d25353ffaa::t_7c0d85961c41a6 55-88,97-98,116-124
+  s_bb93d25353ffaa::t_ef04fc603fd21f 4
+  s_bb93d25353ffaa::t_ed3264bc425bd8 9-21
+skills/engineering/draft-commit-message/scripts/resolve-commit-convention.js
+  s_bb93d25353ffaa::t_0cb42c615d44ec 1-20,23-102,106-109,111,113,115-156,160-179,183-185,188-216
+  s_bb93d25353ffaa::t_f90c8a7f8e0969 157-159
+  s_bb93d25353ffaa::t_cf0057edb9706c 21-22
+  s_bb93d25353ffaa::t_b8e73d4a0ddd33 180-182,186-187
+  s_bb93d25353ffaa::t_5e7b0805ff7099 103-105,110,112,114
+skills/engineering/draft-commit-message/scripts/resolve-commit-convention-cli.js
+  s_bb93d25353ffaa::t_dc0098d6227f12 1-62
+skills/engineering/draft-commit-message/scripts/resolve-commit-convention.test.js
+  s_bb93d25353ffaa::t_d38bb589e3686f 1-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "7c5e44b3f3b741dcbffce86ecce647637ec99924",
+  "prompts": {},
+  "sessions": {
+    "s_bb93d25353ffaa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "31662834-9c34-431e-9acd-1f1290a8ebe8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
