@@ -14,6 +14,7 @@
     "personal"
   ],
   "skills": [
+    "./skills/engineering/draft-commit-message",
     "./skills/engineering/to-pr",
     "./skills/productivity/audit-rules",
     "./skills/productivity/curate-memory",
