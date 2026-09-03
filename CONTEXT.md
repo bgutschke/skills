@@ -311,6 +311,19 @@ of tier.
 
 ### Memory curation
 
+**Provenance**:
+Which of four sources a pool entry, worktree, or orphan store was discovered through:
+`current-project` (the project's own directory — no worktree involved), `live-worktree` (a
+running `git worktree list` result), `worktree-state-parent` (this project's own transcripts
+recorded creating it), or `worktree-state-sibling` (only the worktree's own transcripts
+recorded it, found by scanning another project's transcripts). A worktree entry or orphan
+store always carries one of the last three; `current-project` is a pool-entry-only value,
+since only a pool entry can describe a session that isn't a worktree at all.
+*Avoid*: collapsing `worktree-state-parent` and `worktree-state-sibling` into one
+"found-via-transcripts" value — they distinguish which side of the worktree relationship the
+record was found on (this project's own history versus another project's), which is exactly
+the distinction `readWorktreeStateRecords` exists to preserve run-over-run.
+
 **Memory store**:
 A project's `memory` directory together with the index that points at its contents — the
 files the harness loads as background context at the start of a session. Model-written
