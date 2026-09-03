@@ -1,3 +1,18 @@
+# [1.24.0](https://github.com/bgutschke/skills/compare/v1.23.0...v1.24.0) (2026-09-03)
+
+
+### Bug Fixes
+
+* **draft-commit-message:** fix header/subject mixup, add missing why ([a8bbf25](https://github.com/bgutschke/skills/commit/a8bbf252d24ae538b1b8b3b7a9b1772a34a68dd3)), closes [#139](https://github.com/bgutschke/skills/issues/139)
+
+
+### Features
+
+* **draft-commit-message:** discover repo commit conventions ([f5e1606](https://github.com/bgutschke/skills/commit/f5e1606bc64d84c3c99850c89892a51ed563dd65))
+* **draft-commit-message:** offer convention snippet on fallback ([e3edaf2](https://github.com/bgutschke/skills/commit/e3edaf25ffea4cc29302ca91e2977e58b80bbff8)), closes [#137](https://github.com/bgutschke/skills/issues/137)
+* **engineering:** add draft-commit-message skill ([ed5e65c](https://github.com/bgutschke/skills/commit/ed5e65c8cdcd36951bd0c9d9dbce0b9519d52046)), closes [#135](https://github.com/bgutschke/skills/issues/135)
+* **engineering:** widen draft-commit-message's auto-invoke trigger ([53ac80b](https://github.com/bgutschke/skills/commit/53ac80bd7c582bb11937f0bd8e5c244c4d706b11)), closes [#138](https://github.com/bgutschke/skills/issues/138)
+
 # [1.23.0](https://github.com/bgutschke/skills/compare/v1.22.0...v1.23.0) (2026-09-02)
 
 
