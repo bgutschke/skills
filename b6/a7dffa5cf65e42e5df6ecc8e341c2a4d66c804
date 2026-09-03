@@ -1,0 +1,19 @@
+skills/productivity/curate-memory/scripts/curation-plan-cli.js
+  s_76dd0d41cdc4ba::t_a6db3eb604d981 336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "b6a7dffa5cf65e42e5df6ecc8e341c2a4d66c804",
+  "prompts": {},
+  "sessions": {
+    "s_76dd0d41cdc4ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7a6d6a3-c755-4246-9780-5b8f2da63485",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
