@@ -1,0 +1,23 @@
+skills/engineering/draft-commit-message/scripts/resolve-convention.js
+  s_64722e2f91115c::t_6d274c329b8709 165-167
+  s_64722e2f91115c::t_0dadc57eb4ce79 88,92-94,98,103,110-151
+  s_64722e2f91115c::t_e132c8123dab6d 152
+skills/engineering/draft-commit-message/scripts/resolve-convention.test.js
+  s_64722e2f91115c::t_fc9e7c3a7d06c0 145-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2e37a2e2cbacdbcd227584dbe87df3bd1f62502f",
+  "prompts": {},
+  "sessions": {
+    "s_64722e2f91115c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71c94b00-21fd-469e-9d5f-1daa38e23bd9",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
