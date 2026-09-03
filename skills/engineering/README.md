@@ -4,7 +4,9 @@ Daily code work.
 
 **Manual-only**
 
-_None yet._
+- [draft-commit-message](./draft-commit-message/SKILL.md) — draft a Conventional Commits
+  message for staged changes, reading the diff and branch inside a Haiku subagent. Never
+  stages or commits.
 
 **Also auto-invocable**
 
