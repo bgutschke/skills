@@ -1,0 +1,41 @@
+skills/engineering/repo-catchup/scripts/build-report-cli.js
+  s_77e66eede3a43c::t_6107db54f3fe0c 16
+skills/engineering/repo-catchup/SKILL.md
+  s_77e66eede3a43c::t_2934189159118b 180
+  s_77e66eede3a43c::t_21efaf64a39daa 46-47
+  s_77e66eede3a43c::t_c08af541903fc2 14-20
+  s_77e66eede3a43c::t_054c5a5624ecfe 139-141,150,157,167-169,176-179,181
+  s_77e66eede3a43c::t_46c79d76d68149 129-130
+  s_77e66eede3a43c::t_f2399145117d26 41-45,48
+  s_77e66eede3a43c::t_0065e286283bfa 4
+skills/engineering/repo-catchup/scripts/build-report.js
+  s_77e66eede3a43c::t_e12509724dbe42 6
+skills/engineering/repo-catchup/scripts/github-enrich.test.js
+  s_77e66eede3a43c::t_c2fe67383dbae7 1-16
+  s_77e66eede3a43c::t_a44a6fce7ae411 17-112
+  s_77e66eede3a43c::t_5e90bd827db0bd 113-151
+skills/engineering/repo-catchup/scripts/github-enrich.js
+  s_77e66eede3a43c::t_06b53bab10c2f7 49-56,58-70
+  s_77e66eede3a43c::t_b567e639cfb558 1-48
+  s_77e66eede3a43c::t_0c977e8fc4fef2 57
+skills/engineering/repo-catchup/scripts/gather-commits-cli.js
+  s_77e66eede3a43c::t_1706c783353f69 5
+  s_77e66eede3a43c::t_59db14c84ee387 115-167,176-177,179
+  s_77e66eede3a43c::t_6c741c487c1919 178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "d73ad682e8be119114185578de95adb2969212b2",
+  "prompts": {},
+  "sessions": {
+    "s_77e66eede3a43c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ed5ed22-26ae-455b-a3d1-0263cb8adb0c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
