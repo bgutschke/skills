@@ -1,0 +1,27 @@
+skills/engineering/repo-catchup/SKILL.md
+  s_97f511a1925a8e::t_80b74c896e7b72 19-21
+  s_97f511a1925a8e::t_2e335bdc1fef08 4
+  s_97f511a1925a8e::t_f19e4f0b284ce7 10-11,18
+skills/engineering/repo-catchup/scripts/read-codeowners.test.js
+  s_97f511a1925a8e::t_299dc008c5d2cc 1-31
+skills/engineering/repo-catchup/scripts/read-codeowners.js
+  s_97f511a1925a8e::t_57889535bfa829 1-22
+skills/engineering/repo-catchup/scripts/build-report-cli.js
+  s_97f511a1925a8e::t_8345c595ad110c 5-17,29-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "9e833dcd234411f53cfb07771786d7a5291a30f3",
+  "prompts": {},
+  "sessions": {
+    "s_97f511a1925a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01debac0-06b0-41df-b2ee-fbf9f500eba1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
