@@ -1,3 +1,10 @@
+## [1.24.1](https://github.com/bgutschke/skills/compare/v1.24.0...v1.24.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **refactor-rule-tree:** quote yaml description string ([12caa11](https://github.com/bgutschke/skills/commit/12caa11b0ea8d2b10d539a475950f36c7255b457))
+
 # [1.24.0](https://github.com/bgutschke/skills/compare/v1.23.0...v1.24.0) (2026-09-03)
 
 
