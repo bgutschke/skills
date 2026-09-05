@@ -8,6 +8,9 @@ Daily code work.
   message for staged changes, reading the diff and branch inside a Haiku subagent. Fires
   on an explicit draft/write-a-commit-message ask and on the message-drafting step of a
   plain "commit this" ask. Never stages or commits.
+- [repo-catchup](./repo-catchup/SKILL.md) — report the current repository's commits over
+  a date range as a one-line summary plus a Date/Owner/Ref/Description table, dropping bot
+  and merge commits. Runs `git log` inside a delegated subagent.
 - [to-pr](./to-pr/SKILL.md) — open a new PR (draft by default) from the current branch,
   or fill in an already-open PR's description from its own
   `.github/PULL_REQUEST_TEMPLATE.md`.
