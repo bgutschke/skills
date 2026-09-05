@@ -36,6 +36,10 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
   - [draft-commit-message](./skills/engineering/draft-commit-message/SKILL.md) — draft a
     Conventional Commits message for staged changes, reading the diff and branch inside a
     Haiku subagent. Never stages or commits.
+  - [repo-catchup](./skills/engineering/repo-catchup/SKILL.md) — report the current
+    repository's commits over a date range as a one-line summary plus a
+    Date/Owner/Ref/Description table, dropping bot and merge commits. Runs `git log`
+    inside a delegated subagent.
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
     the current branch, or fill in an already-open PR's description from its own
     `.github/PULL_REQUEST_TEMPLATE.md`.
