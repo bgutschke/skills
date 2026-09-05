@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/bgutschke/skills/compare/v1.24.1...v1.25.0) (2026-09-05)
+
+
+### Features
+
+* **repo-catchup:** add skill implementation ([71a6fce](https://github.com/bgutschke/skills/commit/71a6fce0a4286f82231b3adebbd4481154fe4515))
+
 ## [1.24.1](https://github.com/bgutschke/skills/compare/v1.24.0...v1.24.1) (2026-09-05)
 
 
