@@ -1,0 +1,20 @@
+skills/engineering/repo-catchup/SKILL.md
+  s_987cc34508d58f::t_90913119e63506 44-50
+  s_987cc34508d58f::t_91360dca46f409 143-152,160-161,163-164,167-169,171-185,188,192-199,201-210,214-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "90a87a3c5489b7ba2da9d294225a8699a82d4204",
+  "prompts": {},
+  "sessions": {
+    "s_987cc34508d58f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7826884-be39-45ce-b2a5-e3de49864dcd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
