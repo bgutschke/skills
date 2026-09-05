@@ -1,0 +1,21 @@
+skills/engineering/repo-catchup/scripts/build-report.js
+  s_f1b5ce426414fe::t_cb15e71f598f1b 1-256
+skills/engineering/repo-catchup/scripts/build-report.test.js
+  s_f1b5ce426414fe::t_b9c8511cdc3749 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b8a425f517e943f146419a228760c9b3be1fcedc",
+  "prompts": {},
+  "sessions": {
+    "s_f1b5ce426414fe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5fc2a2a-7f29-46da-a69e-7e7a0603e788",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Bastian Gutschke <bge@medicuja.com>"
+    }
+  }
+}
