@@ -25,6 +25,21 @@
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["major"],
       "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Ship the npm update and the allowScripts pin for claude-code in one PR",
+      "matchPackageNames": ["@anthropic-ai/claude-code"],
+      "groupName": "@anthropic-ai/claude-code"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep the allowScripts pin for claude-code equal to the installed version",
+      "managerFilePatterns": ["/^package\\.json$/"],
+      "matchStrings": ["\"@anthropic-ai/claude-code@(?<currentValue>[^\"]+)\": true"],
+      "depNameTemplate": "@anthropic-ai/claude-code",
+      "datasourceTemplate": "npm"
     }
   ]
 }
