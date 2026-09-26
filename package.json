@@ -42,7 +42,7 @@
     "*.md": "markdownlint-cli2"
   },
   "allowScripts": {
-    "@anthropic-ai/claude-code@2.1.239": true,
+    "@anthropic-ai/claude-code@2.1.280": true,
     "fsevents@2.3.3": true,
     "unrs-resolver@1.12.2": true
   }
