@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/bgutschke/skills/compare/v1.28.2...v1.29.0) (2026-10-02)
+
+
+### Features
+
+* **to-pr:** shorter grounded pr bodies and gh-merge-base ([241134e](https://github.com/bgutschke/skills/commit/241134e644e7689b591fcb838f154e2d0620a424)), closes [#merge-base](https://github.com/bgutschke/skills/issues/merge-base) [.#merge-base](https://github.com/./issues/merge-base) [#182](https://github.com/bgutschke/skills/issues/182)
+
 ## [1.28.2](https://github.com/bgutschke/skills/compare/v1.28.1...v1.28.2) (2026-10-02)
 
 
