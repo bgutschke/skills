@@ -108,7 +108,8 @@ Call the **Agent** tool with:
 ### Brief for the subagent
 
 ```text
-Draft a commit message for the currently staged git changes. Return the message as text.
+Draft a commit message for the currently staged git changes. Return it in the format under
+OUTPUT.
 Do not run `git add` or `git commit` — you are drafting only, never staging or committing.
 
 STEPS:
@@ -116,13 +117,21 @@ STEPS:
 2. If nothing is staged, stop and report "nothing staged" — do not invent a message.
 3. Run `git branch --show-current` to see the branch name (context only — never extract a
    scope or ticket ID from it).
-4. Analyze the diff for the single logical change it represents.
+4. Analyze the diff for the main change it represents.
 5. Before you choose a type, answer this question: does the change alter what users of
    the project receive? If yes, choose from the types in TYPES among feat, fix, and perf.
    If no, choose from the other types in TYPES. A change to tests, CI, or tooling alone
    never alters what users receive. A bump of a runtime dependency (for example under
    "dependencies" in package.json) does, because users install it.
-6. Choose the type from TYPES. Apply the edge-case rules under each type.
+6. If the diff holds more than one kind of change, find its main change. The type follows
+   the main change, not the number of changed lines. Supporting changes that the main
+   change needs, for example its tests, docs, or config, do not decide the type. A large
+   docs edit around a one-line fix is still a fix.
+7. Choose the type from TYPES. Apply the edge-case rules under each type.
+8. Check whether the diff holds two unrelated changes. Two changes are unrelated when each
+   one makes sense as a commit without the other. If so, draft one message for the main
+   change only, and add a split suggestion (see OUTPUT). Do not stage, unstage, or
+   reset any file for the split.
 
 TYPES:
 Definitions from @commitlint/config-conventional (its prompt type descriptions).
@@ -153,7 +162,7 @@ Definitions from @commitlint/config-conventional (its prompt type descriptions).
 FORMAT:
   type(scope): description
 
-- type: one of <resolved convention's typeEnum, comma-separated>, chosen in step 6.
+- type: one of <resolved convention's typeEnum, comma-separated>, chosen in step 7.
 - scope: <if scopeRule.type is "enum": one of <scopeRule.values, comma-separated>,
   included only when the change obviously names one of them — omit it rather than force
   one. Otherwise: optional — include only when the change obviously names one affected
@@ -180,16 +189,51 @@ EXAMPLES:
   fix applied to one silently missed the other.
 
 OUTPUT:
-Return only the commit message, or the literal string "nothing staged" if step 2 fired.
+If step 2 fired, return only the literal string "nothing staged".
+Otherwise, return these labeled parts, in this order. Start the reply with the MESSAGE:
+label. Write no text before it, and write each label on its own line:
+
+MESSAGE:
+<the commit message, and nothing else>
+
+REASON:
+<one line that names the type and the evidence for it, for example:
+type: ci, because only workflow files changed>
+
+SPLIT:
+<only if step 8 found two unrelated changes: one line that names the second change
+and suggests a separate commit for it. If step 8 found no unrelated change,
+leave out the SPLIT label.>
+
+The reason line and the split suggestion never go inside the commit message.
+
+OUTPUT EXAMPLE, for a diff with a one-line null check in a parser plus an unrelated
+rename of a logging helper:
+  MESSAGE:
+  fix(parser): guard against an empty input string
+
+  An empty string reached the tokenizer unguarded and threw before the
+  caller could show a parse error.
+
+  REASON:
+  type: fix, because the parser change repairs a crash that users hit
+
+  SPLIT:
+  The logging helper rename makes sense alone, so commit it separately.
 ```
 
 ## After the subagent returns
 
 - If it reported "nothing staged", relay that to the user and stop — do not draft
   anything.
-- Otherwise, present the returned message to the user for review. Do not stage or commit
-  it yourself, even if asked to "commit this" in the same turn — see "Generation only"
-  above.
+- Otherwise, present the MESSAGE part to the user for review, in its own code block. The
+  user can then copy the message alone. Below the block, show the REASON line. If the
+  subagent returned a split suggestion, show it below the REASON line. Never put either
+  of them inside the message block. Do not stage or commit it yourself, even if asked to
+  "commit this" in the same turn — see "Generation only" above. A split suggestion changes nothing here: never run
+  `git add`, `git reset`, or `git restore --staged` to act on it.
+- If the reply has no MESSAGE: label, use all text before the REASON: label as the
+  message.
 - If the resolved convention's `fallback` field (Convention discovery step 5) is `true`,
   follow "Convention snippet offer" below. If it's `false`, stop here — a repo with a
   discovered convention gets neither the note nor the offer.
@@ -233,13 +277,24 @@ Staged changes: a single-line fix to a null check in a form validator, on a bran
 parsed for a scope. The subagent returns:
 
 ```text
+MESSAGE:
 fix(validator): guard against a missing email field
 
 A submission with no email value reached the regex check unguarded, throwing
 before the required-field message could render.
+
+REASON:
+type: fix, because the change repairs a crash in the validator that users hit
 ```
 
-The skill presents this to the user as-is and stops — no `git add`, no `git commit`.
+The skill presents the message in its own code block, shows the reason line below it, and
+stops — no `git add`, no `git commit`. The diff holds one kind of change, so no split
+suggestion comes back.
+
+Now say that the same diff also holds an unrelated rename in a logging helper. The
+subagent still returns one message, for the validator fix. It adds a split suggestion, for
+example "the logging helper rename makes sense alone, so commit it separately". The skill
+shows that line below the reason line and leaves the staged files as they are.
 
 A repo with its own commitlint config resolves differently at step 4 of Convention
 discovery — say `--print-config json` reports a 100-character header limit and a
