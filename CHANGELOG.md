@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/bgutschke/skills/compare/v1.26.0...v1.27.0) (2026-10-02)
+
+
+### Features
+
+* **draft-commit-message:** add mixed-diff rule and reason line ([d44ec87](https://github.com/bgutschke/skills/commit/d44ec870b994966f850049429b339e2ad2a6877f)), closes [#173](https://github.com/bgutschke/skills/issues/173)
+
 # [1.26.0](https://github.com/bgutschke/skills/compare/v1.25.0...v1.26.0) (2026-10-02)
 
 
