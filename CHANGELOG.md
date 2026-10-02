@@ -1,3 +1,10 @@
+## [1.28.2](https://github.com/bgutschke/skills/compare/v1.28.1...v1.28.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **to-pr:** find the pr template the way github does ([bf62f0c](https://github.com/bgutschke/skills/commit/bf62f0c85a47c57c88002c6622a2cb90c98764e0)), closes [#181](https://github.com/bgutschke/skills/issues/181)
+
 ## [1.28.1](https://github.com/bgutschke/skills/compare/v1.28.0...v1.28.1) (2026-10-02)
 
 
