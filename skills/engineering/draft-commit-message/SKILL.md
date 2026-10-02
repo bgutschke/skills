@@ -99,8 +99,11 @@ Call the **Agent** tool with:
 - `model: "haiku"` — the diff is the only context needed and the drafting rules are fully
   stated below, so a fast model is enough.
 - `description: "Draft commit message"`
-- `prompt`: the brief below, with its FORMAT section filled in from the resolved
-  convention (step 5) rather than sent verbatim.
+- `prompt`: the brief below, with its FORMAT and TYPES sections filled in from the
+  resolved convention (Convention discovery step 5) rather than sent verbatim. In TYPES, keep the entry for
+  each type in `typeEnum` and delete the entry for each type outside it, so the subagent
+  never sees a type the repo rejects. A type in `typeEnum` with no entry below gets a
+  bare `- <type>` line with no definition.
 
 ### Brief for the subagent
 
@@ -114,15 +117,49 @@ STEPS:
 3. Run `git branch --show-current` to see the branch name (context only — never extract a
    scope or ticket ID from it).
 4. Analyze the diff for the single logical change it represents.
+5. Before you choose a type, answer this question: does the change alter what users of
+   the project receive? If yes, choose from the types in TYPES among feat, fix, and perf.
+   If no, choose from the other types in TYPES. A change to tests, CI, or tooling alone
+   never alters what users receive. A bump of a runtime dependency (for example under
+   "dependencies" in package.json) does, because users install it.
+6. Choose the type from TYPES. Apply the edge-case rules under each type.
+
+TYPES:
+Definitions from @commitlint/config-conventional (its prompt type descriptions).
+- feat: A new feature.
+  Tests that go with the feature take feat, not test.
+- fix: A bug fix.
+  Tests that go with the fix take fix, not test. A repair of a broken test is test.
+  A bump of a runtime dependency is fix(deps), because users install it.
+- perf: A code change that improves performance.
+- refactor: A code change that neither fixes a bug nor adds a feature.
+- style: Changes that do not affect the meaning of the code (white-space, formatting,
+  missing semi-colons, etc).
+- docs: Documentation only changes.
+- test: Adding missing tests or correcting existing tests.
+  A change to test files only is test, also when it repairs a broken test.
+- build: Changes that affect the build system or external dependencies (example scopes:
+  gulp, broccoli, npm).
+  A change to build or test configuration (for example jest.config.js) is build.
+  A dependency bump is not build.
+- ci: Changes to our CI configuration files and scripts (example scopes: Travis, Circle,
+  BrowserStack, SauceLabs).
+- chore: Other changes that don't modify src or test files.
+  Other tooling changes that touch neither source nor tests are chore.
+  A bump of a dependency that is not a runtime dependency (for example under
+  "devDependencies" or "peerDependencies" in package.json) is chore(deps).
+- revert: Reverts a previous commit.
 
 FORMAT:
   type(scope): description
 
-- type: one of <resolved convention's typeEnum, comma-separated>.
+- type: one of <resolved convention's typeEnum, comma-separated>, chosen in step 6.
 - scope: <if scopeRule.type is "enum": one of <scopeRule.values, comma-separated>,
   included only when the change obviously names one of them — omit it rather than force
   one. Otherwise: optional — include only when the change obviously names one affected
   area or component; omit it rather than force one.>
+- A dependency bump takes the scope deps<if scopeRule.type is "enum" and deps is not in
+  scopeRule.values: delete this line>.
 - description: <if subjectCase is "lower-case": lowercase,> imperative mood ("add", "fix",
   "update" — not "added" or "adds"), no trailing period.
 - Header (the whole "type(scope): description" line) at or under <resolved convention's
@@ -130,7 +167,7 @@ FORMAT:
 - Body separated from the header by a blank line, for any non-trivial change.
 - Body explains WHAT changed and WHY, never HOW — the diff already shows how.
 
-NEVER include: a co-author trailer, a URL, or a company/product name.
+NEVER include in the message: a co-author trailer, a URL, or a company/product name.
 
 EXAMPLES:
   feat(auth): add password reset flow
