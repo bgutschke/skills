@@ -3,8 +3,6 @@
   "extends": ["config:recommended", "schedule:daily"],
   "minimumReleaseAge": "3 days",
   "semanticCommits": "enabled",
-  "semanticCommitType": "chore",
-  "semanticCommitScope": "",
   "commitMessageTopic": "{{depName}}",
   "lockFileMaintenance": {
     "enabled": true
