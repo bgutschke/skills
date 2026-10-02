@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/bgutschke/skills/compare/v1.25.0...v1.26.0) (2026-10-02)
+
+
+### Features
+
+* **draft-commit-message:** define each type in the subagent brief ([a5c1527](https://github.com/bgutschke/skills/commit/a5c1527fe1ed996f37615776e913de221477badd)), closes [#172](https://github.com/bgutschke/skills/issues/172)
+
 # [1.25.0](https://github.com/bgutschke/skills/compare/v1.24.1...v1.25.0) (2026-09-05)
 
 
