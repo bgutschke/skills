@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/bgutschke/skills/compare/v1.27.0...v1.28.0) (2026-10-02)
+
+
+### Features
+
+* **draft-commit-message:** carry repo doc type guidance to the brief ([496195f](https://github.com/bgutschke/skills/commit/496195f642ab1a1d5c947e75b14671d456de318a)), closes [#174](https://github.com/bgutschke/skills/issues/174)
+
 # [1.27.0](https://github.com/bgutschke/skills/compare/v1.26.0...v1.27.0) (2026-10-02)
 
 
