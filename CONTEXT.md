@@ -371,9 +371,19 @@ list), a written commit-convention doc (`CLAUDE.md`/`CONTRIBUTING.md`), or a pat
 sampled from recent `git log` subjects — checked in that priority order, and merged
 rather than strictly overriding: a linter's structured rules govern what it can
 mechanically check, prose rules govern what it can't (body content, footer syntax,
-breaking-change notation).
+breaking-change notation). The format rules come from one winning source, and the
+meaning of each type always comes from the doc as *Type guidance*.
 *Avoid*: assuming only one source can apply at once — most repos supply more than one,
 and the skill combines them rather than picking a single winner.
+
+**Type guidance**:
+The text of the type subsection in the commit section of the repo doc, passed word for
+word to the `draft-commit-message` subagent. It tells the subagent what the repo means by
+each type, for example that a fix to release tooling is `chore`. The skill reads it for
+every *Discovered convention* source, and on a conflict it wins over the built-in type
+definitions.
+*Avoid*: treating it as a format rule — it never changes the type list, the scope rule,
+or the header length.
 
 **Fallback convention**:
 Used only when the skill finds no *Discovered convention*, drawn from two different
