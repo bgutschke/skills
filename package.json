@@ -44,6 +44,7 @@
   "allowScripts": {
     "@anthropic-ai/claude-code@2.1.284": true,
     "fsevents@2.3.3": true,
-    "unrs-resolver@1.12.2": true
+    "unrs-resolver@1.12.2": true,
+    "@parcel/watcher@2.6.0": true
   }
 }
