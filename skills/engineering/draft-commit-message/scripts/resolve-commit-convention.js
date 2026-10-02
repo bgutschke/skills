@@ -35,7 +35,13 @@ const FALLBACK_CONVENTION = {
   typeGuidance: null,
 };
 
+// The text goes into a brief for a small model on every run. A type subsection is
+// usually a few hundred characters, so 2,000 holds a full one with room to spare but
+// stops a commit section that runs on for pages from crowding out the diff.
 const TYPE_GUIDANCE_MAX_LENGTH = 2000;
+// A scope list sits right under its heading. 500 characters holds a list of a few dozen
+// short names but stops before backticked words in later, unrelated prose.
+const SCOPE_LIST_MAX_LENGTH = 500;
 const COMMIT_HEADING = /^(#{1,6})[ \t]+.*commit.*$/im;
 const TYPE_HEADING = /^(#{1,6})[ \t]+.*type.*$/im;
 
@@ -157,7 +163,7 @@ function extractHeaderMaxLengthFromDoc(section) {
 function extractScopeRuleFromDoc(section) {
   const scopeHeading = section.match(/^#{1,6}[ \t]+.*scope.*$/im);
   if (!scopeHeading || scopeHeading.index === undefined) return { type: 'free' };
-  const scopeSection = section.slice(scopeHeading.index, scopeHeading.index + 500);
+  const scopeSection = section.slice(scopeHeading.index, scopeHeading.index + SCOPE_LIST_MAX_LENGTH);
   const tokens = [...scopeSection.matchAll(/`([a-z0-9-]+)`/g)].map((match) => match[1]).filter((token) => !FALLBACK_TYPE_ENUM.includes(token));
   return tokens.length > 0 ? { type: 'enum', values: [...new Set(tokens)] } : { type: 'free' };
 }

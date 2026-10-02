@@ -94,7 +94,8 @@ itself.
      the first heading that contains "type" in the commit section of the doc, or the full
      commit section when no type heading exists. The field is `null` when the doc has no
      commit heading or no doc exists. It comes from the doc for every `source`, also when
-     commitlint wins the format rules, and it never changes `fallback`.
+     commitlint wins the format rules, and it never changes `fallback`. The text stops
+     at 2,000 characters, so that a long commit section does not crowd out the diff.
 
 ## Delegation
 
@@ -136,16 +137,17 @@ STEPS:
 7. Choose the type from TYPES. Apply the edge-case rules under each type, and then the
    rules in REPO TYPE RULES, if that block exists.
 8. Check whether the diff holds two unrelated changes. Two changes are unrelated when each
-   one makes sense as a commit without the other. If so, draft one message for the main
-   change only, and add a split suggestion (see OUTPUT). Do not stage, unstage, or
-   reset any file for the split.
+   one makes sense as a commit without the other. If so, the main change is the one that
+   alters what users receive (step 5). If both or neither do, the main change is the
+   larger one. Draft one message for the main change only, and add a split suggestion
+   (see OUTPUT). Do not stage, unstage, or reset any file for the split.
 
 TYPES:
 Definitions from @commitlint/config-conventional (its prompt type descriptions).
 - feat: A new feature.
   Tests that go with the feature take feat, not test.
 - fix: A bug fix.
-  Tests that go with the fix take fix, not test. A repair of a broken test is test.
+  Tests that go with the fix take fix, not test.
   A bump of a runtime dependency is fix(deps), because users install it.
 - perf: A code change that improves performance.
 - refactor: A code change that neither fixes a bug nor adds a feature.
@@ -184,7 +186,8 @@ FORMAT:
 - description: <if subjectCase is "lower-case": lowercase,> imperative mood ("add", "fix",
   "update" — not "added" or "adds"), no trailing period.
 - Header (the whole "type(scope): description" line) at or under <resolved convention's
-  headerMaxLength> characters.
+  headerMaxLength> characters. Count the header characters before you return it. If
+  the count is over the limit, shorten the description.
 - Body separated from the header by a blank line, for any non-trivial change.
 - Body explains WHAT changed and WHY, never HOW — the diff already shows how.
 
@@ -215,7 +218,7 @@ type: ci, because only workflow files changed>
 SPLIT:
 <only if step 8 found two unrelated changes: one line that names the second change
 and suggests a separate commit for it. If step 8 found no unrelated change,
-leave out the SPLIT label.>
+end the reply after the REASON line.>
 
 The reason line and the split suggestion never go inside the commit message.
 
