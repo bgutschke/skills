@@ -1,7 +1,7 @@
 ---
 name: to-pr
 argument-hint: "[<PR number or URL>] [--ready|--draft] [--base <branch>]"
-description: Invoked by a human typing /to-pr, or by an in-session subagent whose own given task already implies landing its work as a PR. Open a new PR from the current branch (draft by default for a human, always draft when subagent-invoked; title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own .github/PULL_REQUEST_TEMPLATE.md — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch — see "Agent-invocation guardrails" for how a subagent's use of these two paths narrows.
+description: Invoked by a human typing /to-pr, or by an in-session subagent whose own given task already implies landing its work as a PR. Open a new PR from the current branch (draft by default for a human, always draft when subagent-invoked; title and body derived from its commits and diff), or fill in an already-open PR's description using the target repo's own PR template — falling back to a built-in What changed/Why/Testing structure. --ready/--draft toggle draft state; --base sets or retargets the base branch — see "Agent-invocation guardrails" for how a subagent's use of these two paths narrows.
 ---
 
 # to-pr
@@ -18,8 +18,10 @@ watching its work unfold and sees the required report regardless of any prompt.
 ## Dependencies
 
 Requires an authenticated `gh` CLI — every path shells out to it (`gh pr view`, `gh pr
-create`, `gh pr edit`, `gh api`, `gh repo view`). `git` and `base64` are also used but are
-ambient on any machine capable of running Claude Code, so they aren't listed here.
+create`, `gh pr edit`, `gh api`, `gh repo view`). Requires `node` to run the bundled
+template-selection script (`scripts/select-template-path-cli.js`), which "Composing the
+body" invokes on every run. `git` and `base64` are also used but are ambient on any
+machine capable of running Claude Code, so they aren't listed here.
 
 ## When to use
 
@@ -50,8 +52,8 @@ ambient on any machine capable of running Claude Code, so they aren't listed her
   template has it. No live browser session backs this skill, so it cannot produce an "as
   it should appear" image.
 - Closed or merged PRs, and GitHub's multi-template chooser folder
-  (`.github/PULL_REQUEST_TEMPLATE/*.md`) — only the single-file
-  `.github/PULL_REQUEST_TEMPLATE.md` is ever read.
+  (`PULL_REQUEST_TEMPLATE/`) — only a single template file is ever read, never a file
+  inside that folder.
 - A subagent invoking this skill spontaneously because opening a PR "seems like a good
   idea," rather than because the task it was actually given already implied landing the
   work as a PR. A read-only or advisory task — a code review, an investigation, a status
@@ -153,26 +155,63 @@ Scan `args` for three optional pieces, in any order or position:
 5. Write the completed body to a scratch file, then update the PR in one call,
    self-assigning it at the same time: `gh pr edit <target> --body-file <file>
    --add-assignee @me`.
-6. **Report**: which blanks were filled, which checkboxes were checked, which sections
+6. **Report**: the template path that filled the body (or that the fallback structure
+   was used), which blanks were filled, which checkboxes were checked, which sections
    were left untouched and why, any retarget or draft-state change applied, and that the
    PR is assigned to you — so the reasoning is visible before anyone reads the PR itself.
 
 ## Composing the body
 
-Shared by both paths. "The template" means the target repo's own
-`.github/PULL_REQUEST_TEMPLATE.md`, fetched from whichever base branch the calling path
-already settled on (the create path's step 1, or the update path's `baseRefName`) — never
-the head branch, and never a root or `docs/` variant:
+Shared by both paths. "The template" means the target repo's own PR template, found
+with GitHub's own name and folder rules, and read from whichever base branch the calling
+path already settled on (the create path's step 1, or the update path's `baseRefName`) —
+never the head branch. `<owner>/<repo>` is the PR's own repo from its `url` on the update
+path, and the current repo on the create path.
 
-```bash
-gh api "repos/<owner>/<repo>/contents/.github/PULL_REQUEST_TEMPLATE.md?ref=<base>" \
-  --jq .content | base64 --decode
-```
+GitHub itself reads a PR template from the repo's default branch only. This skill reads
+from the base branch on purpose, because a release branch can carry its own template. So
+for a PR into a non-default branch, the result can differ from GitHub's web form.
 
-- If the file exists, keep every heading, HTML comment, and checkbox exactly where it
-  puts them.
-- If the API call 404s, use the built-in fallback structure: `## What changed`,
-  `## Why`, `## Testing`.
+1. List the file names in each of the three folders GitHub searches — `.github/`, the
+   repo root, and `docs/` — one contents-API call per folder, keeping only `file`
+   entries:
+
+   ```bash
+   gh api "repos/<owner>/<repo>/contents/.github?ref=<base>" \
+     --jq '.[] | select(.type == "file") | .name'
+   gh api "repos/<owner>/<repo>/contents?ref=<base>" \
+     --jq '.[] | select(.type == "file") | .name'
+   gh api "repos/<owner>/<repo>/contents/docs?ref=<base>" \
+     --jq '.[] | select(.type == "file") | .name'
+   ```
+
+   A failed call exits non-zero, and its stderr ends with the HTTP status, for example
+   `gh: Not Found (HTTP 404)`. A 404 on a listing means that folder does not exist — treat
+   it as empty. Any other API error (auth failure, rate limit, network) stops the run with
+   a report. Never fall
+   back to the fallback structure on such an error, since it can hide a real template.
+2. Pass every listed name to the bundled selector, one flag per name, and read the path
+   it prints:
+
+   ```bash
+   node "${CLAUDE_SKILL_DIR}/scripts/select-template-path-cli.js" \
+     --github <name> ... --root <name> ... --docs <name> ...
+   ```
+
+   It matches `pull_request_template.md` or `pull_request_template.txt` in any letter
+   case, checks `.github/`, then the root, then `docs/`, and prints the first match in
+   the exact case listed. It prints nothing when no folder holds a match.
+3. If it printed a path, fetch that exact path:
+
+   ```bash
+   gh api "repos/<owner>/<repo>/contents/<path>?ref=<base>" \
+     --jq .content | base64 --decode
+   ```
+
+- If a template was found, keep every heading, HTML comment, and checkbox exactly where
+  it puts them.
+- If the selector printed nothing, use the built-in fallback structure:
+  `## What changed`, `## Why`, `## Testing`.
 - Never delegate this to `gh pr create`'s own `-T`/`--fill`/`--fill-verbose` — `-T` dumps
   a local file's raw text with no blank-filling, and `--fill`/`--fill-verbose` autofill
   from commit messages with no template awareness. Always compose the full body and pass

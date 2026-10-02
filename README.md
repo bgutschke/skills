@@ -41,8 +41,8 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
     Date/Owner/Ref/Description table, dropping bot and merge commits. Runs `git log`
     inside a delegated subagent.
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
-    the current branch, or fill in an already-open PR's description from its own
-    `.github/PULL_REQUEST_TEMPLATE.md`.
+    the current branch, or fill in an already-open PR's description from the repo's own
+    PR template.
 - **productivity**
   - [audit-rules](./skills/productivity/audit-rules/SKILL.md) — read every active rule
     file and installed skill/agent description and report contradictions or unresolved
