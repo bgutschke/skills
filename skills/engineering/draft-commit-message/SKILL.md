@@ -78,9 +78,9 @@ itself.
    `--doc-file <path>`, and one `--subject "<line>"` per sampled git-log line. **Execute
    this script directly — it deterministically resolves the three signals in priority
    order (commitlint config, then written doc, then git-log sample), degrading to the
-   next source whenever the higher-priority one is absent or unusable. Never re-derive
-   this priority order by hand, and never blend fields from more than one source
-   yourself.**
+   next source whenever the higher-priority one is absent or unusable. It also reads the
+   type guidance of the doc, whichever source wins. Never re-derive this priority order
+   by hand, and never blend fields from more than one source yourself.**
 5. Parse the JSON it prints — the **resolved convention**:
    - `source`: `"commitlint"`, `"doc"`, `"git-log"`, or `"fallback"`.
    - `typeEnum`: the allowed commit types.
@@ -90,6 +90,11 @@ itself.
      scope is restricted to a fixed vocabulary.
    - `fallback`: `true` only when `source` is `"fallback"` — no signal was found anywhere,
      and the generic convention described above is being used as-is.
+   - `typeGuidance`: the type rules of the doc, word for word, or `null`. The script reads
+     the first heading that contains "type" in the commit section of the doc, or the full
+     commit section when no type heading exists. The field is `null` when the doc has no
+     commit heading or no doc exists. It comes from the doc for every `source`, also when
+     commitlint wins the format rules, and it never changes `fallback`.
 
 ## Delegation
 
@@ -103,7 +108,8 @@ Call the **Agent** tool with:
   resolved convention (Convention discovery step 5) rather than sent verbatim. In TYPES, keep the entry for
   each type in `typeEnum` and delete the entry for each type outside it, so the subagent
   never sees a type the repo rejects. A type in `typeEnum` with no entry below gets a
-  bare `- <type>` line with no definition.
+  bare `- <type>` line with no definition. Fill REPO TYPE RULES with the `typeGuidance`
+  text, word for word. If `typeGuidance` is `null`, delete the REPO TYPE RULES block.
 
 ### Brief for the subagent
 
@@ -127,7 +133,8 @@ STEPS:
    the main change, not the number of changed lines. Supporting changes that the main
    change needs, for example its tests, docs, or config, do not decide the type. A large
    docs edit around a one-line fix is still a fix.
-7. Choose the type from TYPES. Apply the edge-case rules under each type.
+7. Choose the type from TYPES. Apply the edge-case rules under each type, and then the
+   rules in REPO TYPE RULES, if that block exists.
 8. Check whether the diff holds two unrelated changes. Two changes are unrelated when each
    one makes sense as a commit without the other. If so, draft one message for the main
    change only, and add a split suggestion (see OUTPUT). Do not stage, unstage, or
@@ -158,6 +165,11 @@ Definitions from @commitlint/config-conventional (its prompt type descriptions).
   A bump of a dependency that is not a runtime dependency (for example under
   "devDependencies" or "peerDependencies" in package.json) is chore(deps).
 - revert: Reverts a previous commit.
+
+REPO TYPE RULES:
+The repo defines these type rules in its own doc. They add to the definitions in TYPES.
+If a rule here conflicts with a definition in TYPES, the rule here wins.
+<typeGuidance, word for word>
 
 FORMAT:
   type(scope): description

@@ -13,7 +13,9 @@
  *   headerMaxLength: number,
  *   scopeRule: ScopeRule,
  *   fallback: boolean,
+ *   typeGuidance: string | null,
  * }} ResolvedConvention
+ * @typedef {Omit<ResolvedConvention, 'typeGuidance'>} FormatConvention
  */
 
 // The bare Conventional Commits spec only formally defines feat/fix; this fuller list is
@@ -30,7 +32,12 @@ const FALLBACK_CONVENTION = {
   headerMaxLength: 72,
   scopeRule: { type: 'free' },
   fallback: true,
+  typeGuidance: null,
 };
+
+const TYPE_GUIDANCE_MAX_LENGTH = 2000;
+const COMMIT_HEADING = /^(#{1,6})[ \t]+.*commit.*$/im;
+const TYPE_HEADING = /^(#{1,6})[ \t]+.*type.*$/im;
 
 const NON_TYPE_CASE_NAMES = ['sentence-case', 'start-case', 'pascal-case', 'upper-case'];
 
@@ -81,7 +88,7 @@ function readScopeRule(rule) {
 
 /**
  * @param {CommitlintConfig | null} config
- * @returns {ResolvedConvention | null}
+ * @returns {FormatConvention | null}
  */
 function extractFromCommitlintConfig(config) {
   if (!config || typeof config !== 'object' || typeof config.rules !== 'object' || config.rules === null) return null;
@@ -100,17 +107,26 @@ function extractFromCommitlintConfig(config) {
 /**
  * A written doc mixes prose about many things with the one section that matters here, so
  * narrow to a heading whose text contains "commit" before pattern-matching — otherwise an
- * unrelated section's own backticked words could be mistaken for a type or scope enum. The
- * section runs until the next heading at the same or a shallower level, so nested
- * subsections (e.g. a "### Type" under "## Commit messages") stay included.
+ * unrelated section's own backticked words could be mistaken for a type or scope enum.
  * @param {string} docText
  * @returns {string}
  */
 function isolateCommitSection(docText) {
-  const headingMatch = docText.match(/^(#{1,6})[ \t]+.*commit.*$/im);
-  if (!headingMatch || headingMatch.index === undefined) return docText;
+  return findSectionUnderHeading(docText, COMMIT_HEADING) ?? docText;
+}
+
+/**
+ * The section runs until the next heading at the same or a shallower level, so nested
+ * subsections (e.g. a "### Type" under "## Commit messages") stay included.
+ * @param {string} text
+ * @param {RegExp} headingPattern must capture the heading's run of `#` as group 1
+ * @returns {string | null} the text under the first matching heading, or null when none matches
+ */
+function findSectionUnderHeading(text, headingPattern) {
+  const headingMatch = text.match(headingPattern);
+  if (!headingMatch || headingMatch.index === undefined) return null;
   const level = headingMatch[1].length;
-  const rest = docText.slice(headingMatch.index + headingMatch[0].length);
+  const rest = text.slice(headingMatch.index + headingMatch[0].length);
   const nextHeading = rest.match(new RegExp(`^#{1,${level}}[ \\t]+`, 'm'));
   return rest.slice(0, nextHeading?.index ?? rest.length);
 }
@@ -148,7 +164,7 @@ function extractScopeRuleFromDoc(section) {
 
 /**
  * @param {string | null} docText
- * @returns {ResolvedConvention | null}
+ * @returns {FormatConvention | null}
  */
 function extractFromDoc(docText) {
   if (typeof docText !== 'string' || docText.trim() === '') return null;
@@ -168,11 +184,28 @@ function extractFromDoc(docText) {
   };
 }
 
+/**
+ * Unlike the format extraction, this never falls back to the whole doc: guidance read from
+ * an unrelated doc would steer the type choice with prose that was never about commits.
+ * The text passes word for word, because the subagent reads prose and a script that
+ * summarized it would decide the type rules itself.
+ * @param {string | null} docText
+ * @returns {string | null}
+ */
+function extractTypeGuidance(docText) {
+  if (typeof docText !== 'string') return null;
+  const commitSection = findSectionUnderHeading(docText, COMMIT_HEADING);
+  if (commitSection === null) return null;
+  const typeSection = findSectionUnderHeading(commitSection, TYPE_HEADING) ?? commitSection;
+  const guidance = typeSection.trim().slice(0, TYPE_GUIDANCE_MAX_LENGTH);
+  return guidance === '' ? null : guidance;
+}
+
 const CONVENTIONAL_SUBJECT = /^([a-z]+)(\([^)]+\))?!?:\s(.+)$/;
 
 /**
  * @param {string[]} subjects
- * @returns {ResolvedConvention | null}
+ * @returns {FormatConvention | null}
  */
 function extractFromGitLog(subjects) {
   if (!Array.isArray(subjects) || subjects.length === 0) return null;
@@ -199,18 +232,20 @@ function extractFromGitLog(subjects) {
  * Resolves a repo's commit-message convention from up to three discovery signals, checked
  * in priority order — commitlint's resolved config, a written convention doc, a git-log
  * subject sample — falling back to the Fallback convention only when none yields a usable
- * signal. The whole resolution degrades to the next source together rather than merging
- * per field: a source that is present but malformed (e.g. commitlint installed but its
- * config carries no usable type-enum rule) is treated the same as an absent one.
+ * signal. The format fields degrade to the next source together rather than merging per
+ * field: a source that is present but malformed (e.g. commitlint installed but its config
+ * carries no usable type-enum rule) is treated the same as an absent one. `typeGuidance`
+ * is the one field that crosses sources: it always comes from the doc, because a linter
+ * can check a type's name but not what the repo means by it.
  * @param {CommitlintConfig | null} commitlintConfig
  * @param {string | null} conventionDocText
  * @param {string[]} gitLogSubjects
  * @returns {ResolvedConvention}
  */
 function resolveCommitConvention(commitlintConfig, conventionDocText, gitLogSubjects) {
-  return (
-    extractFromCommitlintConfig(commitlintConfig) ?? extractFromDoc(conventionDocText) ?? extractFromGitLog(gitLogSubjects) ?? { ...FALLBACK_CONVENTION }
-  );
+  const formatConvention =
+    extractFromCommitlintConfig(commitlintConfig) ?? extractFromDoc(conventionDocText) ?? extractFromGitLog(gitLogSubjects) ?? FALLBACK_CONVENTION;
+  return { ...formatConvention, typeGuidance: extractTypeGuidance(conventionDocText) };
 }
 
 module.exports = { resolveCommitConvention, FALLBACK_CONVENTION };
