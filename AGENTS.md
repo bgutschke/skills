@@ -19,12 +19,14 @@ One of:
 - `refactor` — reorganizes skills or code with no behavior change
 - `perf` — a performance improvement
 - `test` — adds or changes tests
-- `build` — build-system or dependency changes
+- `build` — build-system changes
 - `ci` — CI configuration changes
 - `chore` — tooling, config, or meta changes that don't fit elsewhere
 - `revert` — reverts a previous commit; body states `Reverts commit <hash>.`
 
-`feat`, `fix`, and `perf` are release-triggering: `semantic-release` bumps a version and cuts a GitHub Release from them (see #10). Reserve them for changes to what the plugin actually ships — skills, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`. A change to the release pipeline itself (a workflow, `release.config.js`, `scripts/sync-plugin-version.js`, a `package.json` dependency bump) is `build`/`ci`/`chore` even when it fixes a bug in that tooling — it changes nothing a consumer receives, so it shouldn't cut a release.
+`feat`, `fix`, and `perf` are release-triggering: `semantic-release` bumps a version and cuts a GitHub Release from them (see #10). Reserve them for changes to what the plugin actually ships — skills, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`. A change to the release pipeline itself (a workflow, `release.config.js`, `scripts/sync-plugin-version.js`) is `build`/`ci`/`chore` even when it fixes a bug in that tooling — it changes nothing a consumer receives, so it shouldn't cut a release.
+
+A dependency bump follows Renovate's default split. A bump of a runtime dependency (`dependencies` in `package.json`) is `fix(deps)`, because consumers install it, so it cuts a release. A bump of any other dependency (`devDependencies`, `peerDependencies`, a lockfile refresh) is `chore(deps)`, and cuts no release. See ADR 0031 for the reasoning.
 
 ### Scope
 
