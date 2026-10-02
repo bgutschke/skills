@@ -1,3 +1,10 @@
+## [1.28.1](https://github.com/bgutschke/skills/compare/v1.28.0...v1.28.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **draft-commit-message:** pick the main change of an unrelated pair ([1b6ad3c](https://github.com/bgutschke/skills/commit/1b6ad3c3ab4a02d55f31fe037d6b2be62593d598)), closes [#175](https://github.com/bgutschke/skills/issues/175)
+
 # [1.28.0](https://github.com/bgutschke/skills/compare/v1.27.0...v1.28.0) (2026-10-02)
 
 
