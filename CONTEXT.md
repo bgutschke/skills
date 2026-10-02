@@ -415,3 +415,19 @@ a *Discovered convention* and the offer stops appearing.
 per the *Generation-only boundary*. Also avoid treating the drafted snippet itself as a
 *Discovered convention* before it's written and found again — until then it's just
 proposed text.
+
+### PR composition
+
+**Fallback structure**:
+The built-in body headings `to-pr` uses when the target repo has no PR template on the
+base branch: `## What changed`, `## Why`, `## Testing`. It never overrides or merges with
+a repo's own template.
+*Avoid*: "default template" — a repo's own file is the template, and this is only what
+fills its absence.
+
+**Reversibility signal**:
+A fact in a diff that makes the change hard to undo after merge, drawn from a closed
+list: deleted files, schema or data migrations, removed public exports, changed config
+keys, and a `!` or `BREAKING CHANGE:` marker in a commit.
+*Avoid*: "risk" or "blast radius" for this — those invite a guess about consequences,
+while a signal is only what the diff itself shows.

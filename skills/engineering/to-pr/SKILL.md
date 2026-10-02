@@ -18,9 +18,11 @@ watching its work unfold and sees the required report regardless of any prompt.
 ## Dependencies
 
 Requires an authenticated `gh` CLI — every path shells out to it (`gh pr view`, `gh pr
-create`, `gh pr edit`, `gh api`, `gh repo view`). Requires `node` to run the bundled
-template-selection script (`scripts/select-template-path-cli.js`), which "Composing the
-body" invokes on every run. `git` and `base64` are also used but are ambient on any
+create`, `gh pr edit`, `gh api`, `gh repo view`). Requires `node` to run the two bundled
+scripts that "Composing the body" invokes on every run: the template selector
+(`scripts/select-template-path-cli.js`) and the file-tree renderer
+(`scripts/render-file-tree-cli.js`). `git` and `base64` are also used but are ambient on
+any
 machine capable of running Claude Code, so they aren't listed here.
 
 ## When to use
@@ -110,18 +112,24 @@ Scan `args` for three optional pieces, in any order or position:
 
 ## Create path
 
-1. **Resolve the base branch**, unless `--base` overrides it:
-   - Read the current branch's upstream tracking ref: `git rev-parse --abbrev-ref
-     --symbolic-full-name @{u}` (ignore failure — no upstream configured).
-   - Use it only if it names a branch with a *different* short name than the current
-     branch (strip the remote prefix, e.g. `origin/feature-x` → `feature-x`, and
-     compare). Same-name tracking is push/pull plumbing, not a target signal.
-   - Otherwise fall through to the repo's default branch: `gh repo view --json
-     defaultBranchRef -q .defaultBranchRef.name`.
-   - Deliberately no ancestor-detection heuristic (comparing `git merge-base` distance
-     across candidate branches) — guessing a target from commit-graph shape is exactly
-     the fragility rejected for title derivation below, and base resolution shouldn't
-     reintroduce it.
+1. **Resolve the base branch** from the first of these four sources that gives a value:
+   1. `--base`, when given. It always wins.
+   2. The `gh-merge-base` setting of the current branch, the same setting that `gh pr
+      create` reads: `git config branch.<current>.gh-merge-base`. An unset value or a
+      failed lookup falls through without an error. Only the create path reads this
+      setting. The update path keeps the open PR's own base.
+   3. The current branch's upstream tracking ref: `git rev-parse --abbrev-ref
+      --symbolic-full-name @{u}` (ignore failure — no upstream configured). Use it only
+      if it names a branch with a *different* short name than the current branch (strip
+      the remote prefix, e.g. `origin/feature-x` → `feature-x`, and compare). Same-name
+      tracking is push/pull plumbing, not a target signal.
+   4. The repo's default branch: `gh repo view --json defaultBranchRef -q
+      .defaultBranchRef.name`.
+
+   Deliberately no ancestor-detection heuristic (comparing `git merge-base` distance
+   across candidate branches) — guessing a target from commit-graph shape is exactly the
+   fragility rejected for title derivation below, and base resolution shouldn't
+   reintroduce it.
 2. **Push the branch** if it needs it. If an upstream is already configured but local
    commits aren't on it (`git rev-list @{u}..HEAD --count` > 0), `git push` is
    unambiguous. If no upstream is configured, push to whichever single remote `git
@@ -133,7 +141,9 @@ Scan `args` for three optional pieces, in any order or position:
    base branch resolved in step 1.
 5. **Open the PR**: `gh pr create -B <base> --title "<title>" --body-file <file>
    --assignee @me`, adding `--draft` unless `--ready` was given.
-6. **Report**: the new PR's URL, title, base, draft/ready state, which title tier fired
+6. **Report**: the new PR's URL, title, base, which of the four base sources decided it
+   (`--base`, `gh-merge-base`, upstream ref, or default branch), draft/ready state, whether
+   the file tree was skipped for size (see "Composing the body"), which title tier fired
    (verbatim / documented convention / inferred convention), whether a merge commit was
    detected ahead of base (informational only — see "Deriving the title"), and that it's
    assigned to you.
@@ -157,8 +167,9 @@ Scan `args` for three optional pieces, in any order or position:
    --add-assignee @me`.
 6. **Report**: the template path that filled the body (or that the fallback structure
    was used), which blanks were filled, which checkboxes were checked, which sections
-   were left untouched and why, any retarget or draft-state change applied, and that the
-   PR is assigned to you — so the reasoning is visible before anyone reads the PR itself.
+   were left untouched and why, whether the file tree was skipped for size, any retarget
+   or draft-state change applied, and that the PR is assigned to you — so the reasoning
+   is visible before anyone reads the PR itself.
 
 ## Composing the body
 
@@ -242,9 +253,20 @@ labeled sections:
 
 - **Change summary** — what the diff actually does, file by file or logically grouped;
   never what the change is *for*.
-- **Testing evidence** — tests added or modified, commands the diff implies running, any
-  manual verification steps visible in the diff or commit messages. Omit the category
-  entirely rather than pad it with generic boilerplate.
+- **Testing evidence** — each new test file by its path, tests modified, commands the
+  diff implies running, any manual verification steps visible in the diff or commit
+  messages. Omit the category entirely rather than pad it with generic boilerplate.
+- **Reversibility signals** — facts in the diff that make the change hard to undo after
+  merge. Report only items from this closed list, and name the file or commit that each
+  one comes from:
+  - a deleted file
+  - a schema or data migration
+  - a removed public export
+  - a changed configuration key
+  - a commit marked as breaking, with a `!` after its type or a `BREAKING CHANGE:` footer
+
+  Never report a guess about consequences, such as a "risky" refactor. Omit the category
+  entirely when no item matches.
 - **Commit messages** — reproduce each one inside a fenced code block, character-for-
   character; never paraphrase, condense, or summarize, even under length pressure. The
   ticket-reasoning fallback below depends on exact footer text — blurring `Refs #9` into
@@ -264,12 +286,51 @@ compare it against the subagent's change summary. A mismatch (fewer files mentio
 `--stat` shows, for instance) means re-running the subagent, not composing the body from
 an incomplete report.
 
+Render the file tree of structural changes in this session, with the bundled renderer:
+
+```bash
+git -c core.quotePath=false diff --name-status <base>...HEAD \
+  | node "${CLAUDE_SKILL_DIR}/scripts/render-file-tree-cli.js"
+```
+
+It prints a fenced `diff` block of the added, deleted, renamed, and copied files, nested
+by folder. A rename shows as the old path removed and the new path added. Modified files
+never appear. It prints nothing in two cases:
+
+- The diff only modifies files. Then the body has no tree.
+- The tree is longer than 40 lines. Then the body has no tree, and the report says that
+  the tree was skipped for size. Tell this case apart from the first one by the
+  `--name-status` output: it has at least one line whose status starts with `A`, `C`,
+  `D`, or `R`.
+
+The convention lookup in the target repo, which the "Why" step and the title tiers also
+use, checks for a glossary too: a `CONTEXT.md` or `GLOSSARY.md` at the repo root. The
+root listing from step 1 of the template lookup already shows whether one exists. Fetch
+each one that exists from the base branch, the same way as the template. If one exists,
+write the body in its preferred terms, and avoid the terms it tells readers to avoid.
+The title rules in "Deriving the title" do not change. Without a glossary, skip this
+step.
+
+Write every field that this skill fills in this way:
+
+- Start with the change itself. No opening preamble, such as "This PR...".
+- Use short sentences.
+- Do not repeat the title.
+
 Ground every blank in something real, never invention:
 
-- **What changed** — the diff-evidence subagent's change summary.
+- **What changed** — the diff-evidence subagent's change summary as prose. Then the file
+  tree, when the renderer printed one. Then one short line that lists the reversibility
+  signals, when the subagent reported any, for example `Hard to undo: deletes
+  scripts/old.js; commit a1b2c3d is marked BREAKING CHANGE.`
 - **Why** — see the ticket-reasoning step below.
-- **Testing** — the diff-evidence subagent's testing evidence; if it omitted the
-  category, leave **Testing** unfilled rather than inventing boilerplate.
+- **Testing** — the diff-evidence subagent's testing evidence. Name each new test file
+  as the guard for the change. Never include run output, and never claim that a test
+  failed before and passes now. If the subagent omitted the category, leave **Testing**
+  unfilled rather than inventing boilerplate.
+- In a repo template, the file tree goes into the field that receives the change
+  summary. The signals line goes into the template's risk field, if it has one, and
+  otherwise into the change-summary field. Neither one ever adds a heading.
 - Any other checkbox or blank the template defines — fill only what the diff-evidence
   subagent's report demonstrably supports; leave the rest unchecked or untouched.
 - A template's non-blank content — a fixed disclaimer, a Screenshot section — is left
@@ -361,12 +422,38 @@ after it):
   **Why** ends with `Refs #9`, not the `Closes #9` a naive reading of the linked issue
   might suggest.
 - **What changed** was written from `git log` and `git diff main...HEAD`: adding the
-  `to-pr-description` skill and this repo's first `PULL_REQUEST_TEMPLATE.md`.
+  `to-pr-description` skill and this repo's first `PULL_REQUEST_TEMPLATE.md`. Both are
+  new files, so the renderer adds a file tree after that prose. The diff deletes
+  nothing, so no signals line follows.
 - **Testing** was written from what the diff and history actually showed:
   `claude plugin validate . --strict` passing, plus this same dry run.
 - The filled body was written and the PR self-assigned in one call — `gh pr edit 20
   --body-file <file> --add-assignee @me` — and the report listed all three sections as
   filled, none left untouched, and the new assignee.
+
+**File tree and signals line**, dry-run read-only against commit `408490e` of this repo
+(no PR opened by this check). `git diff --name-status 408490e~1 408490e` lists two
+modified plugin manifests, a type change of `CLAUDE.md` to a symlink, and two deleted
+scripts. The renderer leaves out the modified files and the type change:
+
+````markdown
+```diff
+ scripts/
+-  install.sh
+-  list-skills.sh
+```
+````
+
+The diff-evidence subagent reports two reversibility signals, one per deleted file. The
+commit has no `!` or `BREAKING CHANGE:` marker. So **What changed** ends with the prose
+summary, the tree above, and this line:
+
+```text
+Hard to undo: deletes scripts/install.sh and scripts/list-skills.sh.
+```
+
+**Testing** stays unfilled, because the diff adds no test file and the commit message
+names no check.
 
 **Create path title derivation**, dry-run read-only against this repo's real history
 (no PR opened by this check): `git log --reverse --first-parent main..HEAD --format=%s`
