@@ -210,6 +210,10 @@ describe('classifyFile', () => {
   it('keeps no carriage return in a record from a file with CRLF line endings', () => {
     expect(classifyFile('src/win.js', '// Windows line.\r\nrun();\r\n', SYNTAX)[0].text).toBe('// Windows line.');
   });
+
+  it('returns no records for binary content, even with comment-like bytes', () => {
+    expect(classifyFile('assets/logo.png', '\u0089PNG\r\n\u0000\u0000# not a comment\n// nor this', SYNTAX)).toEqual([]);
+  });
 });
 
 describe('classifyDiff', () => {
