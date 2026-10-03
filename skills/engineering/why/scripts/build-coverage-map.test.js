@@ -126,6 +126,14 @@ describe('buildCoverageMap', () => {
     expect(map.unclassified).toEqual(['plugin_figma_figma']);
   });
 
+  it('maps every shipped source only to categories the coverage map knows', () => {
+    const knownCategories = buildCoverageMap([], []).rows.map(({ category }) => category);
+
+    for (const { categories } of SHIPPED_SOURCES) {
+      expect(knownCategories).toEqual(expect.arrayContaining(categories));
+    }
+  });
+
   it('counts the skills of one plugin once, under the plugin name', () => {
     const map = buildCoverageMap(['sentry:sentry-debug-issue', 'sentry:sentry-get-started'], SOURCES);
 
