@@ -118,6 +118,24 @@ describe('classifyFile', () => {
     ]);
   });
 
+  it('gives a TODO or FIXME line a record of its own, apart from adjacent prose', () => {
+    const content = [
+      '  // parse the JSON',
+      '  // TODO: validate the schema',
+      '  // The vendor API sends dates as Unix seconds.',
+      '  // fixme: retry on failure',
+      '  const created = new Date(data.created * 1000);',
+    ].join('\n');
+    const records = classifyFile('src/order.ts', content, SYNTAX);
+    const ranges = records.map(({ startLine, endLine }) => [startLine, endLine]);
+    expect(ranges).toEqual([
+      [1, 1],
+      [2, 2],
+      [3, 3],
+      [4, 4],
+    ]);
+  });
+
   it('does not read a trailing comment on the first code line as a license header', () => {
     expect(classifyFile('src/index.js', 'const x = 1; // Copyright 2026', SYNTAX)[0].category).toBe('needs-judgment');
   });

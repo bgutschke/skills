@@ -82,7 +82,7 @@ Delete every other comment. This includes:
 - narration that restates the code next to it
 - section banners and separators
 - commented-out code
-- TODO, FIXME, and similar notes, which the report lists with their full text
+- TODO, FIXME, and similar notes
 - a justification with no keep-list reason, however long it is
 
 Never shorten or reword a comment. Keep it whole, or delete it whole.
@@ -160,8 +160,7 @@ Keep the `-z` and `-0` flags. They pass each path whole, also with a space or a 
 character in it. If there are no paths, `-r` runs nothing.
 
 Each command prints a JSON array of records. A long path list can print more than one
-array. A binary file yields no records. A record has
-these fields:
+array. A binary file yields no records. A record has these fields:
 
 - `file`: the path, relative to the repository root. For a list of files, the path as the
   user wrote it.
@@ -207,7 +206,9 @@ type can make the code state this why. Keep the comment, because the code does n
 the why yet. Deletion now loses the information. Then add a reshape flag with these parts:
 
 - the location of the comment, `<path>:<startLine>`
-- the exact symbol that holds the surprise, for example `Item.price` or `parseOrder`
+- the exact symbol that holds the surprise, for example `Item.price` or `parseOrder`. If
+  its definition is outside the scope, find it in the repository with `git grep`. If the
+  repository has no definition, name the symbol as the code next to the comment uses it
 - one concrete proposal: a rename, an extraction, or a type, with the new name
 
 A reshape flag changes no code. Do not edit the symbol, its callers, or the comment.
@@ -215,9 +216,13 @@ A reshape flag changes no code. Do not edit the symbol, its callers, or the comm
 ### TODO and FIXME notes
 
 A TODO, FIXME, or similar note is not on the keep list. Delete it, also when it names a
-reason. Also list it under
-"Removed notes" in the report with its full text, so that the developer can move it to an
-issue tracker.
+reason. List it under "Removed notes" in the report with its full text, so that the
+developer can move it to an issue tracker.
+
+The classifier gives each line that starts with TODO, FIXME, XXX, or HACK a record of its
+own. The line directly below a note
+can continue the note. If it does, delete it too, and add its text to the note's row. If it
+holds its own comment, decide it as its own record.
 
 ### Ambiguous comments
 
@@ -240,8 +245,8 @@ Edit each file with exact string replacement. Change no character outside the co
   block's lines hold no code, remove the lines.
 
 Resolve each `file` against the directory that the classifier ran in. Read each file
-before you edit it. Line numbers in a record match the file before any
-edit, so delete from the bottom of a file to the top.
+before you edit it. Line numbers in a record match the file before any edit, so delete
+from the bottom of a file to the top.
 
 Do not run a formatter, a linter, `git add`, `git commit`, or `git stash`.
 
@@ -310,8 +315,12 @@ heading. Every location uses the line numbers from the classifier, before any ed
 text in "Removed notes" and "Ambiguous deletions" is the record's full `text`. Replace each
 line break with a space, and escape each `|` as `\|`.
 
+Each record goes in one report section only. A TODO or FIXME note goes in "Removed
+notes", never in "Ambiguous deletions".
+
 Every deleted record counts in "Files touched", a removed note and an ambiguous deletion
-too. A record that covers more than one line counts as one deletion. The last line is the
+too. A record that covers more than one line counts as one deletion. A continuation line
+that you add to a note's row counts with the note, as one deletion. The last line is the
 reply contract. It restates the total and says that the changes are unstaged. If the total
 is zero, the last line reads "Deleted 0 comments. Nothing changed." This also applies when
 every comment was kept.

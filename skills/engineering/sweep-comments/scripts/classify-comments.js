@@ -24,6 +24,8 @@ const FORMATTER_DIRECTIVES = [
   /^yapf:\s*(?:disable|enable)\b/,
 ];
 
+const NOTE_PATTERN = /^(?:TODO|FIXME|XXX|HACK)\b/i;
+
 const LICENSE_PATTERN = /\b(?:licen[cs]ed?|copyright|spdx-license-identifier)\b|\(c\)|©/i;
 
 const KEYWORD_CODE_PATTERNS = [
@@ -271,8 +273,10 @@ function newComment(lineNo, text, kind, atTop) {
 /**
  * Merges whole-line comments on adjacent lines into one record, so a block written with
  * line markers is judged as one unit. A directive always stands alone, because it acts on
- * the line below it and not on its neighbours. Code and prose never join, because a kept
- * prose comment must not share a record with commented-out code that is deleted.
+ * the line below it and not on its neighbours. A TODO or FIXME note stands alone too,
+ * because it is always deleted and must not take a kept why with it. Code and prose never
+ * join, because a kept prose comment must not share a record with commented-out code that
+ * is deleted.
  *
  * @param {RawComment[]} comments
  * @param {SyntaxRow} syntax
@@ -306,7 +310,18 @@ function canJoin(previous, next, syntax) {
   if (next.startLine !== previous.endLine + 1) return false;
   if (isDoc(previous.parts[0], syntax) !== isDoc(next.parts[0], syntax)) return false;
   if (isCodeComment(previous.parts.at(-1) ?? '', syntax) !== isCodeComment(next.parts[0], syntax)) return false;
-  return !isDirective(previous.parts.at(-1) ?? '', syntax) && !isDirective(next.parts[0], syntax);
+  return !standsAlone(previous.parts.at(-1) ?? '', syntax) && !standsAlone(next.parts[0], syntax);
+}
+
+/**
+ * True for a comment line that never joins a neighbour: a directive or a TODO-style note.
+ *
+ * @param {string} text
+ * @param {SyntaxRow} syntax
+ * @returns {boolean}
+ */
+function standsAlone(text, syntax) {
+  return isDirective(text, syntax) || NOTE_PATTERN.test(bodyOf(text, syntax));
 }
 
 /**
