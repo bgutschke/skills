@@ -1,0 +1,92 @@
+[
+  {
+    "language": "javascript",
+    "extensions": [".js", ".cjs", ".mjs", ".jsx", ".ts", ".cts", ".mts", ".tsx"],
+    "line": ["//"],
+    "block": [["/*", "*/"]],
+    "doc": ["/**"],
+    "strings": ["\"", "'", "`"]
+  },
+  {
+    "language": "c-family",
+    "extensions": [".c", ".h", ".cc", ".cpp", ".hpp", ".java", ".kt", ".kts", ".scala", ".go", ".swift", ".dart"],
+    "line": ["//"],
+    "block": [["/*", "*/"]],
+    "doc": ["/**", "///"],
+    "strings": ["\""]
+  },
+  {
+    "language": "rust",
+    "extensions": [".rs"],
+    "line": ["//"],
+    "block": [["/*", "*/"]],
+    "doc": ["///", "//!", "/**", "/*!"],
+    "strings": ["\""]
+  },
+  {
+    "language": "csharp",
+    "extensions": [".cs"],
+    "line": ["//"],
+    "block": [["/*", "*/"]],
+    "doc": ["///", "/**"],
+    "strings": ["\""]
+  },
+  {
+    "language": "php",
+    "extensions": [".php"],
+    "line": ["//", "#"],
+    "block": [["/*", "*/"]],
+    "doc": ["/**"],
+    "strings": ["\"", "'"]
+  },
+  {
+    "language": "css",
+    "extensions": [".css"],
+    "line": [],
+    "block": [["/*", "*/"]],
+    "strings": ["\"", "'"]
+  },
+  {
+    "language": "scss",
+    "extensions": [".scss", ".less"],
+    "line": ["//"],
+    "block": [["/*", "*/"]],
+    "doc": ["///"],
+    "strings": ["\"", "'"]
+  },
+  {
+    "language": "hash",
+    "extensions": [".py", ".pyi", ".sh", ".bash", ".zsh", ".rb", ".pl", ".r", ".yml", ".yaml", ".toml", ".tf", ".ex", ".exs"],
+    "line": ["#"],
+    "block": [],
+    "strings": ["\"", "'"]
+  },
+  {
+    "language": "sql",
+    "extensions": [".sql"],
+    "line": ["--"],
+    "block": [["/*", "*/"]],
+    "strings": ["'"]
+  },
+  {
+    "language": "lua",
+    "extensions": [".lua"],
+    "line": ["--"],
+    "block": [["--[[", "]]"]],
+    "strings": ["\"", "'"]
+  },
+  {
+    "language": "markup",
+    "extensions": [".html", ".htm", ".xml", ".svg", ".md", ".vue", ".svelte"],
+    "line": [],
+    "block": [["<!--", "-->"]],
+    "strings": []
+  },
+  {
+    "language": "unknown",
+    "extensions": ["*"],
+    "line": ["//", "#", "--", ";"],
+    "block": [["/*", "*/"], ["<!--", "-->"]],
+    "strings": []
+  }
+]
