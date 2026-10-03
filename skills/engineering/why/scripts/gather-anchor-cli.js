@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @ts-check
 const { execFileSync } = require('child_process');
-const { LOG_FORMAT, buildCodeAnchor } = require('./build-code-anchor');
+const { LOG_FORMAT, buildCodeAnchor, findPullRequests } = require('./build-code-anchor');
 
 const USAGE = 'Usage: gather-anchor-cli.js <path> [--lines <start>,<end>]';
 const LINES_RE = /^(\d+),(\d+)$/;
@@ -117,7 +117,7 @@ try {
   const blame = readBlame(path, lines);
   const ghAuthenticated = isGhAuthenticated();
   const pullRequestBodies = ghAuthenticated
-    ? buildCodeAnchor({ log, blame }).pullRequests.map(readPullRequestBody).filter((pull) => pull !== null)
+    ? findPullRequests(log, blame).map(readPullRequestBody).filter((pull) => pull !== null)
     : [];
   const anchor = buildCodeAnchor({ log, blame, lines, pullRequestBodies });
   console.log(JSON.stringify({ anchor, ghAuthenticated }));

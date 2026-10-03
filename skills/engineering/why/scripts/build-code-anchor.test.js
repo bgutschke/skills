@@ -1,6 +1,6 @@
 // @ts-check
 const { describe, expect, it } = require('@jest/globals');
-const { buildCodeAnchor } = require('./build-code-anchor');
+const { buildCodeAnchor, findPullRequests } = require('./build-code-anchor');
 
 /**
  * Renders one commit the way `git log --follow --name-status` prints it with
@@ -194,5 +194,19 @@ describe('buildCodeAnchor', () => {
     ]);
 
     expect(buildCodeAnchor({ blame }).symbols).toEqual(['MAX_PAGE', 'clampPage', 'PageCursor', 'retry_upload']);
+  });
+});
+
+describe('findPullRequests', () => {
+  it('lists the pull requests of the logged and the blamed commits, each once', () => {
+    const log =
+      logRecord({ hash: HASH_B, date: '2026-01-02T11:00:00+01:00', subject: 'fix: clamp page size (#42)' }) +
+      logRecord({ hash: HASH_A, date: '2026-01-01T11:00:00+01:00', subject: 'Merge pull request #7 from acme/paging' });
+    const blame = blamePorcelain([
+      { hash: HASH_B, line: 10, summary: 'fix: clamp page size (#42)', content: 'const MAX_PAGE = 100;' },
+      { hash: 'c'.repeat(40), line: 11, time: 1767434400, summary: 'fix: tidy (#9)', content: '}' },
+    ]);
+
+    expect(findPullRequests(log, blame)).toEqual([9, 42, 7]);
   });
 });
