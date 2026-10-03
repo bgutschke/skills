@@ -60,13 +60,24 @@ function buildCodeAnchor({ log = '', blame = '', lines = null, pullRequestBodies
     paths: unique(logCommits.flatMap((commit) => commit.paths)),
     lines,
     commits,
-    pullRequests: unique(commits.flatMap(({ subject }) => findPullRequestNumbers(subject))),
-    blamedPullRequests: unique(
-      commits.filter(({ blamed }) => blamed).flatMap(({ subject }) => findPullRequestNumbers(subject)),
-    ),
+    pullRequests: pullRequestsOf(commits),
+    blamedPullRequests: pullRequestsOf(commits.filter(({ blamed }) => blamed)),
     tickets: unique(ticketSources.flatMap(findTickets)),
     symbols: unique(findDeclaredSymbols(blame)),
   };
+}
+
+/**
+ * Lists the pull request numbers of the target's commits, without the rest
+ * of the anchor. The caller needs them first, to fetch the pull request
+ * bodies that the full anchor reads its tickets from.
+ *
+ * @param {string} log
+ * @param {string} blame
+ * @returns {number[]}
+ */
+function findPullRequests(log, blame) {
+  return pullRequestsOf(mergeCommits(parseLog(log), parseBlame(blame)));
 }
 
 /**
@@ -150,6 +161,14 @@ function mergeCommits(logCommits, blameCommits) {
 }
 
 /**
+ * @param {AnchorCommit[]} commits
+ * @returns {number[]}
+ */
+function pullRequestsOf(commits) {
+  return unique(commits.flatMap(({ subject }) => findPullRequestNumbers(subject)));
+}
+
+/**
  * Reads the pull request number from the two subject shapes GitHub writes
  * itself: a squash merge's trailing `(#N)` and a merge commit's
  * `Merge pull request #N`. A bare `#N` elsewhere in a subject is usually an
@@ -202,4 +221,4 @@ function unique(values) {
   return [...new Set(values)];
 }
 
-module.exports = { LOG_FORMAT, buildCodeAnchor };
+module.exports = { LOG_FORMAT, buildCodeAnchor, findPullRequests };
