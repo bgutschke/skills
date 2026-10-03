@@ -43,6 +43,9 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
     the current branch, or fill in an already-open PR's description from the repo's own
     PR template.
+  - [why](./skills/engineering/why/SKILL.md) — answer why a piece of code has its shape
+    from commits, pull requests, reviews, and code comments, with every claim in a
+    confidence tier and every search listed.
 - **productivity**
   - [audit-rules](./skills/productivity/audit-rules/SKILL.md) — read every active rule
     file and installed skill/agent description and report contradictions or unresolved

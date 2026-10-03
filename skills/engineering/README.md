@@ -14,3 +14,6 @@ Daily code work.
 - [to-pr](./to-pr/SKILL.md) — open a new PR (draft by default) from the current branch,
   or fill in an already-open PR's description from its own
   `.github/PULL_REQUEST_TEMPLATE.md`.
+- [why](./why/SKILL.md) — answer why a piece of code has its shape from commits, pull
+  requests, reviews, and code comments, with every claim in a confidence tier and every
+  search listed. Reads git and pull request history inside subagents.
