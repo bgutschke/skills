@@ -1,3 +1,5 @@
+// @ts-check
+const { describe, expect, it } = require('@jest/globals');
 const fs = require('fs');
 const path = require('path');
 const { buildCoverageMap } = require('./build-coverage-map');
@@ -11,6 +13,10 @@ const SOURCES = [
   { source: 'linear', categories: ['issue-tracker'] },
 ];
 
+/**
+ * @param {import('./build-coverage-map').CoverageMap} map
+ * @param {string} category
+ */
 function rowFor(map, category) {
   return map.rows.find((row) => row.category === category);
 }
