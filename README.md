@@ -43,8 +43,9 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
   - [sweep-comments](./skills/engineering/sweep-comments/SKILL.md) — delete disallowed
     comments from the lines the current branch added, keeping doc comments, license
     headers, formatter directives, and comments that explain a why the code cannot state.
-    `--base` names another base branch, `--widen` sweeps whole touched files, and a file
-    list replaces the diff. Never edits code, stages, or commits.
+    Flags a kept why about our own code for a reshape, and lists removed TODO notes and
+    ambiguous deletions. `--base` names another base branch, `--widen` sweeps whole
+    touched files, and a file list replaces the diff. Never edits code, stages, or commits.
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
     the current branch, or fill in an already-open PR's description from the repo's own
     PR template.

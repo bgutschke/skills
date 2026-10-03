@@ -6,7 +6,7 @@ agent: general-purpose
 model: sonnet
 background: false
 argument-hint: "[--base <branch>] [--widen] [<file>...]"
-description: "Deletes disallowed comments from the lines that the current branch added, compared with the repository's default branch, including the working tree. --base names another base branch. --widen sweeps the full content of each touched file. A list of files replaces the diff. A bundled classifier sorts every comment into a category. The sweep keeps doc comments, license headers, formatter directives, and comments that explain a why the code cannot state. It leaves lint and type suppressions in place and lists them. It deletes narration, banners, commented-out code, TODO notes, and justifications with no keep reason. It edits no code, and never stages or commits. Returns a report with a deletion count per file, each kept comment with its reason, and each suppression. Invoked by the user only, with /sweep-comments."
+description: "Deletes disallowed comments from the lines that the current branch added, compared with the repository's default branch, including the working tree. --base names another base branch. --widen sweeps the full content of each touched file. A list of files replaces the diff. A bundled classifier sorts every comment into a category. The sweep keeps doc comments, license headers, formatter directives, and comments that explain a why the code cannot state. A kept why about the repository's own code gets a reshape flag that names the symbol and proposes a rename, extraction, or type. It leaves lint and type suppressions in place and lists them. It deletes narration, banners, commented-out code, TODO and FIXME notes, justifications with no keep reason, and comments it cannot place. It edits no code, and never stages or commits. Returns a report: deletions per file, kept comments with reasons, reshape flags, suppressions, removed notes, and ambiguous deletions. Invoked by the user only, with /sweep-comments."
 ---
 
 # sweep-comments
@@ -28,7 +28,7 @@ developer reviews the working-tree diff and commits.
 - The user wants a review that only reports and edits nothing. This skill deletes.
 - The user wants lint or type suppressions removed. The sweep never deletes a suppression.
 - The user wants the code reshaped so that a comment is no longer necessary. The sweep
-  changes no code.
+  changes no code. It only proposes the reshape in a flag.
 
 ## Arguments
 
@@ -68,8 +68,9 @@ The keep list has four entries. If one of them applies, keep the comment:
 1. A doc comment that defines a public contract, for example JSDoc, a Rust `///` line, or
    a C# `///` line.
 2. A comment that explains a why the code cannot state. The why is an external dependency,
-   platform, vendor, or protocol constraint. Or it is a non-obvious behavior that no
-   rename or extraction can make plain.
+   platform, vendor, or protocol constraint. Or it is a non-obvious behavior that the code
+   does not state. If a rename or extraction can make that behavior plain, add a reshape
+   flag. Step 3 describes the flag.
 3. A license or legal header.
 4. A formatter directive, for example `prettier-ignore` or `fmt: off`.
 
@@ -78,7 +79,7 @@ Delete every other comment. This includes:
 - narration that restates the code next to it
 - section banners and separators
 - commented-out code
-- TODO, FIXME, and similar notes
+- TODO, FIXME, and similar notes, which the report lists with their full text
 - a justification with no keep-list reason, however long it is
 
 Never shorten or reword a comment. Keep it whole, or delete it whole.
@@ -180,7 +181,7 @@ Act on each record by its category:
 | `formatter-directive` | Keep | Kept, reason "formatter directive" |
 | `suppression` | Leave in place | Suppressions, with `rule` |
 | `commented-out-code` | Delete | Files touched |
-| `needs-judgment` | Apply the keep list | Kept or Files touched |
+| `needs-judgment` | Apply the keep list | Kept, Reshape flags, Files touched, Removed notes, or Ambiguous deletions |
 
 For a `needs-judgment` record, read the code around it in the file. If keep list entry 2
 applies, keep the comment. Write the reason as one short clause that names the constraint.
@@ -191,8 +192,35 @@ directive. An example is a file in a language that the classifier does not know.
 Then the record is `needs-judgment`. Keep it, and use the entry name as the reason, for
 example "doc comment".
 
+### Reshape flags
+
+A kept why comment can describe a constraint outside the repository. Examples are a
+dependency, a platform, a vendor, or a protocol. The code cannot state such a why, so the
+comment needs no flag.
+
+A kept why comment can also describe a surprise in the repository's own code. An example
+is "price is in cents, because toItem multiplies by 100". A rename, an extraction, or a
+type can make the code state this why. Keep the comment, because the code does not state
+the why yet. Deletion now loses the information. Then add a reshape flag with these parts:
+
+- the location of the comment, `<path>:<startLine>`
+- the exact symbol that holds the surprise, for example `Item.price` or `parseOrder`
+- one concrete proposal: a rename, an extraction, or a type, with the new name
+
+A reshape flag changes no code. Do not edit the symbol, its callers, or the comment.
+
+### TODO and FIXME notes
+
+A TODO, FIXME, or similar note is not on the keep list. Delete it, also when it names a
+reason. Also list it under
+"Removed notes" in the report with its full text, so that the developer can move it to an
+issue tracker.
+
+### Ambiguous comments
+
 If you cannot decide whether a keep-list entry applies, delete the comment. The keep list
-is a leash, not a default.
+is a leash, not a default. List the comment under "Ambiguous deletions" in the report with
+its full text. The developer then finds it in the diff and restores it if necessary.
 
 ## Step 4: Delete
 
@@ -216,7 +244,8 @@ Do not run a formatter, a linter, `git add`, `git commit`, or `git stash`.
 
 ## Step 5: Report
 
-Return this report as your final message, and nothing else:
+Return this report as your final message, and nothing else. Always use this exact
+structure:
 
 ```markdown
 ## Comment sweep
@@ -235,11 +264,29 @@ Scope: <scope line>
 | --- | --- |
 | `<path>:<startLine>` | <reason> |
 
+### Reshape flags
+
+| Location | Symbol | Proposal |
+| --- | --- | --- |
+| `<path>:<startLine>` | `<symbol>` | <proposal> |
+
 ### Suppressions
 
 | Location | Rule |
 | --- | --- |
 | `<path>:<startLine>` | `<rule>`, or "none named" |
+
+### Removed notes
+
+| Location | Text |
+| --- | --- |
+| `<path>:<startLine>` | `<text>` |
+
+### Ambiguous deletions
+
+| Location | Text |
+| --- | --- |
+| `<path>:<startLine>` | `<text>` |
 
 Deleted <total> comments in <file count> files. The changes are unstaged.
 ```
@@ -255,11 +302,16 @@ full content of touched files since `<ref>` at `<short base hash>`
 If the arguments name files and also have `--base` or `--widen`, add "(`--base` and
 `--widen` ignored)" to the end of the scope line.
 
-If a section has no rows, write "None." under its heading. A record that covers more
-than one line counts as one deletion. The last line is the reply contract. It
-restates the total and says that the changes are unstaged. If the total is zero, the last
-line reads "Deleted 0 comments. Nothing changed." This also applies when every comment
-was kept.
+Keep the six sections in this order. If a section has no rows, write "None." under its
+heading. Every location uses the line numbers from the classifier, before any edit. The
+text in "Removed notes" and "Ambiguous deletions" is the record's full `text`. Replace each
+line break with a space, and escape each `|` as `\|`.
+
+Every deleted record counts in "Files touched", a removed note and an ambiguous deletion
+too. A record that covers more than one line counts as one deletion. The last line is the
+reply contract. It restates the total and says that the changes are unstaged. If the total
+is zero, the last line reads "Deleted 0 comments. Nothing changed." This also applies when
+every comment was kept.
 
 ## Worked example
 
@@ -273,8 +325,11 @@ export function total(items: Item[]): number {
   // ===== totals =====
   // loop over the items and add the prices
   let sum = 0;
+  // item.price is in cents already, because toItem multiplies the API value by 100.
   for (const item of items) sum += item.price; // add price
   // const tax = sum * 0.19;
+  // applyCoupon must run before the cap.
+  sum = applyCoupon(sum);
   // The payment provider rejects amounts above 99999999 cents.
   return Math.min(sum, 99999999);
 }
@@ -289,17 +344,19 @@ The added lines of `scripts/build.sh`:
 npm run build
 ```
 
-The classifier returns eight records:
+The classifier returns ten records:
 
 | Location | Category | Action |
 | --- | --- | --- |
 | `src/cart.ts:1` | `license-header` | Keep |
 | `src/cart.ts:2` | `doc-comment` | Keep |
 | `src/cart.ts:4-5` | `needs-judgment` | Delete: a banner and narration |
-| `src/cart.ts:7` | `needs-judgment`, with `code` | Strip ` // add price`: narration |
-| `src/cart.ts:8` | `commented-out-code` | Delete |
-| `src/cart.ts:9` | `needs-judgment` | Keep: a vendor constraint |
-| `src/cart.ts:12` | `suppression`, rule `@typescript-eslint/no-explicit-any` | Leave in place |
+| `src/cart.ts:7` | `needs-judgment` | Keep, with a reshape flag: a surprise in our own code |
+| `src/cart.ts:8` | `needs-judgment`, with `code` | Strip ` // add price`: narration |
+| `src/cart.ts:9` | `commented-out-code` | Delete |
+| `src/cart.ts:10` | `needs-judgment` | Delete, ambiguous: it names an order but no cause |
+| `src/cart.ts:12` | `needs-judgment` | Keep: a vendor constraint |
+| `src/cart.ts:15` | `suppression`, rule `@typescript-eslint/no-explicit-any` | Leave in place |
 | `scripts/build.sh:1` | `needs-judgment` | Delete: a TODO note |
 
 The classifier joins lines 4 and 5 into one record, because they are adjacent whole-line
@@ -311,7 +368,9 @@ comments. That record removes two lines but counts as one deletion. After the ed
 /** Returns the cart total in cents. */
 export function total(items: Item[]): number {
   let sum = 0;
+  // item.price is in cents already, because toItem multiplies the API value by 100.
   for (const item of items) sum += item.price;
+  sum = applyCoupon(sum);
   // The payment provider rejects amounts above 99999999 cents.
   return Math.min(sum, 99999999);
 }
@@ -330,7 +389,7 @@ Scope: added lines since `origin/main` at `3f9c2a1`
 
 | File | Deleted |
 | --- | --- |
-| `src/cart.ts` | 3 |
+| `src/cart.ts` | 4 |
 | `scripts/build.sh` | 1 |
 
 ### Kept
@@ -339,13 +398,32 @@ Scope: added lines since `origin/main` at `3f9c2a1`
 | --- | --- |
 | `src/cart.ts:1` | license header |
 | `src/cart.ts:2` | doc comment |
-| `src/cart.ts:9` | the payment provider caps the amount |
+| `src/cart.ts:7` | toItem stores the price in cents |
+| `src/cart.ts:12` | the payment provider caps the amount |
+
+### Reshape flags
+
+| Location | Symbol | Proposal |
+| --- | --- | --- |
+| `src/cart.ts:7` | `Item.price` | Rename the field to `priceInCents` |
 
 ### Suppressions
 
 | Location | Rule |
 | --- | --- |
-| `src/cart.ts:12` | `@typescript-eslint/no-explicit-any` |
+| `src/cart.ts:15` | `@typescript-eslint/no-explicit-any` |
 
-Deleted 4 comments in 2 files. The changes are unstaged.
+### Removed notes
+
+| Location | Text |
+| --- | --- |
+| `scripts/build.sh:1` | `# TODO: cache this step` |
+
+### Ambiguous deletions
+
+| Location | Text |
+| --- | --- |
+| `src/cart.ts:10` | `// applyCoupon must run before the cap.` |
+
+Deleted 5 comments in 2 files. The changes are unstaged.
 ```

@@ -6,9 +6,10 @@ Daily code work.
 
 - [sweep-comments](./sweep-comments/SKILL.md) — delete disallowed comments from the lines
   the current branch added, keeping doc comments, license headers, formatter directives,
-  and comments that explain a why the code cannot state. `--base` names another base
-  branch, `--widen` sweeps whole touched files, and a file list replaces the diff. Runs in
-  a forked subagent. Never edits code, stages, or commits.
+  and comments that explain a why the code cannot state. Flags a kept why about our own
+  code for a reshape, and lists removed TODO notes and ambiguous deletions. `--base` names
+  another base branch, `--widen` sweeps whole touched files, and a file list replaces the
+  diff. Runs in a forked subagent. Never edits code, stages, or commits.
 
 **Also auto-invocable**
 
