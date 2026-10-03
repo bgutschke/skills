@@ -1,3 +1,21 @@
+# [1.31.0](https://github.com/bgutschke/skills/compare/v1.30.0...v1.31.0) (2026-10-03)
+
+
+### Bug Fixes
+
+* **sweep-comments:** keep a why that sits next to a todo note ([3257fbd](https://github.com/bgutschke/skills/commit/3257fbd3c878790e38688cc7214eb68a6d356c44)), closes [#198](https://github.com/bgutschke/skills/issues/198)
+* **sweep-comments:** pass whole paths to the classifier ([9b8289b](https://github.com/bgutschke/skills/commit/9b8289b6e59c671d596013f570c41d5fd5a7f423))
+* **sweep-comments:** skip binary files in the classifier ([a9979ce](https://github.com/bgutschke/skills/commit/a9979ceb3adfc247540d2340e4623227cf398819))
+* **sweep-comments:** split commented-out code from adjacent prose ([bed6542](https://github.com/bgutschke/skills/commit/bed654206131d860428eb2d0f2210a5049db410f))
+
+
+### Features
+
+* **sweep-comments:** add base, widen, and file-list scope flags ([7bd4650](https://github.com/bgutschke/skills/commit/7bd46502c581489a7b57e41d4943351c97f2ec6a)), closes [#196](https://github.com/bgutschke/skills/issues/196)
+* **sweep-comments:** add reshape flags, removed notes, and ambiguity ([d7db440](https://github.com/bgutschke/skills/commit/d7db440b248081634f7c097e29426d514dd3bd93)), closes [#197](https://github.com/bgutschke/skills/issues/197)
+* **sweep-comments:** add the comment classifier and its cli ([1598bd1](https://github.com/bgutschke/skills/commit/1598bd1294e141f0c09e646f28d1dfb018ed3aaa)), closes [#194](https://github.com/bgutschke/skills/issues/194)
+* **sweep-comments:** add the minimal end-to-end sweep skill ([c32313c](https://github.com/bgutschke/skills/commit/c32313ce25fc2765d0285890bc66dff548cb3386)), closes [#195](https://github.com/bgutschke/skills/issues/195)
+
 # [1.30.0](https://github.com/bgutschke/skills/compare/v1.29.0...v1.30.0) (2026-10-03)
 
 
