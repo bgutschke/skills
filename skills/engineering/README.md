@@ -2,6 +2,13 @@
 
 Daily code work.
 
+**Manual-only**
+
+- [sweep-comments](./sweep-comments/SKILL.md) — delete disallowed comments from the lines
+  the current branch added, keeping doc comments, license headers, formatter directives,
+  and comments that explain a why the code cannot state. Runs in a forked subagent. Never
+  edits code, stages, or commits.
+
 **Also auto-invocable**
 
 - [draft-commit-message](./draft-commit-message/SKILL.md) — draft a Conventional Commits

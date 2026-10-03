@@ -16,6 +16,7 @@
   "skills": [
     "./skills/engineering/draft-commit-message",
     "./skills/engineering/repo-catchup",
+    "./skills/engineering/sweep-comments",
     "./skills/engineering/to-pr",
     "./skills/engineering/why",
     "./skills/productivity/audit-rules",
