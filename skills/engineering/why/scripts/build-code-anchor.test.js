@@ -1,8 +1,12 @@
+// @ts-check
+const { describe, expect, it } = require('@jest/globals');
 const { buildCodeAnchor } = require('./build-code-anchor');
 
 /**
  * Renders one commit the way `git log --follow --name-status` prints it with
  * the wrapper's own format string.
+ *
+ * @param {{ hash: string, date?: string, subject: string, body?: string, changes?: string[][] }} commit
  */
 function logRecord({ hash, date = '2026-01-01T10:00:00+00:00', subject, body = '', changes = [['M', 'src/limits.js']] }) {
   const status = changes.map((change) => change.join('\t')).join('\n');
@@ -12,6 +16,8 @@ function logRecord({ hash, date = '2026-01-01T10:00:00+00:00', subject, body = '
 /**
  * Renders blamed lines the way `git blame --porcelain` prints them: the full
  * header only at the first line a commit owns, the bare hash line after that.
+ *
+ * @param {{ hash: string, line: number, time?: number, summary?: string, content: string }[]} lines
  */
 function blamePorcelain(lines) {
   const seen = new Set();
