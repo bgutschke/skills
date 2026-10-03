@@ -5,14 +5,15 @@ context: fork
 agent: general-purpose
 model: sonnet
 background: false
-description: "Deletes disallowed comments from the lines that the current branch added, compared with the repository's default branch, including the working tree. A bundled classifier sorts every comment into a category. The sweep keeps doc comments, license headers, formatter directives, and comments that explain a why the code cannot state. It leaves lint and type suppressions in place and lists them. It deletes narration, banners, commented-out code, TODO notes, and justifications with no keep reason. It edits no code, and never stages or commits. Returns a report with a deletion count per file, each kept comment with its reason, and each suppression. Invoked by the user only, with /sweep-comments."
+argument-hint: "[--base <branch>] [--widen] [<file>...]"
+description: "Deletes disallowed comments from the lines that the current branch added, compared with the repository's default branch, including the working tree. --base names another base branch. --widen sweeps the full content of each touched file. A list of files replaces the diff. A bundled classifier sorts every comment into a category. The sweep keeps doc comments, license headers, formatter directives, and comments that explain a why the code cannot state. It leaves lint and type suppressions in place and lists them. It deletes narration, banners, commented-out code, TODO notes, and justifications with no keep reason. It edits no code, and never stages or commits. Returns a report with a deletion count per file, each kept comment with its reason, and each suppression. Invoked by the user only, with /sweep-comments."
 ---
 
 # sweep-comments
 
-Look at every comment on the lines that this branch added. If the comment is not on the
-keep list, delete it. You run as a forked subagent. You do not see the conversation that
-started you. This file is your full brief.
+Look at every comment in scope. By default, the scope is the lines that this branch added.
+If a comment is not on the keep list, delete it. You run as a forked subagent. You do not
+see the conversation that started you. This file is your full brief.
 
 You change comments only. You do not edit code, run a formatter, stage, or commit. The
 developer reviews the working-tree diff and commits.
@@ -28,6 +29,30 @@ developer reviews the working-tree diff and commits.
 - The user wants lint or type suppressions removed. The sweep never deletes a suppression.
 - The user wants the code reshaped so that a comment is no longer necessary. The sweep
   changes no code.
+
+## Arguments
+
+The arguments for this run are: `$ARGUMENTS`
+
+The grammar is `[--base <branch>] [--widen] [<file>...]`. Every part is optional:
+
+- `<file>...`: one or more file paths, relative to the current directory. The full content
+  of each file is in scope. The diff is not read.
+- `--base <branch>`: compare with this branch, not with the default branch.
+- `--widen`: put the full content of each file that the diff touches in scope, not only
+  the added lines.
+
+Resolve the scope in this order:
+
+1. If one or more file paths are present, the scope is those files. Ignore `--base` and
+   `--widen`.
+2. Otherwise, the base is the `--base` branch. If there is no `--base`, the base is the
+   repository's default branch.
+3. If `--widen` is present, the scope is the full content of each file that the diff from
+   the base touches. Otherwise, the scope is only the added lines of that diff.
+
+If an argument starts with `--` and is not `--base` or `--widen`, reply with the grammar
+and stop. If `--base` has no branch after it, do the same.
 
 ## Dependencies
 
@@ -60,12 +85,24 @@ A lint or type suppression, for example `eslint-disable-next-line` or `@ts-expec
 is not on the keep list. Do not delete it. A suppression changes build behavior, so its
 removal is the developer's decision. List it in the report.
 
-## Step 1: Find the base
+## Step 1: Resolve the scope
 
 Run `git rev-parse --is-inside-work-tree`. If it fails, reply that the directory is not a
 git repository and stop.
 
-Find the default branch:
+If the arguments name files, make sure that each path is a file. Use `test -f <path>`. If
+one is not a file, reply with its path and stop. Then go to Step 2.
+
+For the other two scopes, run every later command from the repository root. The root is
+the directory that `git rev-parse --show-toplevel` prints.
+
+If the arguments have `--base <branch>`, find the ref:
+
+1. Use the first of `<branch>` and `origin/<branch>` that
+   `git rev-parse --verify --quiet <ref>^{commit}` accepts.
+2. If neither resolves, reply that the base branch `<branch>` was not found and stop.
+
+Otherwise, find the default branch:
 
 1. Run `git symbolic-ref --quiet --short refs/remotes/origin/HEAD`. If it prints a ref,
    for example `origin/main`, use that ref.
@@ -73,11 +110,22 @@ Find the default branch:
    Use the first one that `git rev-parse --verify --quiet <ref>` accepts.
 3. If no ref resolves, reply that the default branch was not found and stop.
 
-Run `git merge-base <ref> HEAD` and keep the result as `<base>`.
+Run `git merge-base <ref> HEAD` and keep the result as `<base>`. The diff starts at this
+merge base, not at the tip of `<ref>`. Thus commits that landed on `<ref>` later are not in
+scope.
 
 ## Step 2: Classify
 
-Run the classifier on the diff from `<base>` to the working tree:
+Run the classifier for the scope from Step 1.
+
+**A list of files.** Pass the paths as arguments, exactly as the user wrote them:
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js" <file>...
+```
+
+**Added lines, the default.** Run the classifier on the diff from `<base>` to the working
+tree:
 
 ```bash
 git diff --no-color --no-ext-diff <base> | node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js"
@@ -91,16 +139,28 @@ not empty, pass the paths to the classifier as arguments:
 node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js" <path>...
 ```
 
-Each command prints a JSON array of records. A record has these fields:
+**Widened.** List the touched files that still exist, and the untracked files:
 
-- `file`: the path, relative to the repository root
+```bash
+git diff --name-only --diff-filter=d <base>
+git ls-files --others --exclude-standard
+```
+
+If the combined list is not empty, pass every path to the classifier as arguments, as for
+a list of files. A comment on a line that the branch did not change is then in scope too.
+
+Each command prints a JSON array of records. A binary file yields no records. A record has
+these fields:
+
+- `file`: the path, relative to the repository root. For a list of files, the path as the
+  user wrote it.
 - `startLine` and `endLine`: line numbers in the working-tree file
 - `text`: the full comment text, with its markers
 - `category`: one of the six categories below
 - `rule`: on a suppression only, the rule it names, or `null`
 - `code`: present only when code shares a line with the comment
 
-If both arrays are empty, go to Step 5 and report zero deletions.
+If every array is empty, go to Step 5 and report zero deletions.
 
 ## Step 3: Decide each record
 
@@ -141,7 +201,8 @@ Edit each file with exact string replacement. Change no character outside the co
 - **Multi-line block.** Remove the whole block, from its opener to its closer. If the
   block's lines hold no code, remove the lines.
 
-Read each file before you edit it. Line numbers in a record match the file before any
+Resolve each `file` against the directory that the classifier ran in. Read each file
+before you edit it. Line numbers in a record match the file before any
 edit, so delete from the bottom of a file to the top.
 
 Do not run a formatter, a linter, `git add`, `git commit`, or `git stash`.
@@ -153,7 +214,7 @@ Return this report as your final message, and nothing else:
 ```markdown
 ## Comment sweep
 
-Base: `<ref>` at `<short base hash>`
+Scope: <scope line>
 
 ### Files touched
 
@@ -175,6 +236,17 @@ Base: `<ref>` at `<short base hash>`
 
 Deleted <total> comments in <file count> files. The changes are unstaged.
 ```
+
+The scope line is one of these, for added lines, widened, and a list of files:
+
+```text
+added lines since `<ref>` at `<short base hash>`
+full content of touched files since `<ref>` at `<short base hash>`
+<count> files named in the arguments
+```
+
+If the arguments name files and also have `--base` or `--widen`, add "(`--base` and
+`--widen` ignored)" to the end of the scope line.
 
 If a section has no rows, write "None." under its heading. A record that covers more
 than one line counts as one deletion. The last line is the reply contract. It
@@ -245,7 +317,7 @@ The report:
 ```markdown
 ## Comment sweep
 
-Base: `origin/main` at `3f9c2a1`
+Scope: added lines since `origin/main` at `3f9c2a1`
 
 ### Files touched
 
