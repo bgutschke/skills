@@ -134,6 +134,31 @@ describe('buildCoverageMap', () => {
     }
   });
 
+  it('does not count the skills of a plugin whose only servers need authentication', () => {
+    const map = buildCoverageMap(['mcp__plugin_sentry_sentry__authenticate', 'sentry:sentry-debug-issue'], SOURCES);
+
+    expect(rowFor(map, 'error-tracking')).toEqual({
+      category: 'error-tracking',
+      label: 'Error tracking',
+      available: false,
+      sources: [],
+      reason: 'plugin_sentry_sentry, sentry need authentication',
+    });
+  });
+
+  it('counts the skills of a plugin that has a usable server', () => {
+    const map = buildCoverageMap(
+      [
+        'mcp__plugin_sentry_sentry__authenticate',
+        'mcp__plugin_sentry_sentry__search_issues',
+        'sentry:sentry-debug-issue',
+      ],
+      SOURCES,
+    );
+
+    expect(rowFor(map, 'error-tracking')).toMatchObject({ available: true, sources: ['plugin_sentry_sentry', 'sentry'] });
+  });
+
   it('counts the skills of one plugin once, under the plugin name', () => {
     const map = buildCoverageMap(['sentry:sentry-debug-issue', 'sentry:sentry-get-started'], SOURCES);
 

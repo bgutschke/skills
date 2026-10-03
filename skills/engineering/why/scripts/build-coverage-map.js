@@ -3,6 +3,7 @@
 const MCP_TOOL_RE = /^mcp__(.+?)__/;
 const AUTH_TOOL_RE = /^mcp__.+?__(?:authenticate|complete_authentication)$/;
 const TOKEN_SEPARATOR_RE = /[^a-z0-9]+/;
+const PLUGIN_SERVER_RE = /^plugin_([^_]+)_/;
 
 const NO_TOOL_REASON = 'no tool for this category in the session';
 
@@ -35,7 +36,8 @@ const CATEGORIES = [
  * map a `why` run reports from: one row per evidence category, in fixed
  * order, plus the MCP servers that match no category. Source control and
  * repository documents are always available. A server that shows only its
- * authentication tools does not make its category available.
+ * authentication tools does not make its category available, and neither do
+ * the skills of a plugin whose servers all show only those tools.
  *
  * @param {string[]} names
  * @param {SourcePattern[]} patterns
@@ -43,7 +45,7 @@ const CATEGORIES = [
  */
 function buildCoverageMap(names, patterns) {
   const sources = unique(names.map(sourceName));
-  const usable = new Set(names.filter((name) => !AUTH_TOOL_RE.test(name)).map(sourceName));
+  const usable = usableSources(names);
   const servers = unique(names.filter((name) => MCP_TOOL_RE.test(name)).map(sourceName));
 
   return {
@@ -55,6 +57,36 @@ function buildCoverageMap(names, patterns) {
     }),
     unclassified: servers.filter((server) => categoriesOf(server, patterns).length === 0),
   };
+}
+
+/**
+ * Names the sources a session can search. A plugin skill reaches its data
+ * through the plugin's own servers, so a plugin that ships servers, none of
+ * them past authentication, has no usable skill either. A plugin with no
+ * server keeps its skills, because those reach their data another way.
+ *
+ * @param {string[]} names
+ * @returns {Set<string>}
+ */
+function usableSources(names) {
+  const tools = names.filter((name) => MCP_TOOL_RE.test(name));
+  const usableTools = tools.filter((name) => !AUTH_TOOL_RE.test(name));
+  const pluginsWithUsableServers = new Set(usableTools.map(pluginOf));
+  const lockedPlugins = new Set(tools.map(pluginOf).filter((plugin) => !pluginsWithUsableServers.has(plugin)));
+  const usableSkills = names.filter((name) => !MCP_TOOL_RE.test(name) && !lockedPlugins.has(sourceName(name)));
+
+  return new Set([...usableTools, ...usableSkills].map(sourceName));
+}
+
+/**
+ * Names the plugin that ships an MCP tool's server, read from the
+ * `plugin_<plugin>_<server>` shape. A server outside any plugin has none.
+ *
+ * @param {string} name
+ * @returns {string | undefined}
+ */
+function pluginOf(name) {
+  return sourceName(name).match(PLUGIN_SERVER_RE)?.[1];
 }
 
 /**
