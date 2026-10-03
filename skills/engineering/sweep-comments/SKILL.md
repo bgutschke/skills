@@ -42,6 +42,8 @@ The grammar is `[--base <branch>] [--widen] [<file>...]`. Every part is optional
 - `--widen`: put the full content of each file that the diff touches in scope, not only
   the added lines.
 
+A file path that starts with `--` reads as a flag, so the grammar cannot name it.
+
 Resolve the scope in this order:
 
 1. If one or more file paths are present, the scope is those files. Ignore `--base` and
@@ -88,7 +90,8 @@ removal is the developer's decision. List it in the report.
 ## Step 1: Resolve the scope
 
 Run `git rev-parse --is-inside-work-tree`. If it fails, reply that the directory is not a
-git repository and stop.
+git repository and stop. This check applies to every scope, a list of files too. The
+developer reviews the deletions as a git diff.
 
 If the arguments name files, make sure that each path is a file. Use `test -f <path>`. If
 one is not a file, reply with its path and stop. Then go to Step 2.
@@ -132,24 +135,28 @@ git diff --no-color --no-ext-diff <base> | node "${CLAUDE_SKILL_DIR}/scripts/cla
 ```
 
 `git diff` does not show untracked files. Every line of an untracked file is an added
-line. List untracked files with `git ls-files --others --exclude-standard`. If the list is
-not empty, pass the paths to the classifier as arguments:
+line. Pass the untracked files to the classifier as arguments:
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js" <path>...
+git ls-files -z --others --exclude-standard \
+  | xargs -0 -r node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js"
 ```
 
-**Widened.** List the touched files that still exist, and the untracked files:
+**Widened.** Pass the touched files that still exist, and the untracked files, to the
+classifier as arguments:
 
 ```bash
-git diff --name-only --diff-filter=d <base>
-git ls-files --others --exclude-standard
+{ git diff -z --name-only --diff-filter=d <base>; git ls-files -z --others --exclude-standard; } \
+  | xargs -0 -r node "${CLAUDE_SKILL_DIR}/scripts/classify-comments-cli.js"
 ```
 
-If the combined list is not empty, pass every path to the classifier as arguments, as for
-a list of files. A comment on a line that the branch did not change is then in scope too.
+A comment on a line that the branch did not change is then in scope too.
 
-Each command prints a JSON array of records. A binary file yields no records. A record has
+Keep the `-z` and `-0` flags. They pass each path whole, also with a space or a non-ASCII
+character in it. If there are no paths, `-r` runs nothing.
+
+Each command prints a JSON array of records. A long path list can print more than one
+array. A binary file yields no records. A record has
 these fields:
 
 - `file`: the path, relative to the repository root. For a list of files, the path as the
