@@ -119,7 +119,7 @@ describe('buildCodeAnchor', () => {
     const log = logRecord({
       hash: 'a1',
       subject: 'fix: PAY-118 hash with SHA-256',
-      body: 'Encode as UTF-8 over TLS-1.3, per ECMA-262. Patches CVE-2021-44228.',
+      body: 'Encode as UTF-8 over TLS-1.3, per ECMA-262, tag it as BCP-47. Patches CVE-2021-44228.',
     });
 
     expect(buildCodeAnchor({ log }).tickets).toEqual(['PAY-118']);
