@@ -40,6 +40,10 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
     repository's commits over a date range as a one-line summary plus a
     Date/Owner/Ref/Description table, dropping bot and merge commits. Runs `git log`
     inside a delegated subagent.
+  - [sweep-comments](./skills/engineering/sweep-comments/SKILL.md) — delete disallowed
+    comments from the lines the current branch added, keeping doc comments, license
+    headers, formatter directives, and comments that explain a why the code cannot state.
+    Never edits code, stages, or commits.
   - [to-pr](./skills/engineering/to-pr/SKILL.md) — open a new PR (draft by default) from
     the current branch, or fill in an already-open PR's description from the repo's own
     PR template.
