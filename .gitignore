@@ -2,3 +2,4 @@ node_modules
 .claude/*
 !.claude/skills/
 .worktrees
+docs/research/
