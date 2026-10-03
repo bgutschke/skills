@@ -37,6 +37,7 @@ describe('buildCodeAnchor', () => {
       lines: null,
       commits: [],
       pullRequests: [],
+      blamedPullRequests: [],
       tickets: [],
       symbols: [],
     });
@@ -108,6 +109,22 @@ describe('buildCodeAnchor', () => {
     expect(buildCodeAnchor({ log }).tickets).toEqual(['PAY-118', 'OPS-7']);
   });
 
+  it('does not read a standard or algorithm name as a ticket identifier', () => {
+    const log = logRecord({
+      hash: 'a1',
+      subject: 'fix: PAY-118 hash with SHA-256',
+      body: 'Encode as UTF-8 over TLS-1.3, per ECMA-262. Patches CVE-2021-44228.',
+    });
+
+    expect(buildCodeAnchor({ log }).tickets).toEqual(['PAY-118']);
+  });
+
+  it('keeps a ticket whose project key is also a common acronym', () => {
+    const log = logRecord({ hash: 'a1', subject: 'fix: RFC-42 and ISO-7 date parsing' });
+
+    expect(buildCodeAnchor({ log }).tickets).toEqual(['RFC-42', 'ISO-7']);
+  });
+
   it('lists each commit of a blame range once, even when it owns several lines', () => {
     const blame = blamePorcelain([
       { hash: HASH_B, line: 10, time: 1767348000, summary: 'fix: clamp page size (#42)', content: 'const MAX_PAGE = 100;' },
@@ -137,6 +154,18 @@ describe('buildCodeAnchor', () => {
       { hash: HASH_B, date: '2026-01-02T11:00:00+01:00', subject: 'fix: clamp page size (#42)', blamed: true },
       { hash: HASH_A, date: '2026-01-01T11:00:00+01:00', subject: 'feat: add paging', blamed: false },
     ]);
+  });
+
+  it('lists apart the pull requests of the commits that own the target lines', () => {
+    const log =
+      logRecord({ hash: HASH_B, date: '2026-01-02T11:00:00+01:00', subject: 'fix: clamp page size (#42)' }) +
+      logRecord({ hash: HASH_A, date: '2026-01-01T11:00:00+01:00', subject: 'feat: add paging (#7)' });
+    const blame = blamePorcelain([{ hash: HASH_B, line: 10, summary: 'fix: clamp page size (#42)', content: 'const MAX_PAGE = 100;' }]);
+
+    const anchor = buildCodeAnchor({ log, blame });
+
+    expect(anchor.pullRequests).toEqual([42, 7]);
+    expect(anchor.blamedPullRequests).toEqual([42]);
   });
 
   it('leaves uncommitted lines out of the commit list', () => {

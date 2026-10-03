@@ -4,7 +4,8 @@ const RECORD_SEPARATOR = '\x1e';
 const FIELD_SEPARATOR = '\x1f';
 const LOG_FORMAT = '%x1e%H%x1f%aI%x1f%s%x1f%b%x1f';
 const PULL_REQUEST_RE = /\(#(\d+)\)|^Merge pull request #(\d+)\b/g;
-const TICKET_RE = /\b[A-Z][A-Z0-9]+-\d+\b/g;
+const TICKET_RE = /\b([A-Z][A-Z0-9]+)-\d+\b/g;
+const STANDARD_PREFIXES = new Set(['AES', 'CVE', 'ECMA', 'IEEE', 'RSA', 'SHA', 'TLS', 'UTF']);
 const BLAME_HEADER_RE = /^([0-9a-f]{40}) \d+ \d+/;
 const UNCOMMITTED_HASH = '0'.repeat(40);
 const DECLARATION_RE = /\b(?:function|class|const|let|var|def|func|fn|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g;
@@ -19,6 +20,7 @@ const DECLARATION_RE = /\b(?:function|class|const|let|var|def|func|fn|interface|
  *   lines: LineRange | null,
  *   commits: AnchorCommit[],
  *   pullRequests: number[],
+ *   blamedPullRequests: number[],
  *   tickets: string[],
  *   symbols: string[],
  * }} CodeAnchor
@@ -59,6 +61,9 @@ function buildCodeAnchor({ log = '', blame = '', lines = null, pullRequestBodies
     lines,
     commits,
     pullRequests: unique(commits.flatMap(({ subject }) => findPullRequestNumbers(subject))),
+    blamedPullRequests: unique(
+      commits.filter(({ blamed }) => blamed).flatMap(({ subject }) => findPullRequestNumbers(subject)),
+    ),
     tickets: unique(ticketSources.flatMap(findTickets)),
     symbols: unique(findDeclaredSymbols(blame)),
   };
@@ -158,11 +163,19 @@ function findPullRequestNumbers(subject) {
 }
 
 /**
+ * Reads ticket keys such as `PAY-118`. Standard and algorithm names such as
+ * `UTF-8` or `SHA-256` share that shape, so their prefixes never count as a
+ * ticket project. `RFC` and `ISO` stay out of that list, because teams use
+ * them as real project keys, and a lost ticket costs more than one wasted
+ * lookup.
+ *
  * @param {string} text
  * @returns {string[]}
  */
 function findTickets(text) {
-  return [...text.matchAll(TICKET_RE)].map((match) => match[0]);
+  return [...text.matchAll(TICKET_RE)]
+    .filter((match) => !STANDARD_PREFIXES.has(match[1]))
+    .map((match) => match[0]);
 }
 
 /**
