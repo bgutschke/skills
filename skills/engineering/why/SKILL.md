@@ -1,7 +1,7 @@
 ---
 name: why
 argument-hint: "[<path>[:<start>-<end>] | <symbol> | \"<quoted decision>\"]"
-description: "Answers why a piece of code has its shape, from evidence in every source the session reaches: commits and pull requests, tickets, design documents, team chat, monitoring, error reports, and the repository's own decision records. Sorts every claim into a confidence tier (Direct, Supported, Inferred, Speculative, Unknown), cites each source, and lists every search it ran, including the empty ones. Reads git history and every other source inside subagents, so a long history never floods the conversation. Takes a file path with an optional line range, a symbol, or a quoted decision, or reads the target from the conversation. Use when the user types /why. Also use for a plain-language question about why code is the way it is, its rationale, what forces shaped it, or the history behind it. Example requests: \"why do we clamp this to 100\", \"what is the rationale for this retry\", \"history behind this flag\". Do not use for how code works or what code does."
+description: "Answers why a piece of code has its shape, from evidence in every source the session reaches: commits and pull requests, tickets, design documents, team chat, monitoring, error reports, and the repository's own decision records. Sorts every claim into a confidence tier (Direct, Supported, Inferred, Speculative, Unknown), cites each source, and lists every search it ran, including the empty ones. Takes a file path with an optional line range, a symbol, or a quoted decision, or reads the target from the conversation. Use when the user types /why. Also use for a plain-language question about why code is the way it is, its rationale, what forces shaped it, or the history behind it. Example requests: \"why do we clamp this to 100\", \"what is the rationale for this retry\", \"history behind this flag\". Do not use for how code works or what code does."
 ---
 
 # why
@@ -10,7 +10,11 @@ Answer "why is this code like this" with evidence, never with a guess. The skill
 the question in commits and pull requests. It maps which evidence categories the session
 can reach, and runs one investigator per reachable category in parallel. A synthesizer
 sorts every claim into a confidence tier. The reply cites each source and names every
-search, including the ones that found nothing and the categories it could not reach.
+search, including the ones that found nothing and the categories out of its reach.
+
+The five confidence tiers and the fixed reply structure come from the `why` skill in the
+pstack plugin for Cursor, MIT licensed. `references/confidence-tiers.md` holds the full
+credit.
 
 ## When to use
 
@@ -50,10 +54,10 @@ from the user's message instead. It takes one of three forms:
 - A symbol name: `clampPageSize`.
 - A quoted decision: `"we retry three times"`.
 
-With no target in either place, read the target from the conversation: the file, symbol, or decision
-the user discussed last. State your reading in one sentence before you continue, for
-example "Reading this as: why `clampPageSize` in `src/pager.js` caps at 100." The user can
-then redirect you early.
+With no target in either place, read the target from the conversation: the file, symbol,
+or decision the user discussed last. State your reading in one sentence before you
+continue, for example "Reading this as: why `clampPageSize` in `src/pager.js` caps at
+100." The user can then redirect you early.
 
 Keep the user's question word for word. If the question holds a hypothesis, for example
 "is this here because of the old API?", note it. It goes to the synthesizer as one
@@ -64,8 +68,8 @@ Note whether a change to the target is planned. Two signals count:
 - The user says so, for example "I want to raise this to 500".
 - The conversation shows one, for example an open edit or refactor of the target.
 
-A why question alone is not a planned change. If a change is planned, the reply ends with the
-"Before you change it" section. See Step 5.
+A why question alone is not a planned change. If a change is planned, the reply ends with
+the "Before you change it" section. See Step 5.
 
 ## Step 2: Build the code anchor
 
@@ -129,8 +133,7 @@ NAMES
 
 The script prints `{ rows, unclassified }`. Each row has `category`, `label`, `available`,
 `sources`, and, when not available, a `reason`. `unclassified` lists the MCP servers that
-match no category. The table that maps names to categories is
-`scripts/evidence-sources.json`. A new server is one row in that file.
+match no category.
 
 ### The rare path: answer inline
 
@@ -152,9 +155,9 @@ nothing beyond the body. If you cannot say this for a row, go to Step 4.
 
 Then write the reply yourself, in the Step 5 structure. Use the tier rules from
 `${CLAUDE_SKILL_DIR}/references/confidence-tiers.md`. If a change is planned, end with
-"Before you change it", as Step 5 defines it. In Sources consulted, the source control line names
-`gh pr view <n>`. Each other available row reads "skipped, redundant: the body of #<n>
-answers in full". Each row that is not available keeps its reason.
+"Before you change it", as Step 5 defines it. In Sources consulted, the source control
+line names `gh pr view <n>`. Each other available row reads "skipped, redundant: the
+body of #<n> answers in full". Each row that is not available keeps its reason.
 
 ## Step 4: Investigate
 
@@ -162,15 +165,11 @@ Spawn one investigator per available row of the coverage map. Send every Agent c
 single message, so they run in parallel. Each investigator gets the anchor, the question,
 its one category, and the brief for that category below. Investigators write nothing.
 
-Skip an available category only for one of these two reasons, and write the reason down.
-It goes into Sources consulted.
-
-- No tool for the category exists in the session. The map already reports this as not
-  available.
-- The source is provably irrelevant to the target. Example: error tracking for a
-  build-time script that never runs in production.
-
-"Probably irrelevant" is not a reason. When in doubt, investigate.
+Skip an available category only when its source is provably irrelevant to the target.
+Example: error tracking for a build-time script that never runs in production. Write the
+reason down. It goes into Sources consulted. "Probably irrelevant" is not a reason. When
+in doubt, investigate. A category with no tool in the session needs no skip, because the
+map already reports it as not available.
 
 Append this block, word for word, to the end of every investigator brief:
 
@@ -335,12 +334,9 @@ inside it.
 
 Do this:
 - Merge findings that cite the same source, also across categories.
-- When two findings disagree, keep both and show them as a pair, each side with its own
-  tier. Put the pair in the section of the higher tier of the two.
 - Give every claim one tier. If you doubt a citation, check it with a read-only command,
   for example `git show <hash>`.
-- Treat the hypothesis in the question as one candidate. Tier it like any other.
-- Never cite the code as evidence of its own intent.
+- Tier the hypothesis in the question like any other candidate.
 
 Write nothing to disk. Return only the reply, in this structure:
 
@@ -389,7 +385,8 @@ are empty. Always keep "What we don't know" and "Sources consulted". If nothing 
 unknown, write "Nothing on the main question."
 
 If no change is planned, leave out "Before you change it". If a change is planned, every
-entry in it must trace back to a claim above it. If one of the four lists has no entry, write "Nothing in the findings."
+entry in it must trace back to a claim above it. If one of the four lists has no entry,
+write "Nothing in the findings."
 ```
 
 ## After the synthesizer returns

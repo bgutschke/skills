@@ -431,3 +431,35 @@ list: deleted files, schema or data migrations, removed public exports, changed 
 keys, and a `!` or `BREAKING CHANGE:` marker in a commit.
 *Avoid*: "risk" or "blast radius" for this — those invite a guess about consequences,
 while a signal is only what the diff itself shows.
+
+### Code archaeology
+
+**Code anchor**:
+The concrete starting point of a `why` or `blast-radius` run: the target's file paths and
+line ranges, its key symbols, the commits that touched it, the pull request numbers in
+those commits, and the ticket identifiers in their subjects and bodies. Built from raw
+`git` and `gh` output by a pure function before any investigator runs.
+*Avoid*: "context" or "seed" — an anchor is a fixed, structured record, not whatever the
+conversation happens to hold.
+
+**Evidence category**:
+One of a fixed set of places a why can be written down: source control, issue tracker,
+long-form documents, team chat, infrastructure observability, error tracking, and
+repository documents. Each category gets at most one investigator per run.
+*Avoid*: naming the tool ("the Jira investigator") — one server can back more than one
+category, and the category is what the report lists.
+
+**Coverage map**:
+The per-run table with one row per *Evidence category*, stating which tool backs it or
+that it is not available. The "sources consulted" list in a `why` reply is read off this
+map, so an unreachable category is reported, never silently dropped.
+*Avoid*: treating it as a tool inventory — it is keyed by category, and a server that matches
+no category is listed as unclassified, not as a category of its own.
+
+**Confidence tier**:
+The label every claim in a `why` reply carries, from a closed list: Direct (an author wrote
+the why), Supported (several indirect sources converge), Inferred (one reading of the
+context), Speculative (a guess with thin evidence), and Unknown (searched, found nothing).
+The tier fixes the claim's phrasing and the section it appears in.
+*Avoid*: a numeric score or percentage — tiers are hard stops with fixed wording, not a
+scale; and never let the code itself count as evidence for any tier.
