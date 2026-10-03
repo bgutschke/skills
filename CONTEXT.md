@@ -471,7 +471,8 @@ The closed set of comment kinds `sweep-comments` leaves in place: a doc comment 
 defines a public contract, a comment that explains a why the code cannot state, a license
 or legal header, and a formatter directive. Everything else in scope is deleted.
 *Avoid*: "allowlist" or "exceptions" — and avoid reading a lint or type suppression as a
-keep-list entry; a suppression is never deleted by the sweep, but it is flagged, not kept.
+keep-list entry; a suppression is never deleted by the sweep, but it is listed in the
+report, not kept.
 
 **Reshape flag**:
 A report item naming a symbol whose kept why comment describes a surprise in our own code,
