@@ -1,3 +1,21 @@
+# [1.30.0](https://github.com/bgutschke/skills/compare/v1.29.0...v1.30.0) (2026-10-03)
+
+
+### Bug Fixes
+
+* **why:** anchor a symbol on the lines that decide the asked behavior ([2e3cd5f](https://github.com/bgutschke/skills/commit/2e3cd5fa212cca1b26a3e423acfda7f65642018f))
+* **why:** drop skills of a plugin locked behind authentication ([b5ac030](https://github.com/bgutschke/skills/commit/b5ac0309d57284143f716dc41b12a49879d3348e))
+* **why:** gate the inline path on the blamed commit ([5fdf2f4](https://github.com/bgutschke/skills/commit/5fdf2f40d3ac2c8a704ab5e3a62a67ce350e9d9b)), closes [#192](https://github.com/bgutschke/skills/issues/192) [#193](https://github.com/bgutschke/skills/issues/193)
+* **why:** stop reading BCP-47 as a ticket identifier ([58dfc00](https://github.com/bgutschke/skills/commit/58dfc00de954ead8806c9639b554e5ddcad0d94b))
+
+
+### Features
+
+* **why:** add code anchor builder and its gather cli ([77ff8e1](https://github.com/bgutschke/skills/commit/77ff8e1ec1938e37248b2e03e107157dc00ca14e)), closes [#189](https://github.com/bgutschke/skills/issues/189)
+* **why:** add planning constraints, inline path, and gh fallback ([9c935af](https://github.com/bgutschke/skills/commit/9c935af1dde0876f6cf256674843c46f1f3e2b1a)), closes [#192](https://github.com/bgutschke/skills/issues/192)
+* **why:** answer why code has its shape from source control ([c0dbc9b](https://github.com/bgutschke/skills/commit/c0dbc9bffc79231d9a50b1508d52bd5b31fa76af)), closes [#190](https://github.com/bgutschke/skills/issues/190)
+* **why:** search every evidence category the session reaches ([9232546](https://github.com/bgutschke/skills/commit/923254673900136dd905757ad2ed5b6b6957f246)), closes [#191](https://github.com/bgutschke/skills/issues/191)
+
 # [1.29.0](https://github.com/bgutschke/skills/compare/v1.28.2...v1.29.0) (2026-10-02)
 
 
