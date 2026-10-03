@@ -463,3 +463,19 @@ context), Speculative (a guess with thin evidence), and Unknown (searched, found
 The tier fixes the claim's phrasing and the section it appears in.
 *Avoid*: a numeric score or percentage — tiers are hard stops with fixed wording, not a
 scale; and never let the code itself count as evidence for any tier.
+
+### Comment sweep
+
+**Keep list**:
+The closed set of comment kinds `sweep-comments` leaves in place: a doc comment that
+defines a public contract, a comment that explains a why the code cannot state, a license
+or legal header, and a formatter directive. Everything else in scope is deleted.
+*Avoid*: "allowlist" or "exceptions" — and avoid reading a lint or type suppression as a
+keep-list entry; a suppression is never deleted by the sweep, but it is flagged, not kept.
+
+**Reshape flag**:
+A report item naming a symbol whose kept why comment describes a surprise in our own code,
+with a proposed rename, extraction, or type that would let the code state the why itself.
+The comment stays until the reshape lands.
+*Avoid*: treating the flag as a deletion — a flag never changes code, and the sweep never
+performs the reshape it proposes.
