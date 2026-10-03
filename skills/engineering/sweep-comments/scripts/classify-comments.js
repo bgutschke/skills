@@ -59,7 +59,8 @@ function classifyDiff(diff, syntaxTable) {
 
 /**
  * Classifies every comment in the full content of one file. Content with a NUL byte is
- * binary, as git also decides, and yields no records.
+ * binary, as git also decides, and yields no records. A UTF-16 file has NUL bytes too, so
+ * it is skipped and nothing in it is deleted.
  *
  * @param {string} file the file path, used for the record and the syntax lookup
  * @param {string} content
