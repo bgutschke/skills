@@ -17,8 +17,7 @@ A dependency bump follows the Renovate default (`config:recommended`, preset
 `:semanticPrefixFixDepsChoreOthers`). A bump of a runtime dependency is `fix(deps)`,
 because consumers install it, and the decision question says yes. A bump of any other
 dependency (`devDependencies`, `peerDependencies`) is `chore(deps)`. A change to build or
-test configuration, such as `jest.config.js`, stays `build`. The research behind this
-choice is in `docs/research/dependency-update-commit-types.md`.
+test configuration, such as `jest.config.js`, stays `build`.
 
 ## Considered Options
 
