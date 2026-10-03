@@ -479,3 +479,25 @@ with a proposed rename, extraction, or type that would let the code state the wh
 The comment stays until the reshape lands.
 *Avoid*: treating the flag as a deletion — a flag never changes code, and the sweep never
 performs the reshape it proposes.
+
+### Blast radius
+
+**Blast radius**:
+What a change can break outside its own diff: in a library it calls, a data shape, a
+flag, a downstream hop, or the order things run. The object `blast-radius` investigates.
+*Avoid*: using it for a *Reversibility signal* — that term is only what the diff itself
+shows, while blast radius is a claim about consequences that must be proven, not read off.
+
+**Safety fact**:
+The one fact a change is safe because of, which when true clears most of its risks at
+once. A `blast-radius` writeup names exactly one, states the *Evidence ladder* step it
+reached, and shows the proof or marks it unproven.
+*Avoid*: "assumption" — a safety fact is a candidate for proof by running code, and a
+writeup that only asserts it has not done the job.
+
+**Evidence ladder**:
+The five fixed steps a risk or *Safety fact* can reach: stated, pointed at the line, walked
+the failure path, ran real code that fails loudly when wrong, reproduced in the running
+application. Each claim records its step as a label.
+*Avoid*: a score or a blend of steps — a claim stands on the single step it reached, and
+prose never moves it up.
