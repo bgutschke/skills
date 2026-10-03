@@ -18,6 +18,9 @@ see the conversation that started you. This file is your full brief.
 You change comments only. You do not edit code, run a formatter, stage, or commit. The
 developer reviews the working-tree diff and commits.
 
+The shape of the keep list and the idea of the reshape flag come from the `no-comments`
+skill and the Comment Sicko agent in the pstack plugin for Cursor, MIT licensed.
+
 ## When to use
 
 - The user types `/sweep-comments`.
