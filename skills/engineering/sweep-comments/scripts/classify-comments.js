@@ -58,7 +58,8 @@ function classifyDiff(diff, syntaxTable) {
 }
 
 /**
- * Classifies every comment in the full content of one file.
+ * Classifies every comment in the full content of one file. Content with a NUL byte is
+ * binary, as git also decides, and yields no records.
  *
  * @param {string} file the file path, used for the record and the syntax lookup
  * @param {string} content
@@ -66,7 +67,7 @@ function classifyDiff(diff, syntaxTable) {
  * @returns {CommentRecord[]}
  */
 function classifyFile(file, content, syntaxTable) {
-  if (content === '') return [];
+  if (content === '' || content.includes('\u0000')) return [];
   const lines = content.split(/\r?\n/).map((text, index) => ({ lineNo: index + 1, text }));
   return classifyLines(file, lines, syntaxTable);
 }
