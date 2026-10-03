@@ -99,6 +99,25 @@ describe('classifyFile', () => {
       },
     ]);
   });
+
+  it('splits commented-out code from an adjacent prose comment', () => {
+    const content = [
+      '  // const tax = sum * 0.19;',
+      '  // The payment provider rejects amounts above the cap.',
+      '  return Math.min(sum, cap);',
+    ].join('\n');
+    expect(classifyFile('src/cart.ts', content, SYNTAX)).toEqual([
+      { file: 'src/cart.ts', startLine: 1, endLine: 1, text: '// const tax = sum * 0.19;', category: 'commented-out-code' },
+      {
+        file: 'src/cart.ts',
+        startLine: 2,
+        endLine: 2,
+        text: '// The payment provider rejects amounts above the cap.',
+        category: 'needs-judgment',
+      },
+    ]);
+  });
+
   it('does not read a trailing comment on the first code line as a license header', () => {
     expect(classifyFile('src/index.js', 'const x = 1; // Copyright 2026', SYNTAX)[0].category).toBe('needs-judgment');
   });

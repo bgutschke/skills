@@ -269,7 +269,8 @@ function newComment(lineNo, text, kind, atTop) {
 /**
  * Merges whole-line comments on adjacent lines into one record, so a block written with
  * line markers is judged as one unit. A directive always stands alone, because it acts on
- * the line below it and not on its neighbours.
+ * the line below it and not on its neighbours. Code and prose never join, because a kept
+ * prose comment must not share a record with commented-out code that is deleted.
  *
  * @param {RawComment[]} comments
  * @param {SyntaxRow} syntax
@@ -302,7 +303,17 @@ function canJoin(previous, next, syntax) {
   if (previous.code !== '' || next.code !== '') return false;
   if (next.startLine !== previous.endLine + 1) return false;
   if (isDoc(previous.parts[0], syntax) !== isDoc(next.parts[0], syntax)) return false;
+  if (isCodeComment(previous.parts.at(-1) ?? '', syntax) !== isCodeComment(next.parts[0], syntax)) return false;
   return !isDirective(previous.parts.at(-1) ?? '', syntax) && !isDirective(next.parts[0], syntax);
+}
+
+/**
+ * @param {string} text
+ * @param {SyntaxRow} syntax
+ * @returns {boolean}
+ */
+function isCodeComment(text, syntax) {
+  return isCodeLine(bodyOf(text, syntax));
 }
 
 /**
