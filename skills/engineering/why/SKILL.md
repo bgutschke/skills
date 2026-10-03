@@ -487,6 +487,6 @@ ends with one more section:
 > ## Before you change it
 >
 > - Preserve: the cap at or below the vendor limit. Direct, from #41 and API-88.
-> - Change: nothing in the findings.
-> - Avoid: nothing in the findings.
+> - Change: Nothing in the findings.
+> - Avoid: Nothing in the findings.
 > - Risk: the vendor can lift the limit. Unknown, from "What we don't know".
