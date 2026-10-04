@@ -46,10 +46,11 @@ The script must meet all of these:
 
 - It loads the real code: the library at the version the application ships, and the
   exact function the safety fact names. Never a copy, a stub, or a reimplementation.
-- It prints the version and the path of the library that it loaded, so that you can
-  compare them with the lockfile. When the fact names the repository's own code and no
-  library, it prints the file path and the output of `git rev-parse HEAD`. Compare that
-  commit with `head.commit` in place of the lockfile.
+- It prints the version and the path of each library that it loads, so that you can
+  compare them with the lockfile. When the fact names the repository's own code, it also
+  prints the file path and the output of `git rev-parse HEAD`. When `head` is not null,
+  compare that commit with `head.commit`. When `head` is null, the working tree holds the
+  change, and the file path alone is the check.
 - It calls that function with the input the safety fact names.
 - It exits non-zero, with a message that names the expected and the actual value, when
   the fact does not hold. It exits zero only when the fact holds.
@@ -79,10 +80,10 @@ Bash tool a timeout instead.
 
 Then read the output and decide:
 
-- **Exit 0:** the fact holds. Compare the printed library version with the lockfile, or
-  the printed commit with `head.commit`. If they differ, the script ran other code: the
-  fact is `unproven`. If they match, set the safety fact to `Step: ran real code` and
-  `Status: proven`.
+- **Exit 0:** the fact holds. Compare each printed library version with the lockfile,
+  and the printed commit with `head.commit` when `head` is not null. If one differs, the
+  script ran other code: the fact is `unproven`. If they match, set the safety fact to
+  `Step: ran real code` and `Status: proven`.
 - **Non-zero, and the message shows the fact is false:** the fact is `unproven` and
   keeps its step from Step 5. Add the risk "The safety fact
   does not hold" at `Step: ran real code`, with the script as its check.
