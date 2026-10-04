@@ -498,7 +498,8 @@ writeup that only asserts it has not done the job.
 
 **Evidence ladder**:
 The five fixed steps a risk or *Safety fact* can reach: stated, pointed at the line, walked
-the failure path, ran real code that fails loudly when wrong, reproduced in the running
-application. Each claim records its step as a label.
+the failure path, ran real code, reproduced in the running application. At ran real code, a
+script runs the real code and exits non-zero when the claim is wrong. Each claim records
+its step as a label.
 *Avoid*: a score or a blend of steps — a claim stands on the single step it reached, and
 prose never moves it up.
