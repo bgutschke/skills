@@ -40,8 +40,7 @@ try {
 
 /**
  * Checks whether `gh` is both installed and authenticated. A missing binary
- * and an unauthenticated one both throw, so both fall back to the same
- * commit-only anchor.
+ * and an unauthenticated one both throw, so both count as no `gh`.
  *
  * @returns {boolean}
  */
