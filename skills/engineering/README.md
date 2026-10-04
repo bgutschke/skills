@@ -4,11 +4,12 @@ Daily code work.
 
 **Manual-only**
 
-- [blast-radius](./blast-radius/SKILL.md) — find what the current branch can break outside
-  its own diff. Names the one fact the change is safe because of, looks where a search
-  stops (library source at the pinned version, run order, data shapes, flags, downstream
-  hops), and rates each risk on a five-step evidence ladder. Reads the diff and history
-  inside a subagent. Writes and edits nothing in the repository.
+- [blast-radius](./blast-radius/SKILL.md) — find what a branch, a pull request, or a ref
+  range can break outside its own diff. Names the one fact the change is safe because of,
+  looks where a search stops (library source at the pinned version, run order, data
+  shapes, flags, downstream hops), and rates each risk on a five-step evidence ladder.
+  Reads the diff and history inside a subagent. Edits no tracked file. It can fetch a
+  commit from a fork pull request.
 - [sweep-comments](./sweep-comments/SKILL.md) — delete disallowed comments from the lines
   the current branch added, keeping doc comments, license headers, formatter directives,
   and comments that explain a why the code cannot state. Flags a kept why about our own
