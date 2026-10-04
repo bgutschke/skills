@@ -341,8 +341,8 @@ Keep the directory after the run, so the user can rerun the script.
 
 ## Step 7: Write it up
 
-Write the writeup in this structure, in this order. Drop no section. If a section is
-empty, write "None."
+This template is strict. Always use this exact structure, in this order. Drop no
+section. If a section is empty, write "None."
 
 ```text
 ## What it does
