@@ -38,6 +38,8 @@ const COMMENT_LINE_RE = /^\s*(?:\/\/|\/\*|\*|#|--)/;
  *
  * The commits, pull requests, and tickets come from `buildCodeAnchor`, the
  * same function the `why` skill ships, copied into this bundle unchanged.
+ * A skill cannot load a file from another skill's bundle, because that
+ * skill can be absent. Keep the copy identical to the original.
  *
  * @param {{
  *   log?: string,

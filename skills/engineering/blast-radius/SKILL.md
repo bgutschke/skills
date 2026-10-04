@@ -67,7 +67,7 @@ The argument is optional and takes one of three forms:
 
 Pass the argument to the anchor script as one shell argument. When the argument matches
 none of the three forms, the script exits with an error that names it. Relay that error
-to the user and stop. Do not guess a form.
+to the user and stop.
 
 ## Step 1: Build the code anchor
 
@@ -119,14 +119,8 @@ When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise p
 The symbol lists come from a declaration pattern and indentation, not from a parser.
 Treat them as the starting list to search from, not as the full set of what changed.
 
-### The copied anchor builder
-
-`scripts/build-code-anchor.js` and its test file are copies of the anchor builder that
-the `why` skill ships. A skill must not load a file from another skill's bundle, because
-the other skill can be absent where this one runs. The copy stays identical to the
-original. `scripts/build-change-anchor.js` wraps it and adds what a change needs: the
-paths and symbols read from the diff. `scripts/parse-change-target.js` parses the
-argument. The CLI loads all three. Run only the CLI, and do not read the modules.
+Run only the CLI. The other modules under `scripts/` are its parts, and the CLI output
+holds everything they produce.
 
 ## Step 2: Read the change
 
@@ -157,8 +151,7 @@ diff does not spell out. Look for these:
 
 If the pull request body or a commit body states the intent, compare it with what the
 diff does. A gap between the two is a risk. If the intent is unclear, and the answer
-changes the safety fact, ask the user one question with **AskUserQuestion**. Do not
-guess the intent.
+changes the safety fact, ask the user one question with **AskUserQuestion**.
 
 ## Step 3: Name the safety fact
 
@@ -217,9 +210,6 @@ For each risk, record:
 - **Cost:** what breaks for whom, and how badly.
 - **How to check:** the cheapest command, test, or read that settles it.
 - **Step:** the ladder step the risk reached.
-
-The five labels, in order: stated, pointed at the line, walked the failure path, ran real
-code, reproduced in the running application.
 
 Rate the safety fact on the same ladder, before the proof. Only the proof script in
 Step 6 can raise the safety fact to `ran real code`.
@@ -289,7 +279,7 @@ When no script ran, write "none." in place of the script and its output.
 The last line is the reply contract. It names the status of the safety fact in one line,
 so the user can read the result without the rest.
 
-The writeup goes into the chat only. Never write it to a file. Never post it to the pull
+Reply with the writeup in the chat, and only there: not in a file, and not on the pull
 request.
 
 ## Worked example
