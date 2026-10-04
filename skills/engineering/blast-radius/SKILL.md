@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: "Finds what a change can break outside its own diff. Names the one fact the change is safe because of, and rates each risk on a five-step evidence ladder. Reads the current branch against the repository's default branch, working tree included. Use when the user types /blast-radius."
+description: "Finds what a change can break outside its own diff. Names the one fact the change is safe because of, rates each risk on a five-step evidence ladder, and tests that fact with a throwaway script that runs the real code. Reads the current branch against the repository's default branch, working tree included. Use when the user types /blast-radius."
 disable-model-invocation: true
 ---
 
@@ -11,8 +11,8 @@ most of it. The real breakage sits where a search stops: inside a library the co
 in a data shape, behind a flag, a few hops downstream, or in the order things run.
 
 The skill names the one fact the change is safe because of. It looks where a search
-stops, and it rates every risk on a five-step evidence ladder. The result is a fixed
-writeup.
+stops, and it rates every risk on a five-step evidence ladder. Then it tests the fact with
+a script that runs the real code. The result is a fixed writeup.
 
 The analysis runs in this conversation, because you can need an answer from the user
 about intent in the middle of a run. Only the raw reading of the diff and the history
@@ -151,7 +151,7 @@ a caller search misses:
    at least two hops past the first caller.
 
 Log every search as you go: the command or query, and what it found. A search that found
-nothing is a result. It becomes the basis of a cleared risk in Step 6.
+nothing is a result. It becomes the basis of a cleared risk in Step 5.
 
 ## Step 5: Rate each risk
 
@@ -170,14 +170,108 @@ For each risk, record:
 The five labels, in order: stated, pointed at the line, walked the failure path, ran real
 code, reproduced in the running application.
 
-Rate the safety fact on the same ladder. This version of the skill writes no proof
-script, so the safety fact reaches step 3 at most, and its status is always `unproven`.
+Rate the safety fact on the same ladder, before the proof. Only the proof script in
+Step 6 can raise the safety fact to `ran real code`.
 
 Keep a risk you checked and cleared apart from the risks that stand. A cleared risk needs
 a basis: a line that rules it out, a walked path that stops short of the break, or a
 search that found nothing.
 
-## Step 6: Write it up
+## Step 6: Prove the safety fact
+
+Write one small script that tests the safety fact. Run it. Its result decides whether the
+fact is `proven` or `unproven`.
+
+### Make the throwaway directory
+
+Create the directory outside the repository, from the repository root:
+
+```bash
+mktemp -d
+```
+
+The shell keeps no variable from one Bash call to the next. Start every later command in
+this step with `PROOF_DIR=<the printed path>;`, the literal path.
+
+Snapshot the files before anything runs:
+
+```bash
+PROOF_DIR=<the printed path>; { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | git hash-object --stdin; git ls-files -z --others --exclude-standard | xargs -0 git hash-object --; } > "$PROOF_DIR/before"
+```
+
+The status lists every changed and untracked path. The first hash covers the content of
+the uncommitted changes to tracked files. The last command hashes each untracked file,
+because the change can include one. Ignored files are not covered. Never write the
+script, its output, or a snapshot inside the repository.
+
+### Write the script
+
+The script must meet all of these:
+
+- It loads the real code: the library at the version the application ships, and the
+  exact function the safety fact names. Never a copy, a stub, or a reimplementation.
+- It prints the version and the path of the library that it loaded, so that you can
+  compare them with the lockfile.
+- It calls that function with the input the safety fact names.
+- It exits non-zero, with a message that names the expected and the actual value, when
+  the fact does not hold. It exits zero only when the fact holds.
+- It needs no network, no live service, and no secret.
+
+The script lives outside the repository, so a bare import does not find the
+repository's packages. Resolve them from the repository root. In Node, use
+`createRequire` from `node:module` on the repository's `package.json`, and import a
+repository file by its absolute path. In Python, run the script with the repository's
+own interpreter or virtual environment. Use the language and runtime that the
+application uses.
+
+Write it into the throwaway directory, for example `<the printed path>/proof.mjs`.
+
+### Run it
+
+Run the script from the repository root, with a time limit, and keep the output. For a
+Node script:
+
+```bash
+PROOF_DIR=<the printed path>; timeout 120 node "$PROOF_DIR/proof.mjs" > "$PROOF_DIR/output.txt" 2>&1; echo "exit: $?" >> "$PROOF_DIR/output.txt"
+```
+
+If `timeout` is missing, as on a stock macOS, drop `timeout 120` and give the Bash tool
+a timeout instead.
+
+Then read the output and decide:
+
+- **Exit 0:** the fact holds. Compare the printed library version with the lockfile.
+  If they differ, the script ran other code: the fact is `unproven`. If they match, set
+  the safety fact to `Step: ran real code` and `Status: proven`.
+- **Non-zero, and the message shows the fact is false:** the fact is `unproven` and
+  keeps its step from Step 5. The run is also a finding. Add the risk "The safety fact
+  does not hold" at `Step: ran real code`, with the script as its check.
+- **Non-zero for another reason,** such as an import error, a wrong call, or a timeout:
+  fix the script once. If the second run also fails for another reason, the fact is
+  `unproven` and keeps its step. Raise no risk from a broken script.
+
+If the script cannot be written with reasonable effort, or cannot run at all, the fact is
+`unproven` and keeps its step. Reasonable effort ends when the fact needs a live service,
+a network call, a secret, or a full running application to test. Say which in the
+writeup.
+
+Never call the fact proven without a run that exited 0.
+
+### Check the tracked files
+
+After the run, take the same snapshot into `$PROOF_DIR/after`, and compare the two:
+
+```bash
+PROOF_DIR=<the printed path>; { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | git hash-object --stdin; git ls-files -z --others --exclude-standard | xargs -0 git hash-object --; } > "$PROOF_DIR/after"; diff "$PROOF_DIR/before" "$PROOF_DIR/after" && echo unchanged
+```
+
+No output other than `unchanged` means that nothing changed. Any other output lists the
+lines that differ. In that case, show them to the user. Do not revert anything yourself.
+The user decides. Report the result in the writeup either way.
+
+Keep the directory after the run, so the user can rerun the script.
+
+## Step 7: Write it up
 
 Write the writeup in this structure, in this order. Drop no section. If a section is
 empty, write "None."
@@ -189,8 +283,14 @@ empty, write "None."
 ## Safety fact
 <the one fact, as one testable sentence>
 Step: <ladder label>
-Status: unproven
-Proof: none. <one sentence: what a proof script would call, and what it would assert>
+Status: <proven or unproven>
+Proof: <the absolute script path and its run command, or "none." and the reason>
+
+<the script, in a fenced code block>
+
+<its output with the exit line, in a fenced code block>
+
+Tracked files: <unchanged, or changed and the paths that changed>
 
 ## Risks
 ### <short name of the risk>
@@ -205,10 +305,13 @@ Proof: none. <one sentence: what a proof script would call, and what it would as
 - <the risk>: <the basis: a line, a walked path, or "<search> -> nothing">
 
 ## Before you merge
-<the cheapest test or repro that catches the real bug, as a command or a test outline>
+<the cheapest test or repro that catches the real bug. When a proof script ran, it is
+that repro: name its path and its run command. Name a cheaper test only if one exists.>
 
-Safety fact: unproven. <the fact, in one line>
+Safety fact: <proven or unproven>. <the fact, in one line>
 ```
+
+When no script ran, write "none." in place of the script and its output.
 
 The last line is the reply contract. It names the status of the safety fact in one line,
 so the user can read the result without the rest.
