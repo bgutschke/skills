@@ -1,6 +1,7 @@
 ---
 name: blast-radius
-description: "Finds what a change can break outside its own diff. Names the one fact the change is safe because of, rates each risk on a five-step evidence ladder, and tests that fact with a throwaway script that runs the real code. Reads the current branch against the repository's default branch, working tree included. Use when the user types /blast-radius."
+argument-hint: "[<pull request number or URL> | <from>..<to> | <from>...<to>]"
+description: "Finds what a change can break outside its own diff. Names the one fact the change is safe because of, rates each risk on a five-step evidence ladder, and tests that fact with a throwaway script that runs the real code. Reads a pull request by number or URL, or a ref range such as main..feature. With no argument, reads the current branch against the repository's default branch, working tree included. Use when the user types /blast-radius."
 disable-model-invocation: true
 ---
 
@@ -24,23 +25,49 @@ goes to a subagent.
 
 ## When not to use
 
+- The user asks for a general code review, or for bugs inside the diff. Point the user to
+  `/code-review` and, for vulnerabilities, to `/security-review`, and stop. This skill
+  looks outside the diff only.
+- The user asks why the code is shaped the way it is. Point the user to the `why` skill
+  and stop.
 - The current directory is not a git repository. Say so and stop.
-- The current branch has no change against the default branch, and the working tree is
-  clean. Say so and stop.
+- The change is empty: the anchor lists no path. Say so and stop.
 
 ## Dependencies
 
 Requires `node` to run the bundled anchor script.
 
-Requires an authenticated `gh` CLI for the pull request path only: the body and the
-reviews of the branch's pull request. Without it, the anchor holds commits and the diff
-only.
+Requires an authenticated `gh` CLI for the pull request path only: a pull request given
+as the argument, and the body and the reviews of the branch's own pull request. A ref
+range never needs `gh`. Without `gh`, a pull request argument falls back to the current
+branch against the default branch, and the writeup says so.
+
+## Argument grammar
+
+The argument for this run is: `$ARGUMENTS`
+
+The argument is optional and takes one of three forms:
+
+- **A pull request number or URL**, for example `42`, `#42`, or
+  `https://github.com/acme/shop/pull/42`. The skill reads that pull request's diff, its
+  commits, its body, and its reviews. A URL that points at a tab or a comment of the pull
+  request still reads the whole pull request. A pull request from a fork can need
+  commits that the clone lacks. If so, the script fetches them from `origin` by name. The
+  fetch writes no branch and changes no file.
+- **A ref range**, for example `main..feature` or `v1.4.0...HEAD`. Two dots read the
+  commits from the first ref to the second. Three dots read them from the merge base of
+  both refs. An empty side means `HEAD`, as in `main..`.
+- **Nothing.** The skill reads the current branch against the repository's default
+  branch, from the merge base to the working tree, untracked files included.
+
+Pass the argument to the anchor script as one shell argument. When the argument matches
+none of the three forms, the script exits with an error that names it. Relay that error
+to the user and stop. Do not guess a form.
 
 ## Step 1: Build the code anchor
 
 Build the anchor inside a subagent, because raw `git diff` and `git log` output has no
-size limit. The script reads the current branch against the repository's default branch,
-from the merge base to the working tree, untracked files included.
+size limit. The script reads the change that the argument names.
 
 Call the **Agent** tool with:
 
@@ -51,7 +78,7 @@ Call the **Agent** tool with:
 
 ```text
 Run, in the current git repository:
-node "${CLAUDE_SKILL_DIR}/scripts/gather-change-anchor-cli.js"
+node "${CLAUDE_SKILL_DIR}/scripts/gather-change-anchor-cli.js" '<argument>'
 
 Return exactly this, and nothing else:
 ANCHOR: <the script's stdout, verbatim>
@@ -60,9 +87,14 @@ If the script exits non-zero, return "ERROR: " and its stderr.
 Do not read the diff. Do not explain the change. Do not judge whether it is safe.
 ```
 
-When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise parse the
-`ANCHOR:` line as JSON: `{ anchor, base, ghAuthenticated }`.
+In the brief, replace `'<argument>'` with the argument in single quotes. With no
+argument, drop `'<argument>'` from the command.
 
+When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise parse the
+`ANCHOR:` line as JSON: `{ target, anchor, base, head, ghAuthenticated, fallback }`.
+
+- `target`: the parsed argument. `kind` is `branch`, `pullRequest` with the
+  `pullRequest` number or URL, or `range` with `from`, `to`, and `mergeBase`.
 - `anchor.paths`: every file the change touches. A rename lists both names.
 - `anchor.symbols`: the declared symbols the diff `added`, `changed`, and `deleted`. A
   changed symbol is one whose declaration line or body the diff edits.
@@ -71,8 +103,14 @@ When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise p
   of the branch's own pull request.
 - `anchor.tickets`: the ticket identifiers in the commit subjects and bodies, the pull
   request body, and its reviews.
-- `base`: the default branch `ref` and the merge-base `commit` the diff starts from.
-- `ghAuthenticated`: false means that the anchor holds no pull request text.
+- `base`: the `ref` the change starts from and the `commit` the diff starts from. For the
+  branch and a pull request, the commit is the merge base.
+- `head`: the `ref` and the `commit` the change ends at. Null means that the change ends
+  in the working tree.
+- `ghAuthenticated`: false means that the anchor holds no pull request text. Null means
+  that the script did not check, because a ref range needs no `gh`.
+- `fallback`: null, or the sentence that says which change the script read in place of
+  the pull request. Copy it into the writeup.
 
 The symbol lists come from a declaration pattern and indentation, not from a parser.
 Treat them as the starting list to search from, not as the full set of what changed.
@@ -88,13 +126,21 @@ the other too.
 
 ## Step 2: Read the change
 
-Read the diff one file at a time, in the order of `anchor.paths`:
+Read the diff one file at a time, in the order of `anchor.paths`. When `head` is null,
+compare the base with the working tree:
 
 ```bash
 git diff <base.commit> -- <path>
 ```
 
 Read an untracked file directly. It is new in full.
+
+When `head` is not null, compare the base with the head commit. Read a file at the head
+commit with `git show <head.commit>:<path>`, not from the working tree:
+
+```bash
+git diff <base.commit> <head.commit> -- <path>
+```
 
 Write down what the change does in plain words. Then write down what it does that the
 diff does not spell out. Look for these:
@@ -181,6 +227,13 @@ search that found nothing.
 
 Write one small script that tests the safety fact. Run it. Its result decides whether the
 fact is `proven` or `unproven`.
+
+The script runs the code in the working tree. When `head` is not null, compare
+`head.commit` with `git rev-parse HEAD`. If they differ, or if `git status --porcelain`
+prints a line, the working tree does not hold the change. Do not check out anything
+yourself, because a checkout changes the user's files. Ask the user with
+**AskUserQuestion** to check out `head.commit`, or to skip the proof. If the user skips
+it, the fact is `unproven`, and the reason is "the change is not checked out".
 
 ### Make the throwaway directory
 
@@ -278,6 +331,9 @@ empty, write "None."
 
 ```text
 ## What it does
+Read: <the target: the branch against base.ref, pull request <number>, or the range>
+<the fallback sentence, if fallback is not null>
+
 <what the change does, then what it does that the diff does not spell out>
 
 ## Safety fact
