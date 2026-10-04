@@ -6,9 +6,27 @@ disable-model-invocation: true
 
 # blast-radius
 
-Find what a change can break outside its own diff. Every run starts from a code anchor:
-the paths and symbols the change touches, the commits behind it, their pull request
-numbers, and the ticket identifiers.
+Find what a change can break outside its own diff. A caller list from a search misses
+most of it. The real breakage sits where a search stops: inside a library the code calls,
+in a data shape, behind a flag, a few hops downstream, or in the order things run.
+
+The skill names the one fact the change is safe because of. It looks where a search
+stops, and it rates every risk on a five-step evidence ladder. The result is a fixed
+writeup.
+
+The analysis runs in this conversation, because you can need an answer from the user
+about intent in the middle of a run. Only the raw reading of the diff and the history
+goes to a subagent.
+
+## When to use
+
+- The user types `/blast-radius`.
+
+## When not to use
+
+- The current directory is not a git repository. Say so and stop.
+- The current branch has no change against the default branch, and the working tree is
+  clean. Say so and stop.
 
 ## Dependencies
 
@@ -67,3 +85,133 @@ the other skill can be absent where this one runs. The copy stays identical to t
 original. `scripts/build-change-anchor.js` wraps it and adds what a change needs: the
 paths and symbols read from the diff. When you fix the builder in one skill, fix it in
 the other too.
+
+## Step 2: Read the change
+
+Read the diff one file at a time, in the order of `anchor.paths`:
+
+```bash
+git diff <base.commit> -- <path>
+```
+
+Read an untracked file directly. It is new in full.
+
+Write down what the change does in plain words. Then write down what it does that the
+diff does not spell out. Look for these:
+
+- A default that moves: a new parameter default, a removed fallback, a changed constant.
+- A call that now runs earlier, later, more often, or not at all.
+- A value whose type, shape, unit, or encoding changes on its way out of the function.
+- A library call that is new, or now gets different arguments.
+- A deleted symbol from `anchor.symbols.deleted` that can still have a caller.
+
+If the pull request body or a commit body states the intent, compare it with what the
+diff does. A gap between the two is a finding. If the intent is unclear, and the answer
+changes the safety fact, ask the user one question with **AskUserQuestion**. Do not
+guess the intent.
+
+## Step 3: Name the safety fact
+
+The safety fact is the one fact the change is safe because of. When it is true, most of
+the risks are cleared at once. Name exactly one.
+
+Write it as one sentence that a script can test. Name the exact function, value, or
+library call, and the condition that must hold. For example: `parseLimit` from `qs-lite`
+1.4.2 returns a number, not a string, for `?limit=50`. A vague sentence is not a safety
+fact, for example "the change keeps the behavior the same". It names nothing to test.
+
+When two facts compete, pick the one that clears more risks. Record the other as a risk.
+
+## Step 4: Look where a search stops
+
+Start with the callers. Search for every symbol in `anchor.symbols` with `git grep -n -w`.
+A deleted or renamed symbol needs a search for its old name. Then look in the five places
+a caller search misses:
+
+1. **Library source, at the pinned version.** For each library call the change adds or
+   alters, find the version in the lockfile. Read the library's own source for that
+   function, not its documentation. If the installed copy has the lockfile version, read
+   it, for example under `node_modules/<name>/`. Otherwise fetch the source
+   of that exact version into a temporary directory outside the repository, for example
+   with `npm pack <name>@<version>`. Then look for a local patch of that library:
+   `patches/`, `.yarn/patches/`, `patchedDependencies` in `package.json`, or the
+   ecosystem's own patch tool. A patch changes the source you read. Other ecosystems
+   follow the same rule. For Python, use `pip download <name>==<version> --no-deps`. For
+   Go, read the module cache at `go env GOMODCACHE`.
+2. **Run order.** Follow the moment the changed code runs, not only what it calls: microtasks
+   and promises, effects and their cleanup, unmount, teardown, event order, retries, and
+   process exit.
+3. **Data shapes.** Follow a changed value out of the language. It can leave as an API
+   request or response, a database column, or a serialized cache entry. It can also leave
+   as a queue message, a file format, a URL parameter, or an environment variable. Find
+   the reader on the other side.
+4. **Flags.** Find each feature flag, configuration key, or environment switch that
+   gates the changed code. Check the code path for each state of the flag.
+5. **Downstream hops.** Follow the consumer of a changed return value or side effect for
+   at least two hops past the first caller.
+
+Log every search as you go: the command or query, and what it found. A search that found
+nothing is a result. It becomes the basis of a cleared risk in Step 6.
+
+## Step 5: Rate each risk
+
+Read `${CLAUDE_SKILL_DIR}/references/evidence-ladder.md` in full before you rate. Follow
+its steps, its rules, and its evidence rules exactly.
+
+For each risk, record:
+
+- **How it breaks:** the failure, in one or two sentences.
+- **Where:** the real file and line, or the path in the library source with its version.
+- **Likelihood:** low, medium, or high, with the reason in a few words.
+- **Cost:** what breaks for whom, and how badly.
+- **How to check:** the cheapest command, test, or read that settles it.
+- **Step:** the ladder step the risk reached.
+
+The five labels, in order: stated, pointed at the line, walked the failure path, ran real
+code, reproduced in the running application.
+
+Rate the safety fact on the same ladder. This version of the skill writes no proof
+script, so the safety fact reaches step 3 at most, and its status is always `unproven`.
+
+Keep a risk you checked and cleared apart from the risks that stand. A cleared risk needs
+a basis: a line that rules it out, a walked path that stops short of the break, or a
+search that found nothing.
+
+## Step 6: Write it up
+
+Write the writeup in this structure, in this order. Drop no section. If a section is
+empty, write "None."
+
+```text
+## What it does
+<what the change does, then what it does that the diff does not spell out>
+
+## Safety fact
+<the one fact, as one testable sentence>
+Step: <ladder label>
+Status: unproven
+Proof: none. <one sentence: what a proof script would call, and what it would assert>
+
+## Risks
+### <short name of the risk>
+- How it breaks: <the failure>
+- Where: <path:line, or library source path at its version>
+- Likelihood: <low, medium, or high>, <reason>
+- Cost: <what breaks for whom>
+- How to check: <the cheapest command, test, or read>
+- Step: <ladder label>
+
+## Cleared
+- <the risk>: <the basis: a line, a walked path, or "<search> -> nothing">
+
+## Before you merge
+<the cheapest test or repro that catches the real bug, as a command or a test outline>
+
+Safety fact: unproven. <the fact, in one line>
+```
+
+The last line is the reply contract. It names the status of the safety fact in one line,
+so the user can read the result without the rest.
+
+The writeup goes into the chat only. Never write it to a file. Never post it to the pull
+request.
