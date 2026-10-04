@@ -43,8 +43,9 @@ Requires `node` to run the bundled anchor script.
 
 Requires an authenticated `gh` CLI for the pull request path only: a pull request given
 as the argument, and the body and the reviews of the branch's own pull request. A ref
-range never needs `gh`. Without `gh`, a pull request argument falls back to the current
-branch against the default branch, and the writeup says so.
+range never needs `gh`. Without `gh`, a pull request argument stops with an error that
+asks for `gh auth login` or for the ref range of the pull request. No other change can
+stand in for the pull request.
 
 ## Argument grammar
 
@@ -95,7 +96,7 @@ In the brief, replace `'<argument>'` with the argument in single quotes. With no
 argument, drop `'<argument>'` from the command.
 
 When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise parse the
-`ANCHOR:` line as JSON: `{ target, anchor, base, head, ghAuthenticated, fallback }`.
+`ANCHOR:` line as JSON: `{ target, anchor, base, head, ghAuthenticated }`.
 
 - `target`: the parsed argument. `kind` is `branch`, `pullRequest` with the
   `pullRequest` number or URL, or `range` with `from`, `to`, and `mergeBase`.
@@ -114,8 +115,6 @@ When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise p
   in the working tree.
 - `ghAuthenticated`: false means that the anchor holds no pull request text. Null means
   that the script did not check, because a ref range needs no `gh`.
-- `fallback`: null, or the sentence that says which change the script read in place of
-  the pull request. Copy it into the writeup.
 
 The symbol lists come from a declaration pattern and indentation, not from a parser.
 Treat them as the starting list to search from, not as the full set of what changed.
@@ -348,7 +347,6 @@ empty, write "None."
 ```text
 ## What it does
 Read: <the target: the branch against base.ref, pull request <number>, or the range>
-<the fallback sentence, if fallback is not null>
 
 <what the change does, then what it does that the diff does not spell out>
 
