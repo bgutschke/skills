@@ -38,6 +38,21 @@ try {
  * }} Change
  */
 
+/**
+ * Checks whether `gh` is both installed and authenticated. A missing binary
+ * and an unauthenticated one both throw, so both fall back to the same
+ * commit-only anchor.
+ *
+ * @returns {boolean}
+ */
+function isGhAuthenticated() {
+  try {
+    execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Reads the change the target names. `head` is null when the change ends
@@ -55,136 +70,6 @@ function readChange(target, ghAuthenticated) {
     throw new Error(`gh is missing or not authenticated, so pull request ${target.pullRequest} cannot be read. Run "gh auth login", or pass the pull request's ref range, for example main...feature.`);
   }
   return readPullRequest(target.pullRequest);
-}
-
-
-/**
- * Checks whether `gh` is both installed and authenticated. A missing binary
- * and an unauthenticated one both throw, so both fall back to the same
- * commit-only anchor.
- *
- * @returns {boolean}
- */
-function isGhAuthenticated() {
-  try {
-    execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-
-/**
- * Reads the current branch from its merge base with the default branch to
- * the working tree, and the body of the branch's own pull request.
- *
- * @param {boolean | null} ghAuthenticated
- * @returns {Change}
- */
-function readBranch(ghAuthenticated) {
-  const defaultBranch = findDefaultBranch();
-  const base = git(['merge-base', defaultBranch, 'HEAD']).trim();
-  const pullRequest = ghAuthenticated ? readBranchPullRequest() : null;
-  return {
-    base: { ref: defaultBranch, commit: base },
-    head: null,
-    log: readLog(base, 'HEAD'),
-    diff: readWorkingTreeDiff(base),
-    pullRequestBodies: pullRequest ? [pullRequest] : [],
-  };
-}
-
-
-/**
- * Finds the repository's default branch: the remote's own HEAD when it is
- * set, otherwise the first common default branch name that exists.
- *
- * @returns {string}
- */
-function findDefaultBranch() {
-  try {
-    return git(['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']).trim();
-  } catch {
-    const found = DEFAULT_BRANCH_CANDIDATES.find((ref) => {
-      try {
-        git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-    if (found === undefined) throw new Error(`No default branch found. Tried origin/HEAD, ${DEFAULT_BRANCH_CANDIDATES.join(', ')}.`);
-    return found;
-  }
-}
-
-
-/**
- * Reads the diff from the base to the working tree, untracked files
- * included. `git diff` leaves untracked files out, so each one is diffed
- * against an empty file, which needs no change to the index.
- *
- * @param {string} base
- * @returns {string}
- */
-function readWorkingTreeDiff(base) {
-  const tracked = git(['diff', '--no-color', '--no-ext-diff', base]);
-  const untracked = git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean);
-  return tracked + untracked.map(readUntrackedDiff).join('');
-}
-
-
-/**
- * `git diff --no-index` exits with 1 when the files differ, which is always
- * the case here, so the diff is read from the error's stdout.
- *
- * @param {string} path
- * @returns {string}
- */
-function readUntrackedDiff(path) {
-  try {
-    return git(['diff', '--no-color', '--no-ext-diff', '--no-index', '--', '/dev/null', path]);
-  } catch (error) {
-    const stdout = /** @type {{ stdout?: unknown }} */ (error).stdout;
-    if (typeof stdout === 'string' && stdout !== '') return stdout;
-    throw error;
-  }
-}
-
-
-/**
- * Reads the body and the review bodies of the current branch's pull
- * request. Returns null when the branch has no pull request, so one failed lookup
- * never fails the whole anchor.
- *
- * @returns {import('./build-code-anchor').PullRequestBody | null}
- */
-function readBranchPullRequest() {
-  try {
-    const raw = execFileSync('gh', ['pr', 'view', '--json', 'number,body,reviews'], {
-      encoding: 'utf8',
-      maxBuffer: MAX_BUFFER,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-    /** @type {{ number: number, body: string, reviews: { body: string }[] }} */
-    const pull = JSON.parse(raw);
-    return { number: pull.number, body: joinPullRequestText(pull) };
-  } catch {
-    return null;
-  }
-}
-
-
-/**
- * Joins a pull request body and its review bodies into one text, because a
- * ticket identifier can sit in either.
- *
- * @param {{ body: string, reviews: { body: string }[] }} pull
- * @returns {string}
- */
-function joinPullRequestText({ body, reviews }) {
-  return [body, ...reviews.map((review) => review.body)].join('\n\n');
 }
 
 /**
@@ -211,7 +96,6 @@ function resolveCommit(ref) {
     throw new Error(`"${ref}" is not a commit in this repository.`);
   }
 }
-
 
 /**
  * Reads a pull request from its merge base to its head commit, with its
@@ -242,7 +126,7 @@ function readPullRequest(pullRequest) {
  * @param {string[]} commits
  */
 function fetchMissingCommits(commits) {
-  const missing = commits.filter((commit) => !hasCommit(commit));
+  const missing = commits.filter((commit) => !commitExists(commit));
   if (missing.length === 0) return;
   try {
     git(['fetch', '--quiet', '--no-tags', 'origin', ...missing]);
@@ -251,20 +135,118 @@ function fetchMissingCommits(commits) {
   }
 }
 
-
 /**
- * @param {string} commit
+ * @param {string} ref
  * @returns {boolean}
  */
-function hasCommit(commit) {
+function commitExists(ref) {
   try {
-    git(['cat-file', '-e', `${commit}^{commit}`]);
+    resolveCommit(ref);
     return true;
   } catch {
     return false;
   }
 }
 
+/**
+ * Reads the current branch from its merge base with the default branch to
+ * the working tree, and the body of the branch's own pull request.
+ *
+ * @param {boolean | null} ghAuthenticated
+ * @returns {Change}
+ */
+function readBranch(ghAuthenticated) {
+  const defaultBranch = findDefaultBranch();
+  const base = git(['merge-base', defaultBranch, 'HEAD']).trim();
+  const pullRequest = ghAuthenticated ? readBranchPullRequest() : null;
+  return {
+    base: { ref: defaultBranch, commit: base },
+    head: null,
+    log: readLog(base, 'HEAD'),
+    diff: readWorkingTreeDiff(base),
+    pullRequestBodies: pullRequest ? [pullRequest] : [],
+  };
+}
+
+/**
+ * Finds the repository's default branch: the remote's own HEAD when it is
+ * set, otherwise the first common default branch name that exists.
+ *
+ * @returns {string}
+ */
+function findDefaultBranch() {
+  try {
+    return git(['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']).trim();
+  } catch {
+    const found = DEFAULT_BRANCH_CANDIDATES.find(commitExists);
+    if (found === undefined) throw new Error(`No default branch found. Tried origin/HEAD, ${DEFAULT_BRANCH_CANDIDATES.join(', ')}.`);
+    return found;
+  }
+}
+
+/**
+ * Reads the diff from the base to the working tree, untracked files
+ * included. `git diff` leaves untracked files out, so each one is diffed
+ * against an empty file, which needs no change to the index.
+ *
+ * @param {string} base
+ * @returns {string}
+ */
+function readWorkingTreeDiff(base) {
+  const tracked = git(['diff', '--no-color', '--no-ext-diff', base]);
+  const untracked = git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean);
+  return tracked + untracked.map(readUntrackedDiff).join('');
+}
+
+/**
+ * `git diff --no-index` exits with 1 when the files differ, which is always
+ * the case here, so the diff is read from the error's stdout.
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+function readUntrackedDiff(path) {
+  try {
+    return git(['diff', '--no-color', '--no-ext-diff', '--no-index', '--', '/dev/null', path]);
+  } catch (error) {
+    const stdout = /** @type {{ stdout?: unknown }} */ (error).stdout;
+    if (typeof stdout === 'string' && stdout !== '') return stdout;
+    throw error;
+  }
+}
+
+/**
+ * Reads the body and the review bodies of the current branch's pull
+ * request. Returns null when the branch has no pull request, so one failed lookup
+ * never fails the whole anchor.
+ *
+ * @returns {import('./build-code-anchor').PullRequestBody | null}
+ */
+function readBranchPullRequest() {
+  try {
+    const raw = execFileSync('gh', ['pr', 'view', '--json', 'number,body,reviews'], {
+      encoding: 'utf8',
+      maxBuffer: MAX_BUFFER,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    /** @type {{ number: number, body: string, reviews: { body: string }[] }} */
+    const pull = JSON.parse(raw);
+    return { number: pull.number, body: joinPullRequestText(pull) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Joins a pull request body and its review bodies into one text, because a
+ * ticket identifier can sit in either.
+ *
+ * @param {{ body: string, reviews: { body: string }[] }} pull
+ * @returns {string}
+ */
+function joinPullRequestText({ body, reviews }) {
+  return [body, ...reviews.map((review) => review.body)].join('\n\n');
+}
 
 /**
  * Reads the log and the diff between two commits, for a change that ends
@@ -293,7 +275,6 @@ function readCommits(base, head, pullRequestBodies) {
 function readLog(base, head) {
   return git(['log', '--name-status', `--format=${LOG_FORMAT}`, `${base}..${head}`]);
 }
-
 
 /**
  * Runs git and returns its stdout. The buffer is raised far above the
