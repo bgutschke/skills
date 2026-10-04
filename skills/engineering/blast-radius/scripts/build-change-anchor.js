@@ -207,6 +207,18 @@ function indentOf(code) {
 }
 
 /**
+ * Names the symbols one line of code declares. A comment line declares
+ * none, even when its prose holds a keyword such as `function`.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+function findDeclarations(text) {
+  if (COMMENT_LINE_RE.test(text)) return [];
+  return [...text.matchAll(DECLARATION_RE)].map((match) => match[1]);
+}
+
+/**
  * Sorts the collected symbols into the three anchor lists. A symbol both
  * added and removed had its declaration line rewritten, so it counts as
  * changed, as does a symbol whose body alone was edited.
@@ -222,18 +234,6 @@ function classifySymbols({ declaredAdded, declaredRemoved, edited }) {
     changed: [...new Set([...rewritten, ...bodyOnly])],
     deleted: [...declaredRemoved].filter((name) => !declaredAdded.has(name)),
   };
-}
-
-/**
- * Names the symbols one line of code declares. A comment line declares
- * none, even when its prose holds a keyword such as `function`.
- *
- * @param {string} text
- * @returns {string[]}
- */
-function findDeclarations(text) {
-  if (COMMENT_LINE_RE.test(text)) return [];
-  return [...text.matchAll(DECLARATION_RE)].map((match) => match[1]);
 }
 
 module.exports = { buildChangeAnchor };
