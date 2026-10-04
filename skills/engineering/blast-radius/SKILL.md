@@ -19,6 +19,10 @@ The analysis runs in this conversation, because you can need an answer from the 
 about intent in the middle of a run. Only the raw reading of the diff and the history
 goes to a subagent.
 
+The evidence ladder, the single safety fact, and the rule to prove by running code come
+from the pstack plugin for Cursor, MIT licensed. `references/evidence-ladder.md` holds the
+full credit.
+
 ## When to use
 
 - The user types `/blast-radius`.
@@ -95,6 +99,7 @@ When the reply starts with `ERROR: `, relay it to the user and stop. Otherwise p
 
 - `target`: the parsed argument. `kind` is `branch`, `pullRequest` with the
   `pullRequest` number or URL, or `range` with `from`, `to`, and `mergeBase`.
+  `mergeBase` is true for three dots.
 - `anchor.paths`: every file the change touches. A rename lists both names.
 - `anchor.symbols`: the declared symbols the diff `added`, `changed`, and `deleted`. A
   changed symbol is one whose declaration line or body the diff edits.
@@ -121,8 +126,8 @@ Treat them as the starting list to search from, not as the full set of what chan
 the `why` skill ships. A skill must not load a file from another skill's bundle, because
 the other skill can be absent where this one runs. The copy stays identical to the
 original. `scripts/build-change-anchor.js` wraps it and adds what a change needs: the
-paths and symbols read from the diff. When you fix the builder in one skill, fix it in
-the other too.
+paths and symbols read from the diff. `scripts/parse-change-target.js` parses the
+argument. The CLI loads all three. Run only the CLI, and do not read the modules.
 
 ## Step 2: Read the change
 
@@ -152,7 +157,7 @@ diff does not spell out. Look for these:
 - A deleted symbol from `anchor.symbols.deleted` that can still have a caller.
 
 If the pull request body or a commit body states the intent, compare it with what the
-diff does. A gap between the two is a finding. If the intent is unclear, and the answer
+diff does. A gap between the two is a risk. If the intent is unclear, and the answer
 changes the safety fact, ask the user one question with **AskUserQuestion**. Do not
 guess the intent.
 
@@ -194,7 +199,8 @@ a caller search misses:
 4. **Flags.** Find each feature flag, configuration key, or environment switch that
    gates the changed code. Check the code path for each state of the flag.
 5. **Downstream hops.** Follow the consumer of a changed return value or side effect for
-   at least two hops past the first caller.
+   at least two hops past the first caller. The first hop is the caller search itself,
+   so the second hop is the first place a search does not reach.
 
 Log every search as you go: the command or query, and what it found. A search that found
 nothing is a result. It becomes the basis of a cleared risk in Step 5.
@@ -220,8 +226,12 @@ Rate the safety fact on the same ladder, before the proof. Only the proof script
 Step 6 can raise the safety fact to `ran real code`.
 
 Keep a risk you checked and cleared apart from the risks that stand. A cleared risk needs
-a basis: a line that rules it out, a walked path that stops short of the break, or a
-search that found nothing.
+one of these as its basis:
+
+- a line that rules it out
+- a walked path that stops short of the break
+- a command that ran, and its output
+- a search that found nothing
 
 ## Step 6: Prove the safety fact
 
@@ -264,7 +274,9 @@ The script must meet all of these:
 - It loads the real code: the library at the version the application ships, and the
   exact function the safety fact names. Never a copy, a stub, or a reimplementation.
 - It prints the version and the path of the library that it loaded, so that you can
-  compare them with the lockfile.
+  compare them with the lockfile. When the fact names the repository's own code and no
+  library, it prints the file path and the output of `git rev-parse HEAD`. Compare that
+  commit with `head.commit` in place of the lockfile.
 - It calls that function with the input the safety fact names.
 - It exits non-zero, with a message that names the expected and the actual value, when
   the fact does not hold. It exits zero only when the fact holds.
@@ -281,23 +293,25 @@ Write it into the throwaway directory, for example `<the printed path>/proof.mjs
 
 ### Run it
 
-Run the script from the repository root, with a time limit, and keep the output. For a
-Node script:
+Run `command -v timeout` first. Then run the script from the repository root, with a
+time limit, and keep the output. For a Node script:
 
 ```bash
 PROOF_DIR=<the printed path>; timeout 120 node "$PROOF_DIR/proof.mjs" > "$PROOF_DIR/output.txt" 2>&1; echo "exit: $?" >> "$PROOF_DIR/output.txt"
 ```
 
-If `timeout` is missing, as on a stock macOS, drop `timeout 120` and give the Bash tool
-a timeout instead.
+The limit of 120 seconds stops a script that hangs. A proof of one function call needs
+far less. If `timeout` is missing, as on a stock macOS, drop `timeout 120` and give the
+Bash tool a timeout instead.
 
 Then read the output and decide:
 
-- **Exit 0:** the fact holds. Compare the printed library version with the lockfile.
-  If they differ, the script ran other code: the fact is `unproven`. If they match, set
-  the safety fact to `Step: ran real code` and `Status: proven`.
+- **Exit 0:** the fact holds. Compare the printed library version with the lockfile, or
+  the printed commit with `head.commit`. If they differ, the script ran other code: the
+  fact is `unproven`. If they match, set the safety fact to `Step: ran real code` and
+  `Status: proven`.
 - **Non-zero, and the message shows the fact is false:** the fact is `unproven` and
-  keeps its step from Step 5. The run is also a finding. Add the risk "The safety fact
+  keeps its step from Step 5. Add the risk "The safety fact
   does not hold" at `Step: ran real code`, with the script as its check.
 - **Non-zero for another reason,** such as an import error, a wrong call, or a timeout:
   fix the script once. If the second run also fails for another reason, the fact is
@@ -312,7 +326,9 @@ Never call the fact proven without a run that exited 0.
 
 ### Check the tracked files
 
-After the run, take the same snapshot into `$PROOF_DIR/after`, and compare the two:
+Run every other check script, for example one that backs a risk, in the same directory
+and before the second snapshot. After the last run, take the same snapshot into
+`$PROOF_DIR/after`, and compare the two:
 
 ```bash
 PROOF_DIR=<the printed path>; { git status --porcelain=v1 --untracked-files=all; git diff HEAD --binary | git hash-object --stdin; git ls-files -z --others --exclude-standard | xargs -0 git hash-object --; } > "$PROOF_DIR/after"; diff "$PROOF_DIR/before" "$PROOF_DIR/after" && echo unchanged
@@ -358,7 +374,7 @@ Tracked files: <unchanged, or changed and the paths that changed>
 - Step: <ladder label>
 
 ## Cleared
-- <the risk>: <the basis: a line, a walked path, or "<search> -> nothing">
+- <the risk>: <the basis: a line, a walked path, "<command> -> <output>", or "<search> -> nothing">
 
 ## Before you merge
 <the cheapest test or repro that catches the real bug. When a proof script ran, it is
@@ -374,3 +390,88 @@ so the user can read the result without the rest.
 
 The writeup goes into the chat only. Never write it to a file. Never post it to the pull
 request.
+
+## Worked example
+
+This fixture is synthetic. The repository, the library `qs-lite`, and the paths are
+invented. The script and its output come from a real run in a scratch repository. That
+repository installs the invented `qs-lite` 1.4.2 under `node_modules`, and the script loads
+it from there. The paths in the output are shortened to `/work/shop` and
+`/tmp/tmp.QOrjpUPzw4`.
+
+The user types `/blast-radius` on a branch with one commit. The anchor lists
+`src/listing.js` and the changed symbol `readLimit`. The diff:
+
+```diff
+-  const limit = Number(req.query.limit) || 20;
++  const limit = parseLimit(req.url.search, 20);
+```
+
+`parseLimit` comes from `qs-lite`, pinned at 1.4.2 in the lockfile. Its source,
+`node_modules/qs-lite/index.js:4`, calls `Number.parseInt` and returns any number it
+parses, zero included. The old `|| 20` turned zero into 20.
+
+The proof script, `/tmp/tmp.QOrjpUPzw4/proof.mjs`:
+
+```js
+import { createRequire } from 'node:module';
+
+const repo = process.cwd();
+const require = createRequire(`${repo}/package.json`);
+const path = require.resolve('qs-lite');
+const { version } = require('qs-lite/package.json');
+const { parseLimit } = require('qs-lite');
+console.log(`qs-lite ${version} from ${path}`);
+
+const actual = parseLimit('?limit=50', 20);
+if (actual !== 50) {
+  console.error(`FAIL: expected the number 50, got ${JSON.stringify(actual)} (${typeof actual})`);
+  process.exit(1);
+}
+console.log(`OK: parseLimit('?limit=50', 20) returned ${actual} (${typeof actual})`);
+```
+
+The writeup, shortened:
+
+````text
+## What it does
+Read: the branch against main
+
+`readLimit` now parses the page size with `parseLimit` from `qs-lite`, in place of
+`Number`. The diff does not spell out one shift: `?limit=0` now gives 0, not 20.
+
+## Safety fact
+`parseLimit` from `qs-lite` 1.4.2 returns a number, not a string, for `?limit=50`.
+Step: ran real code
+Status: proven
+Proof: /tmp/tmp.QOrjpUPzw4/proof.mjs, run with `node /tmp/tmp.QOrjpUPzw4/proof.mjs`
+
+<the script above>
+
+```text
+qs-lite 1.4.2 from /work/shop/node_modules/qs-lite/index.js
+OK: parseLimit('?limit=50', 20) returned 50 (number)
+exit: 0
+```
+
+Tracked files: unchanged
+
+## Risks
+### Zero page size returns an empty page
+- How it breaks: `?limit=0` reaches `LIMIT $1` as 0, so the list comes back empty.
+- Where: node_modules/qs-lite/index.js:4 at 1.4.2, then src/db/listings.js:14
+- Likelihood: low, the web client never sends 0
+- Cost: a client that sends 0 shows an empty list
+- How to check: a unit test for `readLimit` with `?limit=0`
+- Step: walked the failure path
+
+## Cleared
+- Other callers of `readLimit`: `git grep -n -w readLimit` -> src/routes/listings.js:9 only
+- A flag that gates the route: `git grep -n -i flag src/routes` -> nothing
+
+## Before you merge
+Add a unit test that `readLimit` with `?limit=0` returns 20. Rerun the proof with
+`node /tmp/tmp.QOrjpUPzw4/proof.mjs`.
+
+Safety fact: proven. `parseLimit` from `qs-lite` 1.4.2 returns a number for `?limit=50`.
+````

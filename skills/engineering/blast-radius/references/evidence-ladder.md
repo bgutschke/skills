@@ -39,3 +39,11 @@ These hold for every claim in the writeup, at every step.
    query, and the word "nothing". It is the basis for a cleared risk, not a gap to fill.
 3. **Nothing is invented.** Never invent a caller, an API, a flag, a version, or a line
    reference. If you cannot find it, say what you searched.
+
+## Credit
+
+Three ideas come from the `blast-radius` skill in the pstack plugin for Cursor by Lauren
+Tan, MIT licensed. They are the five steps, the single safety fact, and the rule to prove
+by running code. The source:
+<https://github.com/cursor/plugins/tree/23e4138daa01c42d4969f7a5465f82704e64f798/pstack/skills/blast-radius>.
+This file and `SKILL.md` restate them in their own words.
