@@ -95,8 +95,6 @@ If the script cannot be written with reasonable effort, or cannot run at all, th
 a network call, a secret, or a full running application to test. Say which in the
 writeup.
 
-Never call the fact proven without a run that exited 0.
-
 ## Check the tracked files
 
 Run every other check script, for example one that backs a risk, in the same directory
