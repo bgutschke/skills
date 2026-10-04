@@ -18,9 +18,9 @@ if (process.argv.length > 3 || process.argv.includes('--help')) {
 try {
   const target = parseChangeTarget(process.argv[2]);
   const ghAuthenticated = target.kind === 'range' ? null : isGhAuthenticated();
-  const { base, head, log, diff, pullRequestBodies, fallback } = readChange(target, ghAuthenticated);
+  const { base, head, log, diff, pullRequestBodies } = readChange(target, ghAuthenticated);
   const anchor = buildChangeAnchor({ log, diff, pullRequestBodies });
-  console.log(JSON.stringify({ target, anchor, base, head, ghAuthenticated, fallback }));
+  console.log(JSON.stringify({ target, anchor, base, head, ghAuthenticated }));
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
@@ -35,14 +35,14 @@ try {
  *   log: string,
  *   diff: string,
  *   pullRequestBodies: import('./build-code-anchor').PullRequestBody[],
- *   fallback: string | null,
  * }} Change
  */
 
 
 /**
  * Reads the change the target names. `head` is null when the change ends
- * in the working tree, which only the branch target does.
+ * in the working tree, which only the branch target does. A pull request
+ * without `gh` stops, because no other change can stand in for it.
  *
  * @param {import('./parse-change-target').ChangeTarget} target
  * @param {boolean | null} ghAuthenticated
@@ -50,14 +50,11 @@ try {
  */
 function readChange(target, ghAuthenticated) {
   if (target.kind === 'range') return readRange(target);
-  if (target.kind === 'pullRequest' && ghAuthenticated) return readPullRequest(target.pullRequest);
-
-  const branch = readBranch(ghAuthenticated);
-  if (target.kind === 'branch') return branch;
-  return {
-    ...branch,
-    fallback: `gh is missing or not authenticated, so pull request ${target.pullRequest} was not read. Read the current branch against ${branch.base.ref} instead.`,
-  };
+  if (target.kind === 'branch') return readBranch(ghAuthenticated);
+  if (!ghAuthenticated) {
+    throw new Error(`gh is missing or not authenticated, so pull request ${target.pullRequest} cannot be read. Run "gh auth login", or pass the pull request's ref range, for example main...feature.`);
+  }
+  return readPullRequest(target.pullRequest);
 }
 
 
@@ -95,7 +92,6 @@ function readBranch(ghAuthenticated) {
     log: readLog(base, 'HEAD'),
     diff: readWorkingTreeDiff(base),
     pullRequestBodies: pullRequest ? [pullRequest] : [],
-    fallback: null,
   };
 }
 
@@ -286,7 +282,6 @@ function readCommits(base, head, pullRequestBodies) {
     log: readLog(base.commit, head.commit),
     diff: git(['diff', '--no-color', '--no-ext-diff', base.commit, head.commit]),
     pullRequestBodies,
-    fallback: null,
   };
 }
 
