@@ -33,6 +33,9 @@ Every skill lives at `skills/<bucket>/<skill-name>/SKILL.md` and must be listed 
 ## Available skills
 
 - **engineering**
+  - [blast-radius](./skills/engineering/blast-radius/SKILL.md) — find what the current
+    branch can break outside its own diff, name the one fact the change is safe because
+    of, and rate each risk on a five-step evidence ladder.
   - [draft-commit-message](./skills/engineering/draft-commit-message/SKILL.md) — draft a
     Conventional Commits message for staged changes, reading the diff and branch inside a
     Haiku subagent. Never stages or commits.
