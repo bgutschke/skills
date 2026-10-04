@@ -1,3 +1,20 @@
+# [1.32.0](https://github.com/bgutschke/skills/compare/v1.31.0...v1.32.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* **blast-radius:** check the proof commit only when a head commit exists ([31410b1](https://github.com/bgutschke/skills/commit/31410b100efc33a24825c55743bba59220fb8454)), closes [#201](https://github.com/bgutschke/skills/issues/201)
+* **blast-radius:** require gh auth for pull request targets ([d284bed](https://github.com/bgutschke/skills/commit/d284bed1a1580d7746613cc640d023d621690cde)), closes [#202](https://github.com/bgutschke/skills/issues/202)
+
+
+### Features
+
+* **blast-radius:** add copied anchor builder and change reader ([f1125b2](https://github.com/bgutschke/skills/commit/f1125b2f71fa9a42bcbe3c4791363c228b404a47)), closes [#199](https://github.com/bgutschke/skills/issues/199)
+* **blast-radius:** add the minimal end-to-end skill ([d085dad](https://github.com/bgutschke/skills/commit/d085dada812ac9f77d3ee7e2b98d9b89d4e82c27)), closes [#200](https://github.com/bgutschke/skills/issues/200)
+* **blast-radius:** add the worked example and the pstack credit ([657090b](https://github.com/bgutschke/skills/commit/657090ba8804b22d4c5411bd03f402c66f1c7c6b)), closes [#203](https://github.com/bgutschke/skills/issues/203)
+* **blast-radius:** prove the safety fact with a throwaway script ([aa8852a](https://github.com/bgutschke/skills/commit/aa8852a24393b7cc0f8d7bf170d8e7d92221f4ff)), closes [#201](https://github.com/bgutschke/skills/issues/201)
+* **blast-radius:** read a pull request or a ref range ([9a53a73](https://github.com/bgutschke/skills/commit/9a53a737cff39600bf2c4572890363523be11b1e)), closes [#202](https://github.com/bgutschke/skills/issues/202)
+
 # [1.31.0](https://github.com/bgutschke/skills/compare/v1.30.0...v1.31.0) (2026-10-03)
 
 
