@@ -145,8 +145,8 @@ Scan `args` for three optional pieces, in any order or position:
    (`--base`, `gh-merge-base`, upstream ref, or default branch), draft/ready state, whether
    the file tree was skipped for size (see "Composing the body"), which title tier fired
    (verbatim / documented convention / inferred convention), whether a merge commit was
-   detected ahead of base (informational only — see "Deriving the title"), and that it's
-   assigned to you.
+   detected ahead of base (informational only — see "Deriving the title"), that it's
+   assigned to you, and the diff-evidence line (see "Composing the body").
 
 ## Update path
 
@@ -168,8 +168,9 @@ Scan `args` for three optional pieces, in any order or position:
 6. **Report**: the template path that filled the body (or that the fallback structure
    was used), which blanks were filled, which checkboxes were checked, which sections
    were left untouched and why, whether the file tree was skipped for size, any retarget
-   or draft-state change applied, and that the PR is assigned to you — so the reasoning
-   is visible before anyone reads the PR itself.
+   or draft-state change applied, that the PR is assigned to you, and the diff-evidence
+   line (see "Composing the body") — so the reasoning is visible before anyone reads the
+   PR itself.
 
 ## Composing the body
 
@@ -285,6 +286,14 @@ directly in this session — file list and line counts only, never the full diff
 compare it against the subagent's change summary. A mismatch (fewer files mentioned than
 `--stat` shows, for instance) means re-running the subagent, not composing the body from
 an incomplete report.
+
+If no subagent can be spawned in this session, stop. Tell the caller that the evidence
+step could not run, and write no body. Never fall back to composing the body from the
+session's own memory of the changes, however well the session knows them.
+
+End every report with exactly one diff-evidence line: `Diff evidence: subagent report`
+when the subagent ran and passed the cross-check, or `Diff evidence: none, stopped` when
+the step could not run.
 
 Render the file tree of structural changes in this session, with the bundled renderer:
 
@@ -405,6 +414,24 @@ commit's already-grounded subject into that shape — never invents substantive 
 ticket number the skill has no evidence for, for instance). If the detected shape needs
 information the skill can't ground in something real, skip adapting and fall through to
 the plain default instead.
+
+## Common rationalizations
+
+An agent that skips the diff-evidence subagent always has a reason. These are the reasons
+seen so far.
+
+| Rationalization | Reality |
+|---|---|
+| "I made these changes in this session, so I know them." | Session memory is not evidence. The subagent report is the only source that is grounded in the diff and the full commit messages. |
+| "The file tree and `--stat` come from git, so the evidence is already real." | They cover the file list only. They carry no commit messages, no testing evidence, and no reversibility signals. |
+| "The diff is small, so a subagent is wasteful." | Size does not change the rule. The cross-check is the only guard against a body written from memory. |
+| "The body has no AI attribution line, so it follows the skill." | Meeting one rule does not excuse a skipped rule. |
+
+## Red flags
+
+- You are about to write **What changed** and no subagent report exists in this session.
+- You explain the skipped subagent in your report instead of running it.
+- You treat the `--stat` count or the file tree as the diff evidence.
 
 ## Worked examples
 
