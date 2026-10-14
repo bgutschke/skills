@@ -1,3 +1,10 @@
+## [1.32.1](https://github.com/bgutschke/skills/compare/v1.32.0...v1.32.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **to-pr:** stop when the diff-evidence subagent cannot run ([5afc621](https://github.com/bgutschke/skills/commit/5afc621fd01176e4cf482c7e870b1a7a33a721c5))
+
 # [1.32.0](https://github.com/bgutschke/skills/compare/v1.31.0...v1.32.0) (2026-10-04)
 
 
