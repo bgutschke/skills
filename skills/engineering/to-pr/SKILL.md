@@ -19,8 +19,8 @@ watching its work unfold and sees the required report regardless of any prompt.
 
 Requires an authenticated `gh` CLI — every path shells out to it (`gh pr view`, `gh pr
 create`, `gh pr edit`, `gh api`, `gh repo view`). Requires `node` to run the two bundled
-scripts that "Composing the body" invokes on every run: the template selector
-(`scripts/select-template-path-cli.js`) and the file-tree renderer
+scripts that "Composing the body" invokes on every run: the template lookup
+(`scripts/gather-template-path-cli.js`) and the file-tree renderer
 (`scripts/render-file-tree-cli.js`). `git` and `base64` are also used but are ambient on
 any
 machine capable of running Claude Code, so they aren't listed here.
@@ -144,7 +144,9 @@ Scan `args` for three optional pieces, in any order or position:
 6. **Report**: the new PR's URL, title, base, which of the four base sources decided it
    (`--base`, `gh-merge-base`, upstream ref, or default branch), draft/ready state, whether
    the file tree was skipped for size (see "Composing the body"), which title tier fired
-   (verbatim / documented convention / inferred convention), whether a merge commit was
+   (verbatim / documented convention / inferred convention), the template path or the
+   fallback structure, a `PULL_REQUEST_TEMPLATE/` folder that the lookup found and this
+   skill did not use, whether a merge commit was
    detected ahead of base (informational only — see "Deriving the title"), that it's
    assigned to you, and the diff-evidence line (see "Composing the body").
 
@@ -166,7 +168,8 @@ Scan `args` for three optional pieces, in any order or position:
    self-assigning it at the same time: `gh pr edit <target> --body-file <file>
    --add-assignee @me`.
 6. **Report**: the template path that filled the body (or that the fallback structure
-   was used), which blanks were filled, which checkboxes were checked, which sections
+   was used), a `PULL_REQUEST_TEMPLATE/` folder that the lookup found and this skill did
+   not use, which blanks were filled, which checkboxes were checked, which sections
    were left untouched and why, whether the file tree was skipped for size, any retarget
    or draft-state change applied, that the PR is assigned to you, and the diff-evidence
    line (see "Composing the body") — so the reasoning is visible before anyone reads the
@@ -174,46 +177,41 @@ Scan `args` for three optional pieces, in any order or position:
 
 ## Composing the body
 
-Shared by both paths. "The template" means the target repo's own PR template, found
-with GitHub's own name and folder rules, and read from whichever base branch the calling
+Shared by both paths. "The template" means the target repo's own PR template, read from whichever base branch the calling
 path already settled on (the create path's step 1, or the update path's `baseRefName`) —
 never the head branch. `<owner>/<repo>` is the PR's own repo from its `url` on the update
 path, and the current repo on the create path.
 
 GitHub itself reads a PR template from the repo's default branch only. This skill reads
 from the base branch on purpose, because a release branch can carry its own template. So
-for a PR into a non-default branch, the result can differ from GitHub's web form.
+for a PR into a non-default branch, the result can differ from GitHub's web form. GitHub
+also falls back to a default template in the owner's public `.github` repo. This skill
+does not read that repo, so such a repo gets the fallback structure.
 
-1. List the file names in each of the three folders GitHub searches — `.github/`, the
-   repo root, and `docs/` — one contents-API call per folder, keeping only `file`
-   entries:
-
-   ```bash
-   gh api "repos/<owner>/<repo>/contents/.github?ref=<base>" \
-     --jq '.[] | select(.type == "file") | .name'
-   gh api "repos/<owner>/<repo>/contents?ref=<base>" \
-     --jq '.[] | select(.type == "file") | .name'
-   gh api "repos/<owner>/<repo>/contents/docs?ref=<base>" \
-     --jq '.[] | select(.type == "file") | .name'
-   ```
-
-   A failed call exits non-zero, and its stderr ends with the HTTP status, for example
-   `gh: Not Found (HTTP 404)`. A 404 on a listing means that folder does not exist — treat
-   it as empty. Any other API error (auth failure, rate limit, network) stops the run with
-   a report. Never fall
-   back to the fallback structure on such an error, since it can hide a real template.
-2. Pass every listed name to the bundled selector, one flag per name, and read the path
-   it prints:
+1. Run the bundled lookup, which lists `.github/`, the repo root, and `docs/` on the base
+   branch and prints one JSON line:
 
    ```bash
-   node "${CLAUDE_SKILL_DIR}/scripts/select-template-path-cli.js" \
-     --github <name> ... --root <name> ... --docs <name> ...
+   node "${CLAUDE_SKILL_DIR}/scripts/gather-template-path-cli.js" \
+     --repo <owner>/<repo> --ref <base>
    ```
 
-   It matches `pull_request_template.md` or `pull_request_template.txt` in any letter
-   case, checks `.github/`, then the root, then `docs/`, and prints the first match in
-   the exact case listed. It prints nothing when no folder holds a match.
-3. If it printed a path, fetch that exact path:
+   ```json
+   {"template":".github/pull_request_template.md","glossaries":["CONTEXT.md"],"templateFolder":false}
+   ```
+
+   `template` is the chosen path, or `null` when no folder holds a template. The folder
+   order follows the GitHub docs: `.github/`, then the root, then `docs/`. The name match
+   follows GitHub's behavior: `pull_request_template.md` or `.txt`, in any letter case.
+   `glossaries` lists each `CONTEXT.md` or `GLOSSARY.md` at the root. `templateFolder`
+   is `true` when any of the three folders holds a `PULL_REQUEST_TEMPLATE/` folder.
+
+   The lookup counts a missing `.github/` or `docs/` as empty. It exits non-zero on any
+   other failure: a missing repo or ref, a root that lists no files, or an API error such
+   as an auth failure or a rate limit. On a non-zero exit, stop the run and report its
+   stderr. The fallback structure is only for a `null` template, because a failed lookup
+   can hide a real one.
+2. If `template` is a path, fetch that exact path:
 
    ```bash
    gh api "repos/<owner>/<repo>/contents/<path>?ref=<base>" \
@@ -222,7 +220,7 @@ for a PR into a non-default branch, the result can differ from GitHub's web form
 
 - If a template was found, keep every heading, HTML comment, and checkbox exactly where
   it puts them.
-- If the selector printed nothing, use the built-in fallback structure:
+- If `template` is `null`, use the built-in fallback structure:
   `## What changed`, `## Why`, `## Testing`.
 - Never delegate this to `gh pr create`'s own `-T`/`--fill`/`--fill-verbose` — `-T` dumps
   a local file's raw text with no blank-filling, and `--fill`/`--fill-verbose` autofill
@@ -314,7 +312,7 @@ never appear. It prints nothing in two cases:
 
 The convention lookup in the target repo, which the "Why" step and the title tiers also
 use, checks for a glossary too: a `CONTEXT.md` or `GLOSSARY.md` at the repo root. The
-root listing from step 1 of the template lookup already shows whether one exists. Fetch
+`glossaries` field from step 1 of the template lookup shows which ones exist. Fetch
 each one that exists from the base branch, the same way as the template. If one exists,
 write the body in its preferred terms, and avoid the terms it tells readers to avoid.
 The title rules in "Deriving the title" do not change. Without a glossary, skip this
