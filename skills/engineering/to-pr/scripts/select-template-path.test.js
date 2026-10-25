@@ -1,4 +1,4 @@
-const { selectTemplatePath } = require('./select-template-path');
+const { selectTemplatePath, resolveTemplateLookup } = require('./select-template-path');
 
 describe('selectTemplatePath', () => {
   it('finds the uppercase template in .github/', () => {
@@ -70,5 +70,85 @@ describe('selectTemplatePath', () => {
 
   it('returns null when every folder is empty', () => {
     expect(selectTemplatePath({ github: [], root: [], docs: [] })).toBeNull();
+  });
+});
+
+/**
+ * @param {...[string, string]} entries name and type pairs
+ * @returns {{ stdout: string }}
+ */
+function listing(...entries) {
+  return { stdout: JSON.stringify(entries.map(([name, type]) => ({ name, type }))) };
+}
+
+const NOT_FOUND = { stderr: 'gh: Not Found (HTTP 404)' };
+
+describe('resolveTemplateLookup', () => {
+  it('returns the template path found in the gh listings', () => {
+    expect(
+      resolveTemplateLookup({
+        github: listing(['pull_request_template.md', 'file']),
+        root: listing(['README.md', 'file']),
+        docs: NOT_FOUND,
+      }),
+    ).toEqual({ template: '.github/pull_request_template.md', glossaries: [], templateFolder: false });
+  });
+
+  it('ignores an entry that is not a file', () => {
+    expect(
+      resolveTemplateLookup({
+        github: listing(['pull_request_template.md', 'dir']),
+        root: listing(['README.md', 'file']),
+        docs: NOT_FOUND,
+      }).template,
+    ).toBeNull();
+  });
+
+  it('throws on an API error that is not a 404', () => {
+    expect(() =>
+      resolveTemplateLookup({
+        github: { stderr: 'gh: API rate limit exceeded (HTTP 403)' },
+        root: listing(['README.md', 'file']),
+        docs: NOT_FOUND,
+      }),
+    ).toThrow('.github/ listing failed: gh: API rate limit exceeded (HTTP 403)');
+  });
+
+  it('throws when the root listing is a 404, because the repo or ref does not exist', () => {
+    expect(() =>
+      resolveTemplateLookup({ github: NOT_FOUND, root: NOT_FOUND, docs: NOT_FOUND }),
+    ).toThrow('root listing failed: gh: Not Found (HTTP 404)');
+  });
+
+  it('throws when the root listing holds no files, because a real repo always has one', () => {
+    expect(() =>
+      resolveTemplateLookup({ github: NOT_FOUND, root: listing(['src', 'dir']), docs: NOT_FOUND }),
+    ).toThrow('root listing holds no files');
+  });
+
+  it('lists the glossary files at the root and ignores one in another folder', () => {
+    expect(
+      resolveTemplateLookup({
+        github: listing(['GLOSSARY.md', 'file']),
+        root: listing(['README.md', 'file'], ['GLOSSARY.md', 'file'], ['CONTEXT.md', 'file']),
+        docs: listing(['CONTEXT.md', 'file']),
+      }).glossaries,
+    ).toEqual(['CONTEXT.md', 'GLOSSARY.md']);
+  });
+
+  it.each(['github', 'root', 'docs'])('flags a PULL_REQUEST_TEMPLATE folder in the %s listing', (folder) => {
+    const outcomes = { github: NOT_FOUND, root: listing(['README.md', 'file']), docs: NOT_FOUND };
+    outcomes[folder] = listing(['README.md', 'file'], ['pull_request_template', 'dir']);
+    expect(resolveTemplateLookup(outcomes).templateFolder).toBe(true);
+  });
+
+  it('does not flag a PULL_REQUEST_TEMPLATE entry that is a file', () => {
+    expect(
+      resolveTemplateLookup({
+        github: NOT_FOUND,
+        root: listing(['README.md', 'file'], ['PULL_REQUEST_TEMPLATE', 'file']),
+        docs: NOT_FOUND,
+      }).templateFolder,
+    ).toBe(false);
   });
 });
