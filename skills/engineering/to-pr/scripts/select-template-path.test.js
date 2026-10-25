@@ -151,4 +151,14 @@ describe('resolveTemplateLookup', () => {
       }).templateFolder,
     ).toBe(false);
   });
+
+  it('throws when a folder path names a file, because the listing is not an array', () => {
+    expect(() =>
+      resolveTemplateLookup({
+        github: NOT_FOUND,
+        root: listing(['README.md', 'file']),
+        docs: { stdout: JSON.stringify({ name: 'docs', type: 'file' }) },
+      }),
+    ).toThrow('docs/ listing is not a folder');
+  });
 });
