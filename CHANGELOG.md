@@ -1,3 +1,13 @@
+## [1.32.2](https://github.com/bgutschke/skills/compare/v1.32.1...v1.32.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **to-pr:** give run results when the repo template asks for them ([105bda6](https://github.com/bgutschke/skills/commit/105bda680b6b4a0e40c5d0499638062394365897))
+* **to-pr:** look up the pr template in one bundled script call ([fdbf721](https://github.com/bgutschke/skills/commit/fdbf721f616ea9fd6a5d9a6e943f1b8378d898c3))
+* **to-pr:** pass the template's risk examples to the evidence subagent ([1bc7fb5](https://github.com/bgutschke/skills/commit/1bc7fb5f0df1ae5170e763309236c84f7aba5192))
+* **to-pr:** resolve review findings in the lookup and testing rules ([d083b83](https://github.com/bgutschke/skills/commit/d083b8383a82570a233450a74abdb4fd6ff436dc))
+
 ## [1.32.1](https://github.com/bgutschke/skills/compare/v1.32.0...v1.32.1) (2026-10-14)
 
 
