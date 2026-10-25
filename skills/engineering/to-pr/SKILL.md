@@ -148,7 +148,8 @@ Scan `args` for three optional pieces, in any order or position:
    fallback structure, a `PULL_REQUEST_TEMPLATE/` folder that the lookup found and this
    skill did not use, whether a merge commit was
    detected ahead of base (informational only — see "Deriving the title"), that it's
-   assigned to you, and the diff-evidence line (see "Composing the body").
+   assigned to you, whether the template asked for run results and which commands got
+   no result, and the diff-evidence line (see "Composing the body").
 
 ## Update path
 
@@ -171,7 +172,8 @@ Scan `args` for three optional pieces, in any order or position:
    was used), a `PULL_REQUEST_TEMPLATE/` folder that the lookup found and this skill did
    not use, which blanks were filled, which checkboxes were checked, which sections
    were left untouched and why, whether the file tree was skipped for size, any retarget
-   or draft-state change applied, that the PR is assigned to you, and the diff-evidence
+   or draft-state change applied, that the PR is assigned to you, whether the template
+   asked for run results and which commands got no result, and the diff-evidence
    line (see "Composing the body") — so the reasoning is visible before anyone reads the
    PR itself.
 
@@ -332,9 +334,18 @@ Ground every blank in something real, never invention:
   scripts/old.js; commit a1b2c3d is marked BREAKING CHANGE.`
 - **Why** — see the ticket-reasoning step below.
 - **Testing** — the diff-evidence subagent's testing evidence. Name each new test file
-  as the guard for the change. Never include run output, and never claim that a test
-  failed before and passes now. If the subagent omitted the category, leave **Testing**
-  unfilled rather than inventing boilerplate.
+  as the guard for the change. Never claim that a test failed before and passes now. If
+  the subagent omitted the category, leave **Testing** unfilled rather than inventing
+  boilerplate. Run results follow the rule below.
+- Run results go in only when the repo template's testing field asks for them, for
+  example "List the commands that you ran and their result". The template's request
+  wins, because it is the more local rule. Then give each command one line with its
+  result, such as `` `npm test`: 420 passed `` or `` `npm test`: 3 failed ``. Take each
+  result from the tool output of a run of that command in this session. Tool output is
+  evidence of a run, while session memory of the changes is still no evidence of the
+  diff. A command with no run in this session gets its name and no result. Paste one
+  result line per command, never a log. Without such a request, and in the fallback
+  structure, the body names commands and gives no results.
 - In a repo template, the file tree goes into the field that receives the change
   summary. The signals line goes into the template's risk field, if it has one, and
   otherwise into the change-summary field. Neither one ever adds a heading.
