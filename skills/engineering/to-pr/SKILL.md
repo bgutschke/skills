@@ -240,7 +240,10 @@ since it's an artifact of *how* the PR was authored, not the target repo's own c
 and never write one when composing a body. On the create path, there is nothing to
 conflict with yet, so this step doesn't apply.
 
-Before grounding any blank, gather the diff evidence once per invocation. A real diff can
+Before grounding any blank, gather the diff evidence once per invocation, after the
+template lookup. If the template has a risk field, such as `Hard to undo:`, and that
+field names its own examples, copy the examples word for word into the subagent's brief
+as extra closed-list items. A real diff can
 run arbitrarily large, unlike every other lookup this skill makes — dispatch a
 `general-purpose` subagent to read it instead of pulling it into this session directly. Do
 not override the subagent's model: the "never invent" grounding this evidence must hold
@@ -265,9 +268,11 @@ labeled sections:
   - a removed public export
   - a changed configuration key
   - a commit marked as breaking, with a `!` after its type or a `BREAKING CHANGE:` footer
+  - each example that the template's risk field names, when the brief lists any
 
-  Never report a guess about consequences, such as a "risky" refactor. Omit the category
-  entirely when no item matches.
+  Report a template example only for a literal change of that kind in the diff, for
+  example a renamed secret in a workflow file. Never report a guess about consequences,
+  such as a "risky" refactor. Omit the category entirely when no item matches.
 - **Commit messages** — reproduce each one inside a fenced code block, character-for-
   character; never paraphrase, condense, or summarize, even under length pressure. The
   ticket-reasoning fallback below depends on exact footer text — blurring `Refs #9` into
@@ -276,9 +281,9 @@ labeled sections:
 - **Ticket references** — any ticket number or tracker URL appearing in a commit message
   or the diff itself.
 
-The report is evidence, not prose for any specific template — the subagent doesn't know
-which template this run will fill, so it must never assume a target's section names or
-structure. Mapping the evidence onto the actual template's blanks stays this skill's own
+The report is evidence, not prose for any specific template — the subagent gets at most
+the template's risk examples, never the template, so it must never assume a target's
+section names or structure. Mapping the evidence onto the actual template's blanks stays this skill's own
 job, below.
 
 As a cheap cross-check before trusting the report, run `git diff --stat <base>...HEAD`

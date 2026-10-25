@@ -428,7 +428,8 @@ fills its absence.
 **Reversibility signal**:
 A fact in a diff that makes the change hard to undo after merge, drawn from a closed
 list: deleted files, schema or data migrations, removed public exports, changed config
-keys, and a `!` or `BREAKING CHANGE:` marker in a commit.
+keys, a `!` or `BREAKING CHANGE:` marker in a commit, and each example that the repo
+template's risk field names, such as a secret name.
 *Avoid*: "risk" or "blast radius" for this — those invite a guess about consequences,
 while a signal is only what the diff itself shows.
 
