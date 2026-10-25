@@ -24,47 +24,16 @@ const TEMPLATE_FOLDER_NAME = 'pull_request_template';
  */
 function resolveTemplateLookup(outcomes) {
   const listings = {
-    github: listEntries('.github/', outcomes.github, true),
-    root: listEntries('root', outcomes.root, false),
-    docs: listEntries('docs/', outcomes.docs, true),
+    github: listFolder('.github/', outcomes.github),
+    root: listRoot(outcomes.root),
+    docs: listFolder('docs/', outcomes.docs),
   };
   const root = fileNames(listings.root);
-  if (root.length === 0) throw new Error('root listing holds no files, so the lookup cannot be trusted');
   return {
     template: selectTemplatePath({ github: fileNames(listings.github), root, docs: fileNames(listings.docs) }),
     glossaries: GLOSSARY_NAMES.filter((name) => root.includes(name)),
     templateFolder: Object.values(listings).some((entries) => entries.some(isTemplateFolder)),
   };
-}
-
-/**
- * A 404 on the root means the repo or ref does not exist, never an empty folder.
- *
- * @param {string} folder label for the error message
- * @param {ListingOutcome} outcome
- * @param {boolean} missingIsEmpty whether a 404 means the folder is empty
- * @returns {ListingEntry[]}
- */
-function listEntries(folder, outcome, missingIsEmpty) {
-  if ('stdout' in outcome) return JSON.parse(outcome.stdout);
-  if (missingIsEmpty && NOT_FOUND.test(outcome.stderr)) return [];
-  throw new Error(`${folder} listing failed: ${outcome.stderr.trim()}`);
-}
-
-/**
- * @param {ListingEntry[]} entries
- * @returns {string[]}
- */
-function fileNames(entries) {
-  return entries.filter((entry) => entry.type === 'file').map((entry) => entry.name);
-}
-
-/**
- * @param {ListingEntry} entry
- * @returns {boolean}
- */
-function isTemplateFolder(entry) {
-  return entry.type === 'dir' && entry.name.toLowerCase() === TEMPLATE_FOLDER_NAME;
 }
 
 /**
@@ -105,6 +74,57 @@ function byExtensionThenName(a, b) {
   if (byExtension !== 0) return byExtension;
   if (a === b) return 0;
   return a < b ? -1 : 1;
+}
+
+/**
+ * @param {string} folder label for the error message
+ * @param {ListingOutcome} outcome
+ * @returns {ListingEntry[]}
+ */
+function listFolder(folder, outcome) {
+  if ('stderr' in outcome && NOT_FOUND.test(outcome.stderr)) return [];
+  return parseListing(folder, outcome);
+}
+
+/**
+ * A 404 on the root means the repo or ref does not exist, and a real repo always has a
+ * file at its root, so neither case can count as an empty folder.
+ *
+ * @param {ListingOutcome} outcome
+ * @returns {ListingEntry[]}
+ */
+function listRoot(outcome) {
+  const entries = parseListing('root', outcome);
+  if (fileNames(entries).length === 0) throw new Error('root listing holds no files, so the lookup cannot be trusted');
+  return entries;
+}
+
+/**
+ * @param {string} folder label for the error message
+ * @param {ListingOutcome} outcome
+ * @returns {ListingEntry[]}
+ */
+function parseListing(folder, outcome) {
+  if ('stderr' in outcome) throw new Error(`${folder} listing failed: ${outcome.stderr.trim()}`);
+  const entries = JSON.parse(outcome.stdout);
+  if (!Array.isArray(entries)) throw new Error(`${folder} listing is not a folder`);
+  return entries;
+}
+
+/**
+ * @param {ListingEntry[]} entries
+ * @returns {string[]}
+ */
+function fileNames(entries) {
+  return entries.filter((entry) => entry.type === 'file').map((entry) => entry.name);
+}
+
+/**
+ * @param {ListingEntry} entry
+ * @returns {boolean}
+ */
+function isTemplateFolder(entry) {
+  return entry.type === 'dir' && entry.name.toLowerCase() === TEMPLATE_FOLDER_NAME;
 }
 
 module.exports = { resolveTemplateLookup, selectTemplatePath };

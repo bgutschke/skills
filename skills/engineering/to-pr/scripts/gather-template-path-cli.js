@@ -4,6 +4,7 @@ const { execFileSync } = require('child_process');
 const { resolveTemplateLookup } = require('./select-template-path');
 
 const USAGE = 'Usage: gather-template-path-cli.js --repo <owner/repo> --ref <base>';
+// A contents listing holds up to 1,000 entries of about 1 KB each, which can pass the 1 MiB default.
 const MAX_BUFFER = 16 * 1024 * 1024;
 
 /**

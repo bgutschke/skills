@@ -21,9 +21,7 @@ Requires an authenticated `gh` CLI — every path shells out to it (`gh pr view`
 create`, `gh pr edit`, `gh api`, `gh repo view`). Requires `node` to run the two bundled
 scripts that "Composing the body" invokes on every run: the template lookup
 (`scripts/gather-template-path-cli.js`) and the file-tree renderer
-(`scripts/render-file-tree-cli.js`). `git` and `base64` are also used but are ambient on
-any
-machine capable of running Claude Code, so they aren't listed here.
+(`scripts/render-file-tree-cli.js`).
 
 ## When to use
 
@@ -179,9 +177,9 @@ Scan `args` for three optional pieces, in any order or position:
 
 ## Composing the body
 
-Shared by both paths. "The template" means the target repo's own PR template, read from whichever base branch the calling
-path already settled on (the create path's step 1, or the update path's `baseRefName`) —
-never the head branch. `<owner>/<repo>` is the PR's own repo from its `url` on the update
+Shared by both paths. "The template" means the target repo's own PR template, read from
+whichever base branch the calling path already settled on (the create path's step 1, or
+the update path's `baseRefName`) — never the head branch. `<owner>/<repo>` is the PR's own repo from its `url` on the update
 path, and the current repo on the create path.
 
 GitHub itself reads a PR template from the repo's default branch only. This skill reads
@@ -191,15 +189,11 @@ also falls back to a default template in the owner's public `.github` repo. This
 does not read that repo, so such a repo gets the fallback structure.
 
 1. Run the bundled lookup, which lists `.github/`, the repo root, and `docs/` on the base
-   branch and prints one JSON line:
+   branch and prints one JSON line with three fields:
 
    ```bash
    node "${CLAUDE_SKILL_DIR}/scripts/gather-template-path-cli.js" \
      --repo <owner>/<repo> --ref <base>
-   ```
-
-   ```json
-   {"template":".github/pull_request_template.md","glossaries":["CONTEXT.md"],"templateFolder":false}
    ```
 
    `template` is the chosen path, or `null` when no folder holds a template. The folder
@@ -207,12 +201,10 @@ does not read that repo, so such a repo gets the fallback structure.
    follows GitHub's behavior: `pull_request_template.md` or `.txt`, in any letter case.
    `glossaries` lists each `CONTEXT.md` or `GLOSSARY.md` at the root. `templateFolder`
    is `true` when any of the three folders holds a `PULL_REQUEST_TEMPLATE/` folder.
-
-   The lookup counts a missing `.github/` or `docs/` as empty. It exits non-zero on any
-   other failure: a missing repo or ref, a root that lists no files, or an API error such
-   as an auth failure or a rate limit. On a non-zero exit, stop the run and report its
-   stderr. The fallback structure is only for a `null` template, because a failed lookup
-   can hide a real one.
+   A missing `.github/` or `docs/` counts as empty. Any other failure exits non-zero: a
+   missing repo or ref, a root that lists no files, or an API error such as a rate limit.
+   On a non-zero exit, stop the run and report its stderr. The fallback structure is
+   only for a `null` template, because a failed lookup can hide a real one.
 2. If `template` is a path, fetch that exact path:
 
    ```bash
@@ -241,11 +233,10 @@ and never write one when composing a body. On the create path, there is nothing 
 conflict with yet, so this step doesn't apply.
 
 Before grounding any blank, gather the diff evidence once per invocation, after the
-template lookup. If the template has a risk field, such as `Hard to undo:`, and that
-field names its own examples, copy the examples word for word into the subagent's brief
-as extra closed-list items. A real diff can
-run arbitrarily large, unlike every other lookup this skill makes — dispatch a
-`general-purpose` subagent to read it instead of pulling it into this session directly. Do
+template lookup. A real diff can run arbitrarily large, unlike every other lookup this
+skill makes — dispatch a `general-purpose` subagent to read it instead of pulling it into
+this session directly. If the template's risk field, such as `Hard to undo:`, names its
+own examples, copy them word for word into the brief as extra closed-list items. Do
 not override the subagent's model: the "never invent" grounding this evidence must hold
 up under is a judgment call, not a mechanical extraction, and isn't a place to trade
 quality for a cheaper tier.
@@ -340,17 +331,16 @@ Ground every blank in something real, never invention:
 - **Why** — see the ticket-reasoning step below.
 - **Testing** — the diff-evidence subagent's testing evidence. Name each new test file
   as the guard for the change. Never claim that a test failed before and passes now. If
-  the subagent omitted the category, leave **Testing** unfilled rather than inventing
-  boilerplate. Run results follow the rule below.
+  the subagent omitted the category and no run result applies, leave **Testing**
+  unfilled rather than inventing boilerplate.
 - Run results go in only when the repo template's testing field asks for them, for
   example "List the commands that you ran and their result". The template's request
   wins, because it is the more local rule. Then give each command one line with its
   result, such as `` `npm test`: 420 passed `` or `` `npm test`: 3 failed ``. Take each
-  result from the tool output of a run of that command in this session. Tool output is
-  evidence of a run, while session memory of the changes is still no evidence of the
-  diff. A command with no run in this session gets its name and no result. Paste one
-  result line per command, never a log. Without such a request, and in the fallback
-  structure, the body names commands and gives no results.
+  result from the tool output of a run of that command in this session, and never run a
+  command to get one. A command with no run in this session gets its name and no
+  result. Paste one result line per command, never a log. Without such a request, and in
+  the fallback structure, the body names commands and gives no results.
 - In a repo template, the file tree goes into the field that receives the change
   summary. The signals line goes into the template's risk field, if it has one, and
   otherwise into the change-summary field. Neither one ever adds a heading.
@@ -436,7 +426,7 @@ seen so far.
 
 | Rationalization | Reality |
 |---|---|
-| "I made these changes in this session, so I know them." | Session memory is not evidence. The subagent report is the only source that is grounded in the diff and the full commit messages. |
+| "I made these changes in this session, so I know them." | Session memory is not evidence. The subagent report is the only source that is grounded in the diff and the full commit messages. Only run results come from this session's tool output. |
 | "The file tree and `--stat` come from git, so the evidence is already real." | They cover the file list only. They carry no commit messages, no testing evidence, and no reversibility signals. |
 | "The diff is small, so a subagent is wasteful." | Size does not change the rule. The cross-check is the only guard against a body written from memory. |
 | "The body has no AI attribution line, so it follows the skill." | Meeting one rule does not excuse a skipped rule. |
