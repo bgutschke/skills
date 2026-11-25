@@ -30,7 +30,7 @@
     "jest": "^30.0.0",
     "lint-staged": "^17.3.0",
     "markdownlint-cli2": "^0.24.0",
-    "semantic-release": "^25.0.0",
+    "semantic-release": "^26.0.0",
     "typescript": "^7.0.2"
   },
   "jest": {
